@@ -9,7 +9,7 @@ import {
 import { isIsoDate, localToday } from '../engine/dates.js';
 import { readiness, shiftHeadline, POINTS } from '../engine/rating.js';
 import { gradeCard } from '../engine/grader.js';
-import { BUILDINGS } from '../engine/campus.js';
+import { BUILDINGS, campusStatus } from '../engine/campus.js';
 import {
   buildShift, afterResult, keepGoing, drillPlan, dayMode, daysToInterview, blitzDeck, dueQueue,
 } from '../engine/scheduler.js';
@@ -128,8 +128,9 @@ function go(route, arg) {
   (screens[route] || home)(arg);
 }
 
-function topBar() {
+function topBar({ settingsButton = false } = {}) {
   return header({
+    onSettings: settingsButton ? () => go('settings') : null,
     today: app.today,
     devDate: app.devDate,
     daysLeft: daysToInterview(app.today),
@@ -153,6 +154,7 @@ function home() {
   const resume = activeShift();
   const shiftDone = app.state.lastShiftDate === app.today;
   let primary;
+  let hint = '';
   if (resume) {
     const left = resume.slots.filter((x) => !x.done).length;
     primary = h('button', { class: 'btn primary huge', id: 'start-shift', type: 'button', onclick: () => go('shift') }, `Resume ${resume.kind === 'daily' ? 'shift' : resume.kind} · ${left} card${left > 1 ? 's' : ''} left`);
@@ -163,24 +165,43 @@ function home() {
     primary = more.slots.length
       ? h('button', { class: 'btn primary huge', id: 'start-shift', type: 'button', onclick: () => startShift('keep') }, `Shift done · Keep going · ${more.slots.length} more`)
       : h('p', { class: 'done' }, "Shift done and today's queue is empty.");
+    if (more.slots.length) hint = 'Keep going pulls the next five due topics. Ratings move the same way.';
   } else {
     const plan = buildShift({ topics: app.state.topics, cards: app.bank, history: app.state.history, today: app.today, settings: app.state.settings });
     const label = mode === 'interview' ? `Interview day · ${plan.slots.length} cards` : `Start shift · ${plan.slots.length} card${plan.slots.length === 1 ? '' : 's'} · ~${plan.estimatedMinutes} min`;
     primary = plan.slots.length
       ? h('button', { class: 'btn primary huge', id: 'start-shift', type: 'button', onclick: () => startShift('daily') }, label)
       : h('p', { class: 'done' }, `Nothing due today in the ${app.usingSample ? 'sample deck' : 'question bank'}. ${dueQueue(app.state.topics, app.today).length} topics are due but have no cards yet.`);
+    if (plan.slots.length && mode !== 'interview') hint = 'A clean first answer adds a follow-up card on the same topic.';
+    if (mode === 'interview') hint = 'Six quick confidence cards, then the 60-second intro. Nothing else today.';
   }
+  const planRow = app.data.plan.find((x) => x.date === app.today);
+  const mockToday = planRow && /Mock interview\s*(\d)/i.exec(planRow.interview || '');
   const secondary =
     mode === 'interview'
       ? []
       : [
-          h('button', { class: 'btn', type: 'button', onclick: () => go('blitz') }, 'Blitz'),
-          h('button', { class: 'btn', type: 'button', onclick: () => go('stories') }, 'Stories'),
-          h('button', { class: 'btn', type: 'button', onclick: () => go('mock') }, 'Mock interview'),
-          h('button', { class: 'btn', type: 'button', id: 'nav-browse', onclick: () => go('browse') }, 'Browse'),
-          h('button', { class: 'btn', type: 'button', id: 'nav-settings', onclick: () => go('settings') }, 'Settings'),
+          h('button', { class: 'btn nav', type: 'button', id: 'nav-blitz', onclick: () => go('blitz') }, 'Number Blitz'),
+          h('button', { class: 'btn nav', type: 'button', id: 'nav-stories', onclick: () => go('stories') }, 'Stories'),
+          h('button', { class: `btn nav${mockToday ? ' on' : ''}`, type: 'button', id: 'nav-mock', onclick: () => go('mock') }, mockToday ? `Mock ${mockToday[1]} · today` : 'Mock interview'),
+          h('button', { class: 'btn nav', type: 'button', id: 'nav-browse', onclick: () => go('browse') }, 'Browse'),
         ];
-  mount(app.root, topBar(), homeScreen({ topics: app.state.topics, mode, primary, secondary, onBuilding: (id) => go('building', id) }));
+  const celebrate = app.pendingCelebrate || [];
+  app.pendingCelebrate = [];
+  mount(
+    app.root,
+    topBar({ settingsButton: true }),
+    homeScreen({
+      status: campusStatus(app.state.topics),
+      buildings: BUILDINGS,
+      mode,
+      primary,
+      hint,
+      secondary,
+      celebrate,
+      onBuilding: (id) => go('building', id),
+    }),
+  );
 }
 
 // ---------- the shift loop ----------
@@ -269,6 +290,7 @@ function finishShift() {
   if (shift.kind === 'daily') app.state = completeShift(app.state, app.today);
   app.state.currentShift = null;
   persist();
+  app.pendingCelebrate = [...new Set(shift.energizedDuring || [])].filter((id) => app.state.energized.includes(id));
   if (shift.mode === 'interview') return go('final', { after: false });
 
   const touched = [...new Set(shift.slots.filter((s) => s.done && !s.skipped).map((s) => s.topicId))];

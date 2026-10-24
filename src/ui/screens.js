@@ -1,75 +1,138 @@
 // Screens (stubs — ugly but working). Phase 3 replaces the look and adds the
 // campus map; the data each screen needs is already computed by the engine.
 
-import { h } from './dom.js';
+import { h, s } from './dom.js';
+import { campusMap } from './map.js';
 import { formatPercent, POINTS } from '../engine/rating.js';
 import { formatDay } from '../engine/dates.js';
-import { campusStatus } from '../engine/campus.js';
 
 const MODE_LABEL = {
   normal: '',
-  cutover: 'Cutover week — 10-card shifts, 2 stories',
-  sweep: 'Nov 1 — the sweep: every topic not Locked In',
-  interview: 'Interview day',
+  cutover: 'Cutover week — 10-card shifts, 2 of them stories',
+  sweep: 'Nov 1 — the sweep: every topic not Locked In, up to 20 cards, misses redone before it ends',
+  interview: 'Interview day — six quick cards and your 60-second intro, then stop',
   after: 'After the interview',
 };
 
-export function header({ today, devDate, daysLeft, rd, mode, xp, dayStreak, deckNote }) {
+const FLAME = 'M7 0c1 4 6 6 6 10.5a6 6 0 0 1-12 0C1 8 3 6.5 4 5c.5 2 1.5 3 2.5 3C6 5 7 2.5 7 0Z';
+
+function flame(on) {
+  return s('svg', { class: `flame${on ? ' on' : ''}`, viewBox: '0 0 14 17', 'aria-hidden': 'true' }, s('path', { d: FLAME }));
+}
+
+function gearIcon() {
+  return s(
+    'svg',
+    { class: 'icon', viewBox: '0 0 24 24', 'aria-hidden': 'true' },
+    s('path', { d: 'M4 7h9M17 7h3M4 17h3M11 17h9', 'stroke-width': '2', 'stroke-linecap': 'round' }),
+    s('circle', { cx: '15', cy: '7', r: '2.4', 'stroke-width': '2' }),
+    s('circle', { cx: '9', cy: '17', r: '2.4', 'stroke-width': '2' }),
+  );
+}
+
+function statTile({ id, value, label, fill, target, full }) {
+  return h(
+    'div',
+    { class: 'stat' },
+    h('b', { id }, value),
+    h('span', {}, label),
+    h('div', { class: `bar${full ? ' full' : ''}`, 'aria-hidden': 'true' }, h('i', { style: { width: `${Math.round(Math.max(0, Math.min(1, fill)) * 1000) / 10}%` } })),
+    target != null ? h('div', { class: 'target', style: { left: `${target * 100}%` }, title: 'Target 85% by Nov 1' }) : null,
+  );
+}
+
+export function header({ today, devDate, daysLeft, rd, mode, xp, dayStreak, deckNote, onSettings }) {
+  const when = mode === 'interview' ? 'Interview day' : mode === 'after' ? 'After the interview' : `${daysLeft} day${daysLeft === 1 ? '' : 's'} to the interview · Nov 2`;
   return h(
     'header',
     { class: 'top' },
-    h('div', { class: 'date' }, formatDay(today), devDate ? h('span', { class: 'badge dev' }, `dev date ${today}`) : null, h('span', { class: 'days' }, daysLeft > 0 ? ` · ${daysLeft} day${daysLeft > 1 ? 's' : ''} to interview` : '')),
+    h(
+      'div',
+      { class: 'top-line' },
+      h(
+        'div',
+        { class: 'when' },
+        h('div', { class: 'date' }, formatDay(today), devDate ? h('span', { class: 'badge dev', title: 'Date overridden with ?date=' }, 'dev date') : null),
+        h('div', { class: 'days' }, when),
+      ),
+      h(
+        'div',
+        { class: 'top-right' },
+        h('span', { class: 'xp num', title: 'Day streak · XP' }, flame(dayStreak > 0), `${dayStreak} · ${xp} XP`),
+        onSettings ? h('button', { class: 'btn ghost icon-btn', type: 'button', id: 'nav-settings', 'aria-label': 'Settings', onclick: onSettings }, gearIcon()) : null,
+      ),
+    ),
     h(
       'div',
       { class: 'readiness' },
-      h('div', { class: 'stat' }, h('b', { id: 'r-overall' }, formatPercent(rd.overall)), h('span', {}, 'overall')),
-      h('div', { class: 'stat' }, h('b', { id: 'r-tested' }, formatPercent(rd.onTested)), h('span', {}, 'on tested')),
-      h('div', { class: 'stat' }, h('b', { id: 'r-count' }, `${rd.tested} of ${rd.total}`), h('span', {}, 'tested')),
+      statTile({ id: 'r-overall', value: formatPercent(rd.overall), label: 'overall', fill: rd.overall, target: 0.85, full: rd.targetMet }),
+      statTile({ id: 'r-tested', value: formatPercent(rd.onTested), label: 'on tested', fill: rd.onTested }),
+      statTile({ id: 'r-count', value: `${rd.tested} of ${rd.total}`, label: 'tested', fill: rd.total ? rd.tested / rd.total : 0 }),
     ),
-    h('div', { class: 'meta' }, `${xp} XP · day streak ${dayStreak}`, rd.coreBelowMinor.length ? ` · ${rd.coreBelowMinor.length} Core below Minor Refresh` : ' · no Core below Minor Refresh'),
+    h(
+      'div',
+      { class: 'top-meta' },
+      h('span', {}, 'Target 85% by Nov 1'),
+      h('span', {}, rd.coreBelowMinor.length ? `${rd.coreBelowMinor.length} Core below Minor Refresh` : 'No Core below Minor Refresh'),
+    ),
     MODE_LABEL[mode] ? h('div', { class: 'mode' }, MODE_LABEL[mode]) : null,
     deckNote ? h('div', { class: 'deck-note' }, deckNote) : null,
   );
 }
 
-export function homeScreen({ topics, mode, primary, secondary, onBuilding }) {
-  const status = campusStatus(topics);
+function legend() {
   return h(
-    'main',
-    { class: 'home' },
-    h('div', { class: 'primary-actions' }, primary),
-    secondary.length ? h('nav', { class: 'secondary' }, secondary) : null,
-    mode === 'interview'
-      ? null
-      : h(
-          'section',
-          { class: 'buildings' },
-          h('h2', {}, 'Campus'),
-          h(
-            'ul',
-            { class: 'building-list' },
-            status.map((b) =>
-              h(
-                'li',
-                { class: b.energized ? 'lit' : b.readiness > 0 ? 'warm' : 'dark' },
-                h(
-                  'button',
-                  { class: 'btn building', type: 'button', onclick: () => onBuilding(b.id) },
-                  h('span', { class: 'b-name' }, b.name),
-                  h('span', { class: 'b-area' }, b.area),
-                  h('span', { class: 'b-ready' }, `${formatPercent(b.readiness, 0)}${b.energized ? ' · energized' : ''}`),
-                  h('span', { class: 'windows', 'aria-hidden': 'true' }, windows(b.readiness)),
-                ),
-              ),
-            ),
-          ),
-        ),
+    'div',
+    { class: 'legend', 'aria-hidden': 'true' },
+    h('span', {}, h('i', { class: 'sw dark' }), 'dark'),
+    h('span', {}, h('i', { class: 'sw warm' }), 'coming up'),
+    h('span', {}, h('i', { class: 'sw lit' }), 'energized'),
   );
 }
 
-function windows(readiness) {
-  const lit = Math.round(readiness * 10);
-  return '▮'.repeat(lit) + '▯'.repeat(10 - lit);
+function buildingRow(b, st, onBuilding) {
+  const pct = Math.round(st.readiness * 100);
+  return h(
+    'li',
+    {},
+    h(
+      'button',
+      { class: `bld-row ${st.energized ? 'energized' : st.readiness > 0 ? 'warm' : 'dark'}`, type: 'button', onclick: () => onBuilding(b.id) },
+      h('span', { class: 'bld-name' }, b.name),
+      h('span', { class: 'bld-pct num' }, st.energized ? 'energized' : `${pct}%`),
+      h('span', { class: 'bld-area' }, `${b.area} · ${st.topics} topics · ${Math.round(st.lockedShare * 100)}% Locked In`),
+      h('span', { class: 'bld-bar', 'aria-hidden': 'true' }, h('i', { style: { width: `${pct}%` } })),
+    ),
+  );
+}
+
+export function homeScreen({ status, buildings, mode, primary, hint, secondary, celebrate = [], onBuilding }) {
+  const interactive = mode !== 'interview' && mode !== 'after';
+  const byId = new Map(status.map((x) => [x.id, x]));
+  const just = celebrate.map((id) => buildings.find((b) => b.id === id)).filter(Boolean);
+  return h(
+    'main',
+    { class: 'home' },
+    h(
+      'figure',
+      { class: 'campus' },
+      campusMap({ status, buildings, interactive, celebrate, onBuilding }),
+      just.length
+        ? h('figcaption', { class: 'energized-note' }, just.map((b) => h('p', {}, h('b', {}, `${b.name} energized. `), `“${b.quote}”`)))
+        : h('figcaption', {}, legend()),
+    ),
+    h('div', { class: 'primary-actions' }, primary, hint ? h('p', { class: 'hint center' }, hint) : null),
+    secondary.length ? h('nav', { class: 'secondary', 'aria-label': 'More' }, secondary) : null,
+    interactive
+      ? h(
+          'section',
+          { class: 'buildings' },
+          h('h2', { class: 'section-title' }, 'Buildings'),
+          h('ul', { class: 'bld-list' }, buildings.map((b) => buildingRow(b, byId.get(b.id), onBuilding))),
+          h('p', { class: 'tiny' }, 'Windows light with each area' + "'" + 's weighted readiness. A building energizes when every topic in it is at least Minor Refresh and 60% of its weight is Locked In.'),
+        )
+      : null,
+  );
 }
 
 export function buildingScreen({ building, topics, cardCount, onDrill, onBack }) {
