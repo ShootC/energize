@@ -205,9 +205,10 @@ export function shiftHeadline(topicsAfter) {
 // XP (spec §3 fun layer). Never feeds back into ratings.
 export const XP = { clean: 10, slipped: 5, missed: 1, underPar: 5, codeUnprompted: 10, shiftComplete: 50 };
 
+// The under-par bonus needs a right answer: a fast miss earns nothing extra.
 export function xpForResult(result, card) {
   let xp = XP[result.result] ?? 0;
-  if (card && card.par && result.seconds != null && result.seconds < card.par) xp += XP.underPar;
+  if (result.result !== 'missed' && card && card.par && result.seconds != null && result.seconds < card.par) xp += XP.underPar;
   if (result.codeUnprompted) xp += XP.codeUnprompted;
   return xp;
 }

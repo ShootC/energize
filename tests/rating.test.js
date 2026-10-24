@@ -194,5 +194,7 @@ test('XP: clean 10, slipped 5, missed 1, +5 under par, +10 code unprompted', () 
   assert.equal(xpForResult({ result: 'clean', seconds: 20 }, card), 15);
   assert.equal(xpForResult({ result: 'slipped', seconds: 40 }, card), 5);
   assert.equal(xpForResult({ result: 'missed', seconds: 40 }, card), 1);
+  assert.equal(xpForResult({ result: 'missed', seconds: 5 }, card), 1); // no speed bonus on a miss
+  assert.equal(xpForResult({ result: 'slipped', seconds: 5 }, card), 10);
   assert.equal(xpForResult({ result: 'clean', seconds: 80, codeUnprompted: true }, { par: 90 }), 25);
 });
