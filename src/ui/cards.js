@@ -33,6 +33,18 @@ function submitButton(label, onClick, { disabled = false } = {}) {
   return h('button', { class: 'btn primary big', type: 'button', disabled, onclick: onClick }, label);
 }
 
+// The spoken cards are graded by what you tap, never by listening. When nothing
+// is tapped, the card asks before it grades a blank — the usual reason is that
+// the beats were spoken but not tapped.
+function nudgeBox(text, onMiss) {
+  return h(
+    'div',
+    { class: 'nudge', id: 'nudge', role: 'alert' },
+    h('span', {}, text),
+    h('button', { class: 'btn small', type: 'button', id: 'grade-miss', onclick: onMiss }, 'Grade as a miss'),
+  );
+}
+
 const isFillIn = (b) => !!(b && typeof b === 'object' && b.fillIn);
 
 // A bar that fills over `total` seconds. countdown: shows time left, then
@@ -251,13 +263,26 @@ export function renderScenario(card, { onSubmit }) {
     const boxes = beats.map((b, i) => (isFillIn(b) ? null : h('input', { type: 'checkbox', id: `b${i}` })));
     const num = h('input', { type: 'checkbox', id: 'bnum' });
     const code = h('input', { type: 'checkbox', id: 'bcode' });
-    const grade = submitButton('Grade it', () => {
+    const asksNumber = card.answer.requiresNumber !== false;
+    const asksCode = !!card.answer.codeRef;
+    const submit = () => {
       grade.disabled = true;
       onSubmit({ hits: boxes.map((x) => !!(x && x.checked)), saidNumber: num.checked, saidCode: code.checked, notes: notes.value.trim() }, answeredIn);
+    };
+    const nudge = nudgeBox('Nothing ticked. Tick what you actually said, then Grade it — or grade this one as a miss.', submit);
+    const grade = submitButton('Grade it', () => {
+      if (grade.disabled) return;
+      const anything = boxes.some((x) => x && x.checked) || (asksNumber && num.checked) || (asksCode && code.checked);
+      if (!anything) {
+        if (!nudge.isConnected) grade.before(nudge);
+        nudge.scrollIntoView({ block: 'nearest' });
+        return;
+      }
+      submit();
     });
     mount(
       body,
-      h('p', { class: 'hint' }, `You answered in ${mmss(answeredIn)}${answeredIn > (card.par || 90) ? ` — over the ${card.par || 90} s par` : ''}. Tick only what you actually said.`),
+      h('p', { class: 'instruct' }, h('b', {}, 'The ticks are the grade.'), ` You answered in ${mmss(answeredIn)}${answeredIn > (card.par || 90) ? ` — over the ${card.par || 90} s par` : ''}. Tick only what you actually said.`),
       notes.value.trim() ? h('blockquote', { class: 'typed' }, notes.value.trim()) : null,
       h(
         'ul',
@@ -268,14 +293,14 @@ export function renderScenario(card, { onSubmit }) {
             : h('li', { class: 'beat' }, h('label', { for: `b${i}` }, boxes[i], h('span', {}, beatLabel(b)))),
         ),
       ),
-      card.answer.requiresNumber !== false ? h('label', { class: 'row-check extra', for: 'bnum' }, num, h('span', {}, 'I said a number')) : null,
-      card.answer.codeRef ? h('label', { class: 'row-check extra', for: 'bcode' }, code, h('span', {}, `I named the code reference (${card.answer.codeRef})`)) : null,
+      asksNumber ? h('label', { class: 'row-check extra', for: 'bnum' }, num, h('span', {}, 'I said a number')) : null,
+      asksCode ? h('label', { class: 'row-check extra', for: 'bcode' }, code, h('span', {}, `I named the code reference (${card.answer.codeRef})`)) : null,
       grade,
     );
     body.scrollIntoView({ block: 'start', behavior: 'smooth' });
   });
   body.append(
-    h('p', { class: 'hint' }, 'Answer out loud as if they just asked you, then reveal the model answer.'),
+    h('p', { class: 'instruct' }, h('b', {}, 'Nobody is listening.'), ' Answer out loud as if they just asked you, then Reveal and tick what you said — the ticks are the grade.'),
     timer.el,
     h('details', { class: 'type-instead' }, h('summary', {}, 'Type bullets instead'), notes),
     reveal,
@@ -321,22 +346,43 @@ export function renderStory(card, { onSubmit }) {
     });
   }
 
-  const done = submitButton('Done speaking', async () => {
-    if (done.disabled) return;
-    done.disabled = true;
+  // Speaking ends on the first Done: the clock and the recording stop there, so
+  // tapping the beats afterwards (if they were spoken but not tapped) costs no time.
+  let ended = null;
+  const endSpeaking = async () => {
+    if (ended) return ended;
     timer.stop();
     const seconds = timer.elapsed();
+    if (recBtn) recBtn.disabled = true;
     let audioUrl = null;
     if (recorder) {
       live.delete(recorder.cancel);
       audioUrl = await recorder.stop();
     }
-    onSubmit({ hits: [...hits], seconds, audioUrl }, seconds);
+    ended = { seconds, audioUrl };
+    return ended;
+  };
+  const submit = () => {
+    done.disabled = true;
+    onSubmit({ hits: [...hits], seconds: ended.seconds, audioUrl: ended.audioUrl }, ended.seconds);
+  };
+  const nudge = nudgeBox('No beat tapped. Tap the beats you hit, then Grade it — or grade this one as a miss.', submit);
+  const done = submitButton('Done speaking', async () => {
+    if (done.disabled) return;
+    await endSpeaking();
+    if (!hits.some(Boolean)) {
+      if (!nudge.isConnected) done.before(nudge);
+      done.textContent = 'Grade it';
+      nudge.scrollIntoView({ block: 'nearest' });
+      return;
+    }
+    submit();
   });
   return h(
     'div',
     { class: 'card-body story' },
-    h('p', { class: 'hint' }, `Say it out loud. Tap each beat as you hit it. Clean = every beat inside ${mmss(timing.min)}–${mmss(timing.max)}; past ${mmss(timing.limit)} is a ramble.`),
+    h('p', { class: 'instruct' }, h('b', {}, 'The taps are the grade.'), ' Say it out loud and tap each beat below the moment you say it. Nobody is listening — a beat you spoke but did not tap counts as missed.'),
+    h('p', { class: 'hint' }, `Clean = every beat tapped inside ${mmss(timing.min)}–${mmss(timing.max)}; past ${mmss(timing.limit)} is a ramble.`),
     timer.el,
     h('div', { class: 'chips' }, chips),
     recBtn ? h('div', { class: 'rec-row' }, recBtn, recStatus) : null,

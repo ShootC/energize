@@ -242,10 +242,12 @@ async function main() {
     } else if (card.type === 'scenario') {
       btn('Reveal').click(); await sleep(20);
       document.querySelectorAll('.beats input, #bnum, #bcode').forEach((x) => { x.checked = !wrong; });
-      btn('Grade it').click();
+      btn('Grade it').click(); await sleep(20);
+      document.getElementById('grade-miss')?.click(); // a blank answer asks first
     } else if (card.type === 'story') {
       document.querySelectorAll('.chip').forEach((c) => c.click());
-      btn('Done speaking').click();
+      btn('Done speaking').click(); await sleep(50);
+      document.getElementById('grade-miss')?.click();
     } else if (card.type === 'defect') {
       document.querySelectorAll('.lines button')[wrong ? 0 : a.defectIndex].click();
       btn('This line').click();
@@ -410,6 +412,32 @@ async function main() {
     const ok = await evaluate(`!!document.querySelector(".card.type-${type}") && !!document.querySelector(${JSON.stringify(control)})`);
     await screenCheck(`card ${type}`, ok, id);
   }
+
+  // Spoken cards are graded by taps: with nothing tapped they ask first, and "Grade as a miss" grades a blank.
+  await open('?date=2026-10-24&card=I3-sty-01');
+  await evaluate(`[...document.querySelectorAll('button')].find((b) => b.textContent === 'Done speaking').click()`);
+  await settle(300);
+  const storyAsked = await evaluate('!!document.querySelector("#nudge") && !document.querySelector(".result") && [...document.querySelectorAll("button")].some((b) => b.textContent === "Grade it")');
+  await shot('20-story-nothing-tapped');
+  await click('#grade-miss');
+  await settle(300);
+  check('story: Done speaking with no beat tapped asks first; Grade as a miss grades it Missed', storyAsked && /^Missed/.test((await text('.result h2')) || ''), `${storyAsked} · ${await text('.result h2')}`);
+  await open('?date=2026-10-24&card=I3-sty-01');
+  await evaluate(`[...document.querySelectorAll('button')].find((b) => b.textContent === 'Done speaking').click()`);
+  await settle(200);
+  await evaluate('document.querySelectorAll(".chip:not(.fill-in)").forEach((c) => c.click())');
+  await evaluate(`[...document.querySelectorAll('button')].find((b) => b.textContent === 'Grade it').click()`);
+  await settle(300);
+  check('story: tapping the beats after Done, then Grade it, grades the beats (clock stopped at Done)', !!(await text('.result h2')) && !/^Missed/.test((await text('.result h2')) || ''), await text('.result h2'));
+  await open('?date=2026-10-24&card=P6-scn-01');
+  await evaluate(`[...document.querySelectorAll('button')].find((b) => b.textContent === 'Reveal').click()`);
+  await settle(100);
+  await evaluate(`[...document.querySelectorAll('button')].find((b) => b.textContent === 'Grade it').click()`);
+  await settle(200);
+  const scnAsked = await evaluate('!!document.querySelector("#nudge") && !document.querySelector(".result")');
+  await click('#grade-miss');
+  await settle(300);
+  check('scenario: Grade it with nothing ticked asks first; Grade as a miss grades it Missed', scnAsked && /^Missed/.test((await text('.result h2')) || ''), `${scnAsked} · ${await text('.result h2')}`);
 
   // A miss shows the hook and a re-read link that deep-links into Browse.
   await open('?date=2026-10-24&card=S3-num-01');
