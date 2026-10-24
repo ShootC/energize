@@ -43,7 +43,6 @@
   {
     "card": "C2-num-01",
     "kind": "outside",
-    "decision": true,
-    "why": "the Cx section attributes the 10-year integrated retest to 'the IFC' with no section; the card uses IFC 901.6.2.2 from the Smoke control table. Keep the section, or drop to 'IFC' with confirmInEdition?"
+    "why": "decided Oct 24: keep IFC 901.6.2.2 — the Cx section says only 'the IFC'; the section number is the Smoke control table's integrated-retest row"
   }
 ]
