@@ -185,7 +185,11 @@ function home() {
       ? h('button', { class: 'btn primary huge', id: 'start-shift', type: 'button', onclick: () => startShift('daily') }, label)
       : h('p', { class: 'done' }, `Nothing due today in the ${app.usingSample ? 'sample deck' : 'question bank'}. ${dueQueue(app.state.topics, app.today).length} topics are due but have no cards yet.`);
     if (plan.slots.length && mode !== 'interview') hint = 'A clean first answer adds a follow-up card on the same topic.';
-    if (mode === 'interview') hint = 'Six quick confidence cards, then the 60-second intro. Nothing else today.';
+    if (mode === 'interview') {
+      const quick = plan.slots.filter((x) => x.slot === 'confidence').length;
+      const intro = plan.slots.some((x) => x.slot === 'intro');
+      hint = `${quick} quick confidence card${quick === 1 ? '' : 's'} from your strongest topics${intro ? ', then the 60-second intro' : ''}. Nothing else today.`;
+    }
   }
   const planRow = app.data.plan.find((x) => x.date === app.today);
   const mockToday = planRow && /Mock interview\s*(\d)/i.exec(planRow.interview || '');
@@ -202,7 +206,7 @@ function home() {
   app.pendingCelebrate = [];
   mount(
     app.root,
-    topBar({ settingsButton: true }),
+    topBar({ settingsButton: mode !== 'interview' }),
     homeScreen({
       status: campusStatus(app.state.topics),
       buildings: BUILDINGS,
@@ -480,7 +484,8 @@ function final(arg = {}) {
   const rd = readiness(app.state.topics);
   const stats = `${app.state.history.length} cards answered · ${app.state.xp} XP · best Blitz ${app.state.blitzBest || 0}`;
   const map = arg.after ? campusMap({ status: campusStatus(app.state.topics), buildings: BUILDINGS, interactive: false }) : null;
-  mount(app.root, topBar(), finalScreen({ checklist: app.data.checklist, rd, stats, after: !!arg.after, map }));
+  // After Nov 2 the gear stays so state can still be exported; on Nov 2 nothing else is offered.
+  mount(app.root, topBar({ settingsButton: !!arg.after }), finalScreen({ checklist: app.data.checklist, rd, stats, after: !!arg.after, map }));
 }
 
 export function start() {
