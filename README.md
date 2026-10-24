@@ -10,7 +10,7 @@ A study game for the Fluidstack fire-protection commissioning interview (Mon Nov
 
 ## Get it on your phone
 
-**The hosted link (recommended — installs like an app, works offline).** Once the repository is on GitHub under the ShootC account (steps below), the app lives at:
+**The hosted link (recommended — installs like an app, works offline).** The app lives at:
 
 ```
 https://shootc.github.io/energize/
@@ -50,17 +50,18 @@ node build.js                                       # → dist/
 
 `PROGRESS.md` has the card schema, the rules the engine follows and how to add cards. The audit fails the tests until every number, section, step and beat is found in the guide (or listed with a reason in `scripts/audit-allow.json`).
 
-## Hosting on GitHub Pages (one-time)
+## Hosting on GitHub Pages
 
-Pages on a free GitHub account needs a public repository. The repo includes the study guide and the story scripts; if that should stay private, skip this and use the file.
+Done on Oct 24, 2026: the public repository is [github.com/ShootC/energize](https://github.com/ShootC/energize) and the app is at `https://shootc.github.io/energize/`. For the record, the one-time setup was:
 
 ```bash
-gh auth login                                   # sign in as ShootC (gh auth switch --user ShootC if already added)
-gh repo create ShootC/energize --public --source . --remote origin --push
-gh api -X POST repos/ShootC/energize/pages -f build_type=workflow
+gh auth switch --user ShootC
+gh repo create ShootC/energize --public --source . --remote origin
+gh api -X POST repos/ShootC/energize/pages -f build_type=workflow   # Pages source: GitHub Actions
+git push -u origin main && git push origin v1.0
 ```
 
-The last command sets the Pages source to GitHub Actions (also: repo → Settings → Pages → Source: *GitHub Actions*). `.github/workflows/pages.yml` then builds `dist/` and publishes it on every push to `main`; the first run takes about a minute. The app is at `https://shootc.github.io/energize/`.
+`.github/workflows/pages.yml` builds `dist/` and publishes it on every push to `main`; a run takes about a minute (repo → Actions). Pages on a free account needs the repository to stay public.
 
 **Re-deploy after editing cards or content:**
 
