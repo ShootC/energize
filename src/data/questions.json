@@ -417,14 +417,14 @@
         "3. Safety isolation: actuators and solenoids replaced by test lamps or simulators; agent cylinders disconnected.",
         "4. Shutdown circuits verified before anything is tripped.",
         "5. Steps: expected result, actual result, pass/fail and initials on every line.",
-        "6. Return to normal: panel reset; test lamps stay in place for the next test.",
-        "7. Failure modes: open and ground faults on releasing circuits, loss of primary power, abort and manual release."
+        "6. Failure modes: open and ground faults on releasing circuits, loss of primary power, abort and manual release.",
+        "7. Return to normal: panel reset; test lamps stay in place for the next test."
       ],
-      "defectIndex": 5,
+      "defectIndex": 6,
       "codeRef": null,
-      "explanation": "Line 6 — return to normal means every isolation reversed and verified. The most dangerous outcome of a test is a system left disabled."
+      "explanation": "Line 7 — return to normal means every isolation reversed and verified. The most dangerous outcome of a test is a system left disabled."
     },
-    "hook": "Step 6 is put-it-all-back: every isolation reversed, every one verified.",
+    "hook": "The last step is put-it-all-back: every isolation reversed, every one verified.",
     "source": "Data center commissioning language › Script development — what a good fire FPT script contains.",
     "par": 40,
     "confirmInEdition": false
@@ -1335,18 +1335,18 @@
     "id": "S1-ord-01",
     "topicId": "S1",
     "type": "order",
-    "prompt": "L3 — prove the pipe. Put the steps in order.",
+    "prompt": "L3 — prove the pipe, then into L4. Put the steps in order.",
     "answer": {
       "steps": [
         "Witness the underground flush before it connects to the riser",
-        "Underground hydro: 200 psi for 2 h",
-        "Aboveground hydro: 200 psi for 2 h",
-        "Signed certificates for underground and aboveground"
+        "Then both hydros — underground and aboveground",
+        "Signed certificates for underground and aboveground",
+        "L4 — inspector’s test: time to alarm"
       ],
       "codeRef": null,
-      "explanation": "Witness the underground flush before it connects to the riser, then both hydros; signed Contractor's Material and Test Certificates for underground and aboveground."
+      "explanation": "L3 — prove the pipe: witness the underground flush before it connects to the riser, then both hydros, then signed certificates for underground and aboveground. L4 — prove the system — opens with the inspector’s test: time to alarm."
     },
-    "hook": "Flush it, then squeeze it twice, then sign twice.",
+    "hook": "Flush it, squeeze it twice, sign twice — then time the alarm.",
     "source": "Sprinkler and underground › Acceptance sequence",
     "par": 40,
     "confirmInEdition": false
@@ -1989,7 +1989,7 @@
       ],
       "explanation": "Main drain test: record static and residual — that's the NFPA 25 baseline; a reading more than 10% below acceptance has to be investigated. The baselines go to Ops in the turnover package."
     },
-    "hook": "You're not testing the drain — you're writing the number Ops compares against for 30 years.",
+    "hook": "You’re not testing the drain — you’re writing the number Ops compares against; more than 10% below it means investigate.",
     "source": "Sprinkler and underground › Acceptance sequence",
     "par": 75,
     "confirmInEdition": false
@@ -3454,8 +3454,7 @@
             "k factor",
             "k",
             "k-factor sprinkler",
-            "sprinkler k-factor",
-            "orifice"
+            "sprinkler k-factor"
           ]
         },
         {
@@ -4479,7 +4478,7 @@
     "answer": {
       "lines": [
         "1. Prerequisites: generator available; transfer switch rep present; central station on test.",
-        "2. Run the pump to 150% rated flow — peak load.",
+        "2. Run the pump at peak load.",
         "3. Simulate loss of normal power at the controller's normal feed.",
         "4. Watch the transfer to the alternate source; pump keeps running; record the transfer.",
         "5. Restore normal power; transfer back; no overcurrent device opens on either transfer.",
@@ -5412,12 +5411,16 @@
     "id": "E1-num-03",
     "topicId": "E1",
     "type": "number",
-    "prompt": "NFPA 110 vocabulary: Type ___ = power within 10 s; Level ___ = failure could cost lives; Class = hours of ___ at rated load. Which standard (name only — confirm sections in your edition)?",
+    "prompt": "NFPA 110 vocabulary: Type ___ = power within ___ s; Level ___ = failure could cost lives; Class = hours of ___ at rated load. Which standard (name only — confirm sections in your edition)?",
     "interviewerPhrasing": "What do Level, Type and Class mean on a generator spec?",
     "answer": {
       "fields": [
         {
-          "label": "Type number for power within 10 s",
+          "label": "Type number",
+          "value": 10
+        },
+        {
+          "label": "power within, s",
           "value": 10
         },
         {
@@ -6577,7 +6580,7 @@
       "explanation": "Test cause and effect against the sequence of operations, not just the devices: every input against every output (blank cells too), 100% point-to-point at L3, failure modes and loss of primary power at L4, ride-through on batteries at L5, and a verified return to normal."
     },
     "hook": "Devices prove the wiring; cause and effect proves the sequence — 100% of points, then every cell in the matrix.",
-    "source": "Story 2 — A data center with no drawings › Script",
+    "source": "Data center commissioning language › Script development — what a good fire FPT script contains.",
     "par": 90,
     "confirmInEdition": false
   },
@@ -8747,7 +8750,7 @@
     "id": "A1-num-02",
     "topicId": "A1",
     "type": "number",
-    "prompt": "Hazen-Williams, p = 4.52 Q^1.85 / (C^1.85 d^4.87): the constant ___, the flow exponent ___, the diameter exponent ___. C for black steel dry and pre-action ___; black steel wet ___.",
+    "prompt": "Hazen-Williams friction loss p = k·Q^a / (C^a d^b), psi per ft: the constant k ___, the flow exponent a ___, the diameter exponent b ___. C for black steel dry and pre-action ___; black steel wet ___.",
     "interviewerPhrasing": "Give me the Hazen-Williams shape and the C-factors you'd use on a pre-action system.",
     "answer": {
       "fields": [
@@ -8810,7 +8813,7 @@
     "id": "A2-num-01",
     "topicId": "A2",
     "type": "number",
-    "prompt": "The numbers your L4 script leans on: air test ___ psi for ___ h with loss ≤ ___ psi; double-interlock above the 500 gal exemption proves water at the test connection within ___ s. Section for the 60-second rule?",
+    "prompt": "The numbers your L4 script leans on: air test ___ psi for ___ h with loss ≤ ___ psi; double-interlock above the 500 gal exemption proves water at the test connection within ___ s. Section for the delivery-time rule?",
     "answer": {
       "fields": [
         {

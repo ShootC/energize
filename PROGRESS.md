@@ -92,13 +92,23 @@ Six commits, one per deliverable. Everything in `src/ui/` was rebuilt on the Pha
 | Nov 2 | `?date=2026-11-02` | quick confidence cards + the 60-second intro, nothing else; then "Stop. You're ready. Go win it." + day-of checklist | smoke + shots |
 | After Nov 2 | `?date=2026-11-03` | "The campus is commissioned.", the final campus, totals; gear kept for export | smoke + shots |
 
+### Phase 4 · Accuracy audit (Fable, Oct 24)
+
+- **`scripts/audit.js`** — for every card (and every mock question) extracts the facts it teaches — numbers with their units, section references, identifiers (L4, 9540A, EST3), word answers, order steps, beats, defect lines — and locates each one, verbatim or trivially reformatted (1,560 = 1560, 24-hour = 24 h, "sixteen" = 16, "annually" = 1 yr = 12 mo, a table cell's unit taken from its column header), in the block its `source` names, then the section, the file, then both files. Writes `audit-report.md` (repo root; exit 1 while it has findings). `--review` appends the soft signals (paraphrased beats and steps, facts drawn from another section, matrices built from prose, planted lines whose numbers are all real); `--card <id>` traces one card fact by fact.
+- **What it reports**: facts in neither source file; graded facts (number fields, `codeRef`, order steps) found only outside the card's section; hedged references ("confirm in your edition") on cards without `confirmInEdition`, and `confirmInEdition` cards with a section number; order cards whose steps are not the guide's sequence or not in its order; story scripts and beat quotes that are not verbatim, graded beats that quote a bracketed line, cards without exactly one lesson beat; matrix cells against the guide's tables (the IST matrix, the gas-detection table, the which-story table); prompts that read as multiple choice, offer the word answer as an option, or contain a numeric answer; topics outside the per-weight range; source labels that do not resolve (headings, bold labels, "table", list numbers and table-row keys all resolve); mock.json beats against the question's section plus every section its topic's cards cite.
+- **`scripts/audit-allow.json`** — 10 entries (12 reported items) that are deliberately not guide facts, each with a reason: the hypothetical 130 s reading (S3-scn-02), the planted 0.03 in. w.c. repeated in K1-def-01's correction, the affinity laws in words (F6-num-01, asked for by the Phase 2 brief), the 0.7 S / CIS 0.70 coincidence (K3-num-04), the 10% main-drain rule that lives in Pre-action (S4-num-01), "NICET IV" as 4 (I1-num-01), and two order cards that sequence a guide paragraph (C6-ord-01 "in advance", F3-ord-01 "at peak load"). They are listed in the report's appendix, never hidden; an entry with `"decision": true` is an open question and prints under "Needs your decision" (one today: C2-num-01's IFC 901.6.2.2).
+- **Findings fixed by hand** (9 cards): S4-scn-01's hook invented "for 30 years" (now the guide's 10% rule) · E1-num-03's prompt said "power within 10 s" while asking for Type 10 (now two blanks) · A1-num-02's prompt printed the Hazen-Williams constants it asked for (now k, a, b) · A2-num-01 asked for the "60-second rule" while asking for 60 (now "delivery-time rule") · K3-scn-01 re-sourced from Story 2 to Cx › Script development (four of its six beats) · C3-def-01's excerpt listed Return to normal before Failure modes (reordered; planted line now line 7) · S1-ord-01 split "both hydros" into underground-then-aboveground, which the guide does not say (now the guide's L3 line into L4: flush → both hydros → signed certificates → inspector's test; closes the Phase 2 open question) · P6-num-01 accepted "orifice" for "K-factor" and the alias sat in the prompt (dropped) · F3-def-01's filler line equated peak load with 150% flow (now "Run the pump at peak load").
+- **Reading pass.** Every one of the 388 cards was read against the guide / scripts by area (Cx, Sprinkler, Pre-action, Fire pump, Emergency power, Smoke control, Gaseous & ASD, BESS / gas / mist, Applied, Interview), plus the 15 mock questions against the likely-questions list and the story beats. The nine cards above were the only discrepancies; every other number, section, step order, matrix cell and beat matched the source. The only judgment calls left are under Open questions.
+- **Gate.** `tests/audit.test.js` runs the audit and fails on any finding (and checks every allowlist entry names a real card with a reason). 94 tests.
+- **Verified**: `npm test` 94/94 · `node validate.js … --strict` clean for the bank and mock.json · `node build.js` → 758 KB · `node tools/smoke.js` 53/53 at 390×844 offline.
+
 ## In progress
 
-- Nothing. Next: **Phase 4** (accuracy audit, Fable) — then Phase 5 (phone QA + ship, Opus).
+- Nothing. Next: **Phase 5** (phone QA + ship, Opus).
 
-## For the next sessions (Phase 4 audit, Phase 5 ship)
+## For the next sessions (Phase 5 ship; re-audits)
 
-- **Phase 4** only touches `src/data/*.json` (and writes `scripts/audit.js`). To eyeball a card after fixing it: `node build.js`, then open `dist/index.html?card=<id>`. Decision 35 lists the hypothetical numbers in prompts and planted defect lines that are deliberately not guide facts.
+- **Phase 4 is done** (`scripts/audit.js`, `audit-report.md`, `scripts/audit-allow.json`, `tests/audit.test.js`). When the guide or the scripts change: edit `content/*.md`, run `node scripts/audit.js --review`, fix the cards it lists by following the guide (never from memory), re-run until the report says `0 findings`; `npm test` fails while it has any. A card that deliberately carries a non-guide number (a hypothetical reading in an interviewer prompt) goes in `scripts/audit-allow.json` with a reason. To eyeball a card after fixing it: `node build.js`, then open `dist/index.html?card=<id>`.
 - **Phase 5** builds on this UI. Things it should know:
   - Story recording uses `getUserMedia`, which most browsers refuse on `file://`; the card then says "Microphone not available here" and works without it. Served over https (GitHub Pages) it should prompt once — verify on a real phone.
   - Smoke hooks to keep: `#r-overall`, `#start-shift`, `#nav-settings` (the gear), `#nav-browse`, `#nav-blitz`, `#nav-stories`, `#nav-mock`, `#pause-shift`, `#export-state`, `#export-topics`, `#export-text`, `#import-paste`, `#settings-msg`, `#browse-search`, `#deck-mock-N`, `#mock-done`, `#mock-reveal`, `#mock-grade`, `#mock-headline`; button texts `Submit`, `Submit order`, `Submit matrix`, `Reveal`, `Grade it`, `Done speaking`, `This line`, `Reset progress`; `.result h2` starts with Clean / Slipped / Missed and Next / Finish is the last `.result button`.
@@ -111,10 +121,11 @@ Edit `src/data/questions.json` directly (keep topic order; one card per type get
 
 ```
 node validate.js src/data/questions.json --strict
+node scripts/audit.js --review          # every fact against the guide → audit-report.md
 npm test && node build.js
 ```
 
-The validator checks: schema per type, unique ids, id ↔ topic ↔ type agreement, topicId exists, `source` starts with a real heading (`node validate.js --headings`), `confirmInEdition` cards have no section number in `codeRef`; it warns on per-topic counts (Core 6–10 over ≥3 types, Support 4–6, Light 2–3), missing `interviewerPhrasing`, order cards outside 4–8 steps, defect scripts outside 6–8 lines, number cards with a codeRef but no aliases. `tests/bank.test.js` turns those warnings into failures and adds the answerability checks.
+The audit locates every number, unit, reference, step, beat and line in the source the card names (see Phase 4 above); the validator checks: schema per type, unique ids, id ↔ topic ↔ type agreement, topicId exists, `source` starts with a real heading (`node validate.js --headings`), `confirmInEdition` cards have no section number in `codeRef`; it warns on per-topic counts (Core 6–10 over ≥3 types, Support 4–6, Light 2–3), missing `interviewerPhrasing`, order cards outside 4–8 steps, defect scripts outside 6–8 lines, number cards with a codeRef but no aliases. `tests/bank.test.js` turns those warnings into failures and adds the answerability checks.
 
 ### Card type names
 
@@ -249,17 +260,28 @@ Phase 2 (question bank):
 39. **F3-mat-01** reads the L5 pump-signal sentence literally: electric = pump running / loss of phase or phase reversal / controller trouble; diesel = engine running / controller trouble / switch off-automatic (diesel "pump running" and "loss of phase" are —).
 40. **Verification gates added:** `tests/bank.test.js` (coverage and answerability of every card), the build test expects the bank and three mock decks inlined, and `tools/smoke.js` plays the real bank as well as the sample deck.
 
+Phase 4 (accuracy audit):
+
+41. **Scope chain.** A fact is looked for in the block the `source` label names, then the section, then the file, then both files. Found in another section is a hard finding only for graded facts (number fields, `codeRef`, order steps); for prompts, explanations, beats and defect lines it is a review note, because scenario answers legitimately pull related facts in (K3's cards, the NOAEL percentages in a door-fan card, the 19.5% O2 alarm in a nitrogen card) and every one of those was checked by eye.
+42. **Units.** A number's unit is the token after it, a glued suffix (24-hour, 0.4-volt), the unit a field label ends with (ambiguous ones — min, s, h, V, in, ft, yr — must end the label; "(min)" means minimum; a `%` or `psi` anywhere in the label counts), or the table column header. "Annually" = 1 yr = 12 mo, "semiannually" = 6 mo, "weekly" = 1 wk, "half" = 50%, number words count, a year is never a duration. A value that exists only without its unit is a finding — that is how "40 min" for "40 psi" would be caught.
+43. **Hooks** are mnemonic: checked in both files, numbers and acronym identifiers only, hyphenated wordplay split, number words ignored. A hook number that is in neither file is a finding (S4-scn-01's "30 years" was one).
+44. **Hedges** are the lines matching "confirm … in your edition", "check whether your edition applies", "confirm the edition's wording". A bold label that ends in a hedge hedges the list or table under it (NFPA 110 numbers, the ASD airflow table); "IBC values above" hedges only the table rows that name IBC; a hedge inside a table cell hedges that cell; the Sources section's global caveat is not a hedge. A number field found only on hedged lines needs `confirmInEdition: true` and a standard-only `codeRef`.
+45. **Order cards** are located line by line with a bag of content words (a step needs ≥ 50% of its words on one line; one- and two-word steps need all of them), all steps in one scope, and the positions must be monotone. Two cards keep a timeline the guide gives as prose and are allowlisted (C6-ord-01: "agree thresholds … in advance" precedes the burn-off; F3-ord-01: "simulate loss of normal power at peak load" puts the load first).
+46. **Multiple choice** means option markers (A) … B), "(a) … (b)"), "which of the following", true/false, yes/no, a word answer or alias offered in the prompt, or a numeric answer printed in the prompt with no unit or the field's unit. Fill-in connector words ("detection ___ loss of air" → or / and, P1-num-02) are open recall and were left — see Open questions.
+47. **The committed `audit-report.md`** is the default (lean) report; `--review` is for a reading pass and is not committed.
+
 ## Open questions
 
 - Defect card, wrong line → Not Ready. If that feels too harsh for a recognition task, change one line in `gradeDefect` (`src/engine/grader.js`) to give `framework: true` (Needs Improvement).
 - Nov 1 sweep includes Not Tested topics whose study day is Nov 1 (A4, A5); they sort late, so they rarely make the 20. Say if they should be skipped.
 - Interview-day cards are unrated so a slip on Nov 2 can't knock a topic down. Say if you want them rated.
 - IST matrix "Utility failure → Central station: *Trouble if a panel loses AC*" is encoded as a "Trouble" cell (C4-mat-03, A3-mat-01). Say if you'd rather it be "per BOD".
-- "The documents" attributes the 10-year integrated retest to "the IFC" without a section; C2-num-01 and K4 use IFC 901.6.2.2 from the Smoke control table.
+- "The documents" attributes the 10-year integrated retest to "the IFC" without a section; C2-num-01 and K4 use IFC 901.6.2.2 from the Smoke control table. The audit prints C2-num-01 under "Needs your decision": keep the section, or make it "IFC" with `confirmInEdition`?
+- P1-num-02 asks for the connector words as blanks (non-interlock: detection ___ sprinkler operation → "or"; double-interlock → "and"; single-interlock opens on ___ → "detection"). Open recall by the letter of §7.3, but "or" vs "and" is a two-way choice; P1-mat-01 covers the same logic as a matrix. Say if you want P1-num-02 dropped or re-asked.
+- E1-num-03 now has two blanks that are both 10 (Type ___ = power within ___ s): the guide's definition of Type 10 makes any phrasing leak one into the other. Say if you'd rather it asked only Level 1 and Class = fuel.
 - The Fire pump table's "95% / 5% figure is NFPA 25's annual test" never says what the two figures are; F1-num-03 asks only the figures and the standard.
 - Does a diesel pump also report "pump running" to the FACP, or only "engine running"? F3-mat-01 assumes only engine running (decision 39).
 - The guide hedges the inert-gas Class C factor ("check whether your edition applies 1.35"); no card asks it. It gives no section for the hydrogen / off-gas exhaust numbers (25% LFL, 1 cfm/ft², 2–30 min) → `codeRef: null`.
-- S1-ord-01 orders the underground hydro before the aboveground hydro; the guide says only "then both hydros". A swap grades as slipped.
 - A4 (Lake Mariner paragraph) and I11 (posting facts) are thin on source material; trim to five cards if they feel stretched.
 - I4-scn-02 (transport time) could carry `codeRef: "NFPA 72"` for the +10 tick; left null.
 - Grader quirks, not card errors: "20-14" (hyphenated chapter) does not match "NFPA 20 Chapter 14"; "NFPA 20" alone fails on Chapter 14 cards; "9540A" needs the alias form (present).
@@ -279,9 +301,10 @@ Phase 2 (question bank):
 Needs Node ≥ 20 (built on 24). No npm install — there are no dependencies.
 
 ```
-npm test                                   # 92 engine / data / bank / mock / build tests
+npm test                                   # 94 engine / data / bank / mock / build / audit tests
 node validate.js src/data/questions.json   # schema check for the bank (also sample.json, mock.json); add --strict
 node validate.js --headings                # headings a card's source may start with
+node scripts/audit.js [--review] [--card <id>]   # every fact against the guide → audit-report.md (exit 1 on findings)
 node build.js                              # → dist/index.html
 node tools/smoke.js [--shots <dir>]        # headless Chrome/Edge at 390×844, offline: sample deck, real bank, every screen
 npm run check                              # tests + validate + build

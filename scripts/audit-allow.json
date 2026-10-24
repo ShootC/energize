@@ -1,0 +1,49 @@
+[
+  {
+    "card": "S3-scn-02",
+    "token": "130 s",
+    "why": "hypothetical reading in the interviewer's question (decision 35); the card teaches the 100 s limit"
+  },
+  {
+    "card": "K1-def-01",
+    "token": "0.03",
+    "why": "the planted wrong value, repeated in the explanation and hook so the correction names it; the guide value is 0.05 in. w.c."
+  },
+  {
+    "card": "F6-num-01",
+    "where": "fields",
+    "why": "the Phase 2 brief asked for the affinity laws in words; the guide gives only the formulas Q2/Q1 = N2/N1, P2/P1 = (N2/N1)^2, Pnet = Pdischarge - Psuction"
+  },
+  {
+    "card": "K3-num-04",
+    "where": "prompt",
+    "token": "0.7",
+    "why": "the prompt's 0.7 S is the smoke-detector spacing factor; the CIS >= 0.70 answer is a separate fact that happens to share the number"
+  },
+  {
+    "card": "S4-num-01",
+    "where": "fields[2]",
+    "why": "the 10% main-drain rule lives in Pre-action > Test-day details; the static/residual baseline this card is about is in the Sprinkler L4 line"
+  },
+  {
+    "card": "I1-num-01",
+    "where": "fields[1]",
+    "why": "the guide writes the level as a Roman numeral: NICET IV"
+  },
+  {
+    "card": "C6-ord-01",
+    "kind": "order",
+    "why": "the guide is a paragraph, not a list: 'Agree thresholds and fire watch with the Cx lead in advance' fixes the order the card uses (agree, burn off, leave, re-learn)"
+  },
+  {
+    "card": "F3-ord-01",
+    "kind": "order",
+    "why": "the guide's 'Simulate loss of normal power at peak load' is one clause; the card puts the load before the loss, which is the only reading"
+  },
+  {
+    "card": "C2-num-01",
+    "kind": "outside",
+    "decision": true,
+    "why": "the Cx section attributes the 10-year integrated retest to 'the IFC' with no section; the card uses IFC 901.6.2.2 from the Smoke control table. Keep the section, or drop to 'IFC' with confirmInEdition?"
+  }
+]
