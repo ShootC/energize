@@ -5,15 +5,21 @@
 // The first pass pins the sample deck (?deck=sample) so its expectations are
 // stable; the second pass plays the real bank (src/data/questions.json); the
 // third visits every screen and card type, checking none scrolls sideways.
+// The Phase 5 passes add 430×932 and landscape, topics.json import by paste and
+// by file picker, a full reset, story recording with the microphone granted
+// (Chrome's fake device) and refused, the installable app served over http
+// (service worker, offline reload, a new build's Reload note), boot time under
+// 4× CPU throttling, and card-top stability across a shift.
 //
 //   node tools/smoke.js [--chrome <path>] [--shots <dir>] [--keep]
 //
 // Exit code 0 = all checks passed.
 
 import { spawn } from 'node:child_process';
+import { createServer } from 'node:http';
 import { mkdirSync, writeFileSync, mkdtempSync, rmSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, dirname, resolve } from 'node:path';
+import { join, dirname, resolve, extname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { readiness, formatPercent } from '../src/engine/rating.js';
 import { readFileSync } from 'node:fs';
@@ -56,10 +62,26 @@ class CDP {
       } else if (msg.method) for (const h of this.handlers) h(msg);
     });
   }
-  send(method, params = {}) {
+  // Every call times out, so a page promise that never settles fails the run instead of hanging it.
+  send(method, params = {}, timeout = 30000) {
     const id = ++this.id;
     this.ws.send(JSON.stringify({ id, method, params }));
-    return new Promise((ok, reject) => this.pending.set(id, { resolve: ok, reject }));
+    return new Promise((ok, reject) => {
+      const t = setTimeout(() => {
+        this.pending.delete(id);
+        reject(new Error(`${method} timed out after ${timeout} ms`));
+      }, timeout);
+      this.pending.set(id, {
+        resolve: (v) => {
+          clearTimeout(t);
+          ok(v);
+        },
+        reject: (e) => {
+          clearTimeout(t);
+          reject(e);
+        },
+      });
+    });
   }
   on(fn) {
     this.handlers.push(fn);
@@ -81,7 +103,8 @@ async function launch() {
   const exe = CHROME_CANDIDATES.find((p) => existsSync(p));
   if (!exe) throw new Error('No Chrome/Edge found; pass --chrome <path>');
   const profile = mkdtempSync(join(tmpdir(), 'energize-chrome-'));
-  const proc = spawn(exe, ['--headless=new', '--remote-debugging-port=0', `--user-data-dir=${profile}`, '--no-first-run', '--no-default-browser-check', '--disable-gpu', '--allow-file-access-from-files', 'about:blank'], { stdio: ['ignore', 'ignore', 'pipe'] });
+  // The fake media flags give the story card a microphone to record from.
+  const proc = spawn(exe, ['--headless=new', '--remote-debugging-port=0', `--user-data-dir=${profile}`, '--no-first-run', '--no-default-browser-check', '--disable-gpu', '--allow-file-access-from-files', '--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', 'about:blank'], { stdio: ['ignore', 'ignore', 'pipe'] });
   const wsUrl = await new Promise((ok, reject) => {
     let buf = '';
     const t = setTimeout(() => reject(new Error('Chrome did not report a DevTools port')), 20000);
@@ -102,9 +125,42 @@ async function launch() {
   return { proc, profile, cdp: new CDP(ws), ws, exe };
 }
 
+// Serve dist/ over http for the installable-app checks. `site.variant`, once set,
+// serves a "new build": sw.js with that version and index.html with a marker.
+function serveDist(dir) {
+  const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.webmanifest': 'application/manifest+json', '.svg': 'image/svg+xml', '.png': 'image/png' };
+  const site = { variant: null, hits: [] };
+  const srv = createServer((req, res) => {
+    let p = decodeURIComponent(new URL(req.url, 'http://x').pathname);
+    if (p === '/') p = '/index.html';
+    const file = join(dir, p.replace(/^\/+/, ''));
+    site.hits.push(p);
+    if (!existsSync(file)) {
+      res.writeHead(404);
+      res.end();
+      return;
+    }
+    let body = readFileSync(file);
+    if (site.variant && p === '/sw.js') body = Buffer.from(body.toString('utf8').replace(/const VERSION = '[^']+'/, `const VERSION = '${site.variant}'`));
+    if (site.variant && p === '/index.html') body = Buffer.concat([body, Buffer.from(`\n<!-- ${site.variant} -->\n`)]);
+    res.writeHead(200, { 'content-type': types[extname(p)] || 'application/octet-stream', 'cache-control': 'no-cache' });
+    res.end(body);
+  });
+  return new Promise((ok) =>
+    srv.listen(0, '127.0.0.1', () => {
+      site.srv = srv;
+      site.url = `http://127.0.0.1:${srv.address().port}/`;
+      ok(site);
+    }),
+  );
+}
+
+let browser = null;
+
 async function main() {
   mkdirSync(SHOTS, { recursive: true });
   const { proc, profile, cdp, ws, exe } = await launch();
+  browser = proc;
   console.log(`Chrome: ${exe}\nPage: ${PAGE}\nScreenshots: ${SHOTS}\n`);
   const errors = [];
   const requests = [];
@@ -125,9 +181,10 @@ async function main() {
     if (r.exceptionDetails) throw new Error(`page eval failed: ${r.exceptionDetails.exception?.description || r.exceptionDetails.text}`);
     return r.result.value;
   };
+  const online = (on) => cdp.send('Network.emulateNetworkConditions', { offline: !on, latency: 0, downloadThroughput: -1, uploadThroughput: -1 });
   const open = async (query = '') => {
     const loaded = cdp.waitFor('Page.loadEventFired');
-    await cdp.send('Page.navigate', { url: PAGE + query });
+    await cdp.send('Page.navigate', { url: /^https?:/.test(query) ? query : PAGE + query });
     await loaded;
     await evaluate('new Promise((r) => setTimeout(r, 150))');
   };
@@ -408,9 +465,128 @@ async function main() {
   const nov2 = await evaluate('({ gear: !!document.getElementById("nav-settings"), nav: document.querySelectorAll("nav.secondary .btn").length, list: document.querySelectorAll(".bld-row").length, interactive: !!document.querySelector(".map.interactive") })');
   await screenCheck('Nov 2 home', !nov2.gear && nov2.nav === 0 && nov2.list === 0 && !nov2.interactive, JSON.stringify(nov2));
 
+  // ---- Phase 5: other phone sizes and landscape ----
+  for (const [w, hgt, label] of [[430, 932, '430×932'], [844, 390, 'landscape 844×390']]) {
+    await cdp.send('Emulation.setDeviceMetricsOverride', { width: w, height: hgt, deviceScaleFactor: 2, mobile: true });
+    await open('?date=2026-10-24');
+    await screenCheck(`home at ${label}`, (await evaluate('document.querySelectorAll(".map .bld").length')) === 10 && !!(await text('#start-shift')), label);
+    await open('?date=2026-10-24&card=S3-num-01');
+    const reach = await evaluate(`(() => { const b = [...document.querySelectorAll('button')].find((x) => x.textContent === 'Submit'); if (!b) return false; b.scrollIntoView({ block: 'end' }); const r = b.getBoundingClientRect(); return r.width > 0 && r.bottom <= innerHeight + 1; })()`);
+    await screenCheck(`number card at ${label}`, reach, 'Submit reachable');
+    await open('?date=2026-10-24&card=I3-sty-01');
+    await screenCheck(`story card at ${label}`, !!(await text('.chip')) && (await evaluate('[...document.querySelectorAll("button")].some((b) => b.textContent === "Done speaking")')), 'chips + Done speaking');
+  }
+  await cdp.send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+
+  // ---- Phase 5: import content/topics.json by paste and by file picker; full reset ----
+  await open('?date=2026-10-24');
+  await evaluate('localStorage.clear()');
+  await open('?date=2026-10-24');
+  await click('#nav-settings');
+  const topicsText = readFileSync(join(ROOT, 'content/topics.json'), 'utf8');
+  const fileShape = JSON.stringify(topics.map((t) => [t.id, t.rating, t.points, t.next_review]));
+  await evaluate(`(() => { const t = document.querySelector('textarea.paste'); t.value = ${JSON.stringify(topicsText)}; document.getElementById('import-paste').click(); })()`);
+  const pasteMsg = await text('#settings-msg');
+  const pasted = await evaluate(`JSON.stringify(energize.state.topics.map((t) => [t.id, t.rating, t.points, t.next_review])) === ${JSON.stringify(fileShape)}`);
+  check('import: content/topics.json pasted → 65 topics with the file\'s ratings', /Imported 65 topics/.test(pasteMsg || '') && pasted, pasteMsg);
+  const doc = await cdp.send('DOM.getDocument', { depth: -1 });
+  const fileInput = await cdp.send('DOM.querySelector', { nodeId: doc.root.nodeId, selector: 'input.file' });
+  await evaluate('document.getElementById("settings-msg").textContent = ""');
+  await cdp.send('DOM.setFileInputFiles', { nodeId: fileInput.nodeId, files: [join(ROOT, 'content/topics.json')] });
+  await settle(300);
+  const fileMsg = await text('#settings-msg');
+  check('import: topics.json through the file picker', /Imported 65 topics/.test(fileMsg || ''), fileMsg);
+  await evaluate(`[...document.querySelectorAll('button')].find((b) => b.textContent === 'Reset progress').click()`);
+  await settle(100);
+  const afterReset = await evaluate('(() => { const s = JSON.parse(localStorage.getItem("energize.state.v1")); return { history: s.history.length, xp: s.xp, c1: s.topics.find((t) => t.id === "C1").rating }; })()');
+  check('reset: a fresh state in localStorage — no history, 0 XP, shipped ratings', afterReset.history === 0 && afterReset.xp === 0 && afterReset.c1 === 'Needs Improvement', JSON.stringify(afterReset));
+
+  // ---- Phase 5: story recording — microphone granted (fake device), then refused ----
+  await open('?date=2026-10-24&card=I6-sty-01');
+  check('audio: Record is offered where MediaRecorder exists', !!(await evaluate('document.querySelector(".btn.rec")')));
+  await click('.btn.rec');
+  await settle(600);
+  const recLabel = await text('.btn.rec');
+  await evaluate('document.querySelectorAll(".chip").forEach((c) => c.click())');
+  await evaluate(`[...document.querySelectorAll('button')].find((b) => b.textContent === 'Done speaking').click()`);
+  await settle(600);
+  const audio = await evaluate('(() => { const a = document.querySelector(".result audio"); return a ? { blob: a.src.startsWith("blob:"), controls: a.controls } : null; })()');
+  await screenCheck('audio: Record → Done speaking → playback of the take', /Recording/.test(recLabel || '') && !!audio && audio.blob && audio.controls, `${recLabel} · ${JSON.stringify(audio)}`);
+  const denyScript = await cdp.send('Page.addScriptToEvaluateOnNewDocument', { source: 'navigator.mediaDevices.getUserMedia = () => Promise.reject(new DOMException("denied", "NotAllowedError"));' });
+  await open('?date=2026-10-24&card=I6-sty-01');
+  await click('.btn.rec');
+  await settle(300);
+  const refused = await evaluate('document.body.innerText.includes("Microphone not available here")');
+  await evaluate('document.querySelectorAll(".chip").forEach((c) => c.click())');
+  await evaluate(`[...document.querySelectorAll('button')].find((b) => b.textContent === 'Done speaking').click()`);
+  await settle(300);
+  const gradedWithout = await evaluate('!!document.querySelector(".result h2") && !document.querySelector(".result audio")');
+  check('audio: a refused microphone says so and the card still grades', refused && gradedWithout);
+  await cdp.send('Page.removeScriptToEvaluateOnNewDocument', { identifier: denyScript.identifier });
+
+  // ---- Phase 5: performance — boot under 4× CPU throttling; card top stable across a shift ----
+  await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
+  await open('?date=2026-10-24');
+  await evaluate('localStorage.clear()');
+  await open('?date=2026-10-24');
+  const perf = await evaluate('(() => { const nav = performance.getEntriesByType("navigation")[0]; const paint = performance.getEntriesByType("paint").find((p) => p.name === "first-contentful-paint"); return { fcp: paint ? Math.round(paint.startTime) : null, dcl: Math.round(nav.domContentLoadedEventEnd), boot: energize.bootMs }; })()');
+  await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
+  console.log(`  perf at 4× CPU throttle (file://): first contentful paint ${perf.fcp} ms · DOMContentLoaded ${perf.dcl} ms · home screen drawn at ${perf.boot} ms`);
+  check('perf: home screen drawn under 1 s at 4× CPU throttle', perf.boot != null && perf.boot < 1000, `${perf.boot} ms`);
+  await click('#start-shift');
+  const tops = [];
+  for (let i = 0; i < 8; i++) {
+    if (!(await evaluate('!!document.querySelector(".card")'))) break;
+    // offsetTop ignores the card's 260 ms entrance transform (translateY) and the scroll position:
+    // this measures where the card sits in the layout, which is what must not move.
+    tops.push(await evaluate('(() => { let el = document.querySelector(".card"); let y = 0; while (el) { y += el.offsetTop; el = el.offsetParent; } return y; })()'));
+    await evaluate(`(${playCard})(false)`);
+    await evaluate(`(() => { const b = [...document.querySelectorAll('.result button')].pop(); b.click(); })()`);
+    await settle(30);
+  }
+  check('layout: the card starts at the same height on every swap', tops.length >= 6 && Math.max(...tops) - Math.min(...tops) <= 2, `card tops ${tops.join(' ')}`);
+  await click('#pause-shift');
+
+  // ---- Phase 5: the installable app over http — service worker, offline reload, update ----
+  const site = await serveDist(join(ROOT, 'dist'));
+  await online(true);
+  const manifest = await (await globalThis.fetch(`${site.url}manifest.webmanifest`)).json();
+  const iconsOk = (await Promise.all(manifest.icons.map((i) => globalThis.fetch(site.url + i.src).then((r) => r.ok)))).every(Boolean);
+  check('pwa: manifest served with its icons', manifest.display === 'standalone' && manifest.start_url === './' && iconsOk, `${manifest.icons.length} icons`);
+  await open(`${site.url}index.html?date=2026-10-24`);
+  await evaluate('localStorage.clear()');
+  const sw = await evaluate(`(async () => { const reg = await navigator.serviceWorker.ready; for (let i = 0; i < 100 && !navigator.serviceWorker.controller; i++) await new Promise((r) => setTimeout(r, 100)); const keys = await caches.keys(); const hit = await caches.match('./index.html', { ignoreSearch: true }); return { active: !!reg.active, controller: !!navigator.serviceWorker.controller, keys, cached: !!hit, version: energize.data.build.version }; })()`);
+  check('pwa: service worker registered, page controlled, shell cached under the build version', sw.active && sw.controller && sw.cached && sw.keys.includes(`energize-${sw.version}`), JSON.stringify(sw));
+  await click('#nav-settings');
+  await settle();
+  const appPanel = await text('#app-panel');
+  await screenCheck('pwa: Settings explains Add to Home Screen when served', /Add to Home Screen/.test(appPanel || ''), (appPanel || '').slice(0, 70));
+  await online(false);
+  await open(`${site.url}index.html?date=2026-10-26`);
+  const offlineInfo = await evaluate('({ cards: energize.bank.length, cutover: document.body.innerText.includes("Cutover week"), controller: !!navigator.serviceWorker.controller })');
+  check('pwa: opens offline from the cache, whatever the ?query', offlineInfo.cards >= 300 && offlineInfo.cutover && offlineInfo.controller, JSON.stringify(offlineInfo));
+  const offlineAssets = await evaluate(`Promise.all(['./manifest.webmanifest', './icon-192.png', './apple-touch-icon.png'].map((u) => fetch(u).then((r) => r.ok).catch(() => false)))`);
+  check('pwa: manifest and icons come from the cache offline', offlineAssets.every(Boolean), JSON.stringify(offlineAssets));
+  await online(true);
+  await settle(500);
+  site.variant = 'smoke-v2';
+  await open(`${site.url}index.html?date=2026-10-24`);
+  const noteShown = await evaluate(`(async () => { for (let i = 0; i < 200; i++) { if (document.getElementById('update-note')) return true; await new Promise((r) => setTimeout(r, 100)); } return false; })()`);
+  const swDiag = noteShown ? '' : await evaluate(`(async () => { const reg = await navigator.serviceWorker.getRegistration(); return JSON.stringify({ installing: reg?.installing?.state, waiting: reg?.waiting?.state, active: reg?.active?.state, controller: !!navigator.serviceWorker.controller, updateReady: energize.updateReady, route: energize.route, keys: await caches.keys() }); })()`);
+  await screenCheck('pwa: a new build shows the Reload note on the campus screen', noteShown, noteShown ? 'update-note' : `no note within 20 s · ${swDiag} · server hits: ${site.hits.slice(-12).join(' ')}`);
+  const reloaded = cdp.waitFor('Page.loadEventFired');
+  await click('#reload-app');
+  await reloaded;
+  await settle(300);
+  // The marker is a comment after </html>, which the parser hangs off the document itself.
+  const v2 = await evaluate('(async () => ({ marker: [...document.childNodes].some((n) => n.nodeType === 8 && n.nodeValue.includes("smoke-v2")), keys: await caches.keys(), cards: energize.bank.length }))()');
+  check('pwa: Reload runs the new build and only its cache remains', v2.marker && v2.cards >= 300 && v2.keys.length === 1 && v2.keys[0] === 'energize-smoke-v2', JSON.stringify(v2));
+  await online(false);
+  site.srv.close();
+
   check('no console errors or exceptions', errors.length === 0, errors.slice(0, 3).join(' | '));
-  const remote = requests.filter((u) => !/^(file|data|blob|about|chrome):/.test(u));
-  check('no network requests (network disabled the whole run)', remote.length === 0, remote.slice(0, 3).join(' '));
+  const remote = requests.filter((u) => !/^(file|data|blob|about|chrome):/.test(u) && !u.startsWith(site.url));
+  check('no network requests beyond the local test server', remote.length === 0, remote.slice(0, 3).join(' '));
 
   ws.close();
   proc.kill();
@@ -427,5 +603,6 @@ async function main() {
 
 main().catch((e) => {
   console.error(e);
+  if (browser) browser.kill();
   process.exitCode = 1;
 });

@@ -396,16 +396,19 @@ nav.secondary { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-
 .progress { margin: 0 0 12px; }
 .progress-top { display: flex; align-items: center; justify-content: space-between; min-height: 40px; }
 .progress-label { color: var(--muted); font-size: var(--fs-small); }
-.dots { display: flex; flex-wrap: wrap; gap: 5px; }
-.dot { width: 10px; height: 10px; border-radius: 50%; background: var(--line-2); transition: background var(--fast) var(--ease); }
-.dot.follow { width: 7px; height: 7px; margin: 1.5px; }
+/* One row always: dots shrink instead of wrapping when follow-ups extend the shift, so the card never moves. */
+.dots { display: flex; flex-wrap: nowrap; align-items: center; gap: 5px; height: 16px; }
+.dot { flex: 0 1 10px; min-width: 0; width: 10px; aspect-ratio: 1 / 1; height: auto; border-radius: 50%; background: var(--line-2); transition: background var(--fast) var(--ease); }
+.dot.follow { flex-basis: 7px; width: 7px; }
 .dot.is-done { background: var(--amber); }
 .dot.now { background: var(--lit); box-shadow: 0 0 0 3px rgba(255, 243, 214, 0.18); }
-.slot-label { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 0 0 10px; color: var(--muted); font-size: var(--fs-small); }
-.slot-kind { padding: 1px 8px; border-radius: 6px; border: 1px solid var(--line-2); color: var(--text); font-size: var(--fs-tiny); font-weight: 650; text-transform: uppercase; letter-spacing: 0.06em; }
+/* Fixed height (kind + pill on one row, the topic clamped to two lines) so every card starts at the same y. */
+.slot-label { display: grid; grid-template-columns: 1fr auto; grid-template-rows: 26px auto; align-items: center; gap: 4px 10px; margin: 0 0 10px; height: 72px; color: var(--muted); font-size: var(--fs-small); }
+.slot-label .pill { grid-column: 2; grid-row: 1; }
+.slot-kind { grid-column: 1; grid-row: 1; justify-self: start; padding: 1px 8px; border-radius: 6px; border: 1px solid var(--line-2); color: var(--text); font-size: var(--fs-tiny); font-weight: 650; text-transform: uppercase; letter-spacing: 0.06em; }
 .slot-kind.s-redo { border-color: var(--amber-line); color: var(--amber); }
 .slot-kind.s-followup { border-style: dashed; }
-.slot-topic { flex: 1 1 200px; }
+.slot-topic { grid-column: 1 / -1; grid-row: 2; align-self: start; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.35; max-height: 2.7em; }
 
 /* ---------- 11 · cards ---------- */
 .card {
@@ -764,3 +767,12 @@ mark.hit { color: var(--amber-ink); background: var(--amber); border-radius: 3px
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 1ms !important; animation-delay: 0ms !important; transition-duration: 1ms !important; }
 }
+
+/* ---- installable app (Phase 5) ---- */
+.update-note {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin: 0 0 14px; padding: 10px 14px;
+  background: var(--amber-soft); border: 1px solid var(--amber-line); border-radius: var(--r-m);
+  color: var(--text); font-size: var(--fs-small);
+}
+.update-note .btn { flex: none; }

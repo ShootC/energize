@@ -106,13 +106,21 @@ function buildingRow(b, st, onBuilding) {
   );
 }
 
-export function homeScreen({ status, buildings, mode, primary, hint, secondary, celebrate = [], onBuilding }) {
+export function homeScreen({ status, buildings, mode, primary, hint, secondary, celebrate = [], updateReady = false, onReload, onBuilding }) {
   const interactive = mode !== 'interview' && mode !== 'after';
   const byId = new Map(status.map((x) => [x.id, x]));
   const just = celebrate.map((id) => buildings.find((b) => b.id === id)).filter(Boolean);
   return h(
     'main',
     { class: 'home' },
+    updateReady
+      ? h(
+          'div',
+          { class: 'update-note', role: 'status', id: 'update-note' },
+          h('span', {}, 'A newer build is ready.'),
+          h('button', { class: 'btn small', type: 'button', id: 'reload-app', onclick: onReload }, 'Reload'),
+        )
+      : null,
     h(
       'figure',
       { class: 'campus' },
@@ -384,7 +392,22 @@ export function blitzScreen({ deck, best, onDone, onBack, onTick = () => {} }) {
 
 // ---------- settings ----------
 
-export function settingsScreen({ settings, onSetting, onImport, onExport, onReset, onBack, buildInfo, storageOk }) {
+function appPanel(pwa) {
+  if (!pwa) return null;
+  let line;
+  if (pwa.standalone) line = h('p', { class: 'hint' }, 'Installed on this phone. It opens offline; a newer build shows a Reload note on the campus screen.');
+  else if (!pwa.served) line = h('p', { class: 'hint' }, 'Opened as a file: everything works, and progress stays in this browser. For a home-screen icon that opens offline, open the hosted link instead (see README).');
+  else line = h('p', { class: 'hint' }, 'iPhone: Share → Add to Home Screen. Android: menu → Install app (or the button below). Works offline once installed.');
+  return h(
+    'section',
+    { class: 'panel', id: 'app-panel' },
+    h('h2', { class: 'section-title' }, 'App'),
+    line,
+    pwa.canInstall ? h('button', { class: 'btn', type: 'button', id: 'install-app', onclick: pwa.onInstall }, 'Install on this phone') : null,
+  );
+}
+
+export function settingsScreen({ settings, onSetting, onImport, onExport, onReset, onBack, buildInfo, storageOk, pwa = null }) {
   const paste = h('textarea', { class: 'paste', rows: 4, placeholder: 'Paste topics.json or state.json here' });
   const file = h('input', { type: 'file', accept: 'application/json,.json', class: 'file' });
   const msg = h('p', { class: 'msg', id: 'settings-msg', 'aria-live': 'polite' });
@@ -457,6 +480,7 @@ export function settingsScreen({ settings, onSetting, onImport, onExport, onRese
       h('p', { class: 'hint' }, 'Back to the shipped topics.json ratings. History and XP are cleared.'),
       h('button', { class: 'btn quiet', type: 'button', onclick: () => { if (confirm('Reset all progress back to the shipped topics.json?')) onReset(); } }, 'Reset progress'),
     ),
+    appPanel(pwa),
     h('p', { class: 'build tiny' }, buildInfo),
   );
 }

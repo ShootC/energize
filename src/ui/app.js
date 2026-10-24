@@ -5,6 +5,7 @@ import { h, mount, vibrate, chime, pill } from './dom.js';
 import { renderCard, renderResult, stopCardActivity } from './cards.js';
 import { mockScreen } from './boss.js';
 import { campusMap } from './map.js';
+import { setupPwa, promptInstall } from './pwa.js';
 import {
   header, homeScreen, buildingScreen, debriefScreen, finalScreen, settingsScreen, browseScreen, blitzScreen, storyListScreen,
 } from './screens.js';
@@ -108,21 +109,39 @@ function boot() {
   app.countByTopic = {};
   for (const c of app.bank) app.countByTopic[c.topicId] = (app.countByTopic[c.topicId] || 0) + 1;
 
+  // The rendered guide stays inert in its <template>; the search index over it is
+  // built the first time Browse opens (it is not needed to draw the home screen).
   app.docs = {};
   for (const doc of ['guide', 'scripts']) {
     const template = document.getElementById(`doc-${doc}`);
     const headings = app.data.docs[doc].headings;
-    app.docs[doc] = { template, headings, sections: docSections(template, headings) };
+    app.docs[doc] = { template, headings, sections: null };
   }
 
   app.state = load(app.storage) || createState(app.data.topics, { today: app.today });
   persist();
   window.energize = app; // debugging / headless checks
   app.go = go;
+  app.updateReady = false;
+  app.pwa = setupPwa({
+    onUpdateReady: () => {
+      app.updateReady = true;
+      if (app.route === 'home') home();
+    },
+    onInstallable: () => {
+      if (app.route === 'settings') settings();
+    },
+  });
   // ?card=P2-num-01 opens that one card as a practice drill (QA, audits).
   const devCard = app.cardById.get(new URLSearchParams(location.search).get('card') || '');
   if (devCard) return startShift('single', { card: devCard });
   go('home');
+  app.bootMs = Math.round(performance.now());
+}
+
+function ensureDocIndex() {
+  for (const d of Object.values(app.docs)) if (!d.sections) d.sections = docSections(d.template, d.headings);
+  return app.docs;
 }
 
 // ---------- routing ----------
@@ -215,6 +234,8 @@ function home() {
       hint,
       secondary,
       celebrate,
+      updateReady: app.updateReady,
+      onReload: () => location.reload(),
       onBuilding: (id) => go('building', id),
     }),
   );
@@ -390,8 +411,9 @@ function building(id) {
 }
 
 function browse(arg = {}) {
-  const target = arg.source ? findSource(arg.source, app.docs) : null;
-  mount(app.root, browseScreen({ docs: app.docs, target, onBack: () => go(['shift', 'mock'].includes(arg.back) ? arg.back : 'home') }));
+  const docs = ensureDocIndex();
+  const target = arg.source ? findSource(arg.source, docs) : null;
+  mount(app.root, browseScreen({ docs, target, onBack: () => go(['shift', 'mock'].includes(arg.back) ? arg.back : 'home') }));
 }
 
 function settings() {
@@ -400,7 +422,13 @@ function settings() {
     settingsScreen({
       settings: app.state.settings,
       storageOk: app.storageOk,
-      buildInfo: `Build ${app.data.build.time} · ${app.bank.length} cards (${app.usingSample ? 'sample deck' : 'questions.json'})`,
+      pwa: {
+        served: app.pwa.served,
+        standalone: app.pwa.standalone,
+        canInstall: !!app.pwa.installPrompt,
+        onInstall: () => promptInstall(app.pwa).then(() => settings()),
+      },
+      buildInfo: `Build ${app.data.build.time} · v${app.data.build.version || '?'} · ${app.bank.length} cards (${app.usingSample ? 'sample deck' : 'questions.json'})`,
       onSetting: (k, v) => {
         app.state.settings = { ...app.state.settings, [k]: v };
         persist();

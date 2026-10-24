@@ -102,18 +102,33 @@ Six commits, one per deliverable. Everything in `src/ui/` was rebuilt on the Pha
 - **Gate.** `tests/audit.test.js` runs the audit and fails on any finding (and checks every allowlist entry names a real card with a reason). 94 tests.
 - **Verified**: `npm test` 94/94 · `node validate.js … --strict` clean for the bank and mock.json · `node build.js` → 758 KB · `node tools/smoke.js` 53/53 at 390×844 offline.
 
+### Phase 5 · Phone QA and ship (Fable, Oct 24)
+
+- **Installable app.** `build.js` now writes, beside `dist/index.html`: `manifest.webmanifest` (standalone, `start_url: ./`, scope `./`), `sw.js` (the service worker from `src/pwa/sw.js`, stamped with the build version — a 10-hex hash of content + code + styles), and the icons from `tools/icon.js` — one geometry (a dark building with its windows coming on, inside the maskable safe zone) drawn as `icon.svg` and rasterised by hand into `icon-192.png`, `icon-512.png` (maskable) and `apple-touch-icon.png` (180, iOS ignores SVG). No dependencies: the PNG encoder is `node:zlib` plus a CRC. `index.html` links the manifest and icons (the only `<link>`s; `checkOffline` now allows links to files beside the page and the build refuses any it did not write) and still works alone from `file://`.
+- **Service worker** (`src/pwa/sw.js`): cache-first app shell under `energize-<version>`; any navigation (`?date=`, `?card=`…) is served from the cached `index.html`; a new build installs behind the running one (`skipWaiting` + `clients.claim`), old caches are deleted, and the page — `src/ui/pwa.js`, registered only over http(s) — notices `controllerchange` and shows *A newer build is ready — Reload* on the campus screen (`#update-note`). The page also calls `registration.update()` when it comes back online or becomes visible. Settings gets an **App** panel: Add to Home Screen instructions when served, an *Install on this phone* button when Android offers `beforeinstallprompt`, a note when opened as a file; the build line shows the version.
+- **Hosting.** `.github/workflows/pages.yml` runs `npm test`, builds `dist/` and publishes it with `actions/deploy-pages` on every push to `main` (Pages source: GitHub Actions). README has the one-time steps for the **ShootC** account (`gh repo create ShootC/energize --public …`, `gh api … pages -f build_type=workflow`) and the re-deploy steps; the URL will be `https://shootc.github.io/energize/`. Not done here: the repo has no remote yet and `gh` on this machine is signed in as a different account — see Open questions. The plain-file route (send yourself `dist/index.html`) is documented too.
+- **QA** (`tools/smoke.js`, headless Edge/Chrome, 74 checks): everything from Phase 3, plus home / number card / story card at 430×932 and landscape 844×390 (Submit reachable, no sideways scroll); `content/topics.json` imported by paste and through the file picker (`DOM.setFileInputFiles`); full reset leaves a fresh state in `localStorage`; story recording with a microphone (Chrome's fake device: Record → *Recording* → Done speaking → a blob-URL `<audio>` on the result) and with the microphone refused (the card says *Microphone not available here* and still grades); boot under 4× CPU throttling; card-top stability across a shift; the app served over http with the service worker registered and the shell cached, an offline reload with a different `?query`, manifest and icons from the cache offline, a "new build" (the test server rewrites `sw.js`'s version and marks `index.html`) producing the Reload note, and Reload running it. Every DevTools call has a 30 s timeout and the browser is killed on failure.
+- **Performance** at 4× CPU throttle from `file://`: first contentful paint ~110 ms, DOMContentLoaded ~150 ms, home screen drawn at ~130 ms (the gate is 1 s). The bank and the rendered guide are parsed once; the Browse search index is now built on first open, not at boot. **Layout shift**: the slot label (kind, topic, rating pill) wrapped to 1–3 lines and the progress dots wrapped when follow-ups extended a shift, so the card moved by up to 41 px between cards. Now the slot label is a fixed 72 px grid (topic clamped to two lines) and the dots shrink on one row; the card starts at the same y on every swap (checked).
+- **README.md**: what it is, install on iPhone and Android, the plain-file route, a day with it, export to the chat tracker, updating content, hosting and re-deploy steps, developing.
+- **Verified**: `npm test` 95/95 · `node build.js` → `dist/` (764 KB page + 6 companion files) · `node tools/smoke.js` 74/74 · `node scripts/audit.js` 0 findings.
+
+#### Screens added in Phase 5
+
+| Screen | How to reach it | What it shows / does | Checked |
+| --- | --- | --- | --- |
+| Update note | served over http, a newer build has installed | amber bar on the campus screen: "A newer build is ready" + Reload | smoke (test server serves a second build) |
+| Settings › App | gear → App panel | install instructions (iPhone / Android), *Install on this phone* when offered, file-mode note, build version | smoke (served) |
+
 ## In progress
 
-- Nothing. Next: **Phase 5** (phone QA + ship, Opus).
+- Nothing. **v1.0** is tagged. Left for you: put the repo under the ShootC GitHub account and turn on Pages (README › Hosting), then open the link on your phone and Add to Home Screen.
 
-## For the next sessions (Phase 5 ship; re-audits)
+## For later sessions (re-audits, re-deploys)
 
-- **Phase 4 is done** (`scripts/audit.js`, `audit-report.md`, `scripts/audit-allow.json`, `tests/audit.test.js`). When the guide or the scripts change: edit `content/*.md`, run `node scripts/audit.js --review`, fix the cards it lists by following the guide (never from memory), re-run until the report says `0 findings`; `npm test` fails while it has any. A card that deliberately carries a non-guide number (a hypothetical reading in an interviewer prompt) goes in `scripts/audit-allow.json` with a reason. To eyeball a card after fixing it: `node build.js`, then open `dist/index.html?card=<id>`.
-- **Phase 5** builds on this UI. Things it should know:
-  - Story recording uses `getUserMedia`, which most browsers refuse on `file://`; the card then says "Microphone not available here" and works without it. Served over https (GitHub Pages) it should prompt once — verify on a real phone.
-  - Smoke hooks to keep: `#r-overall`, `#start-shift`, `#nav-settings` (the gear), `#nav-browse`, `#nav-blitz`, `#nav-stories`, `#nav-mock`, `#pause-shift`, `#export-state`, `#export-topics`, `#export-text`, `#import-paste`, `#settings-msg`, `#browse-search`, `#deck-mock-N`, `#mock-done`, `#mock-reveal`, `#mock-grade`, `#mock-headline`; button texts `Submit`, `Submit order`, `Submit matrix`, `Reveal`, `Grade it`, `Done speaking`, `This line`, `Reset progress`; `.result h2` starts with Clean / Slipped / Missed and Next / Finish is the last `.result button`.
-  - Landscape and 430×932 are untested; the layout is a single 640px column, so it should hold.
-  - First paint: the page is one 758 KB file (the rendered guide is ~half of it, inside `<template>` so it isn't laid out until Browse opens).
+- **Content or cards changed:** edit `content/*.md` or `src/data/*.json`, run `node scripts/audit.js --review`, fix the cards it lists by following the guide (never from memory), re-run until the report says `0 findings`; `npm test` fails while it has any. A card that deliberately carries a non-guide number (a hypothetical reading in an interviewer prompt) goes in `scripts/audit-allow.json` with a reason. To eyeball a card: `node build.js`, then open `dist/index.html?card=<id>`.
+- **Re-deploy:** `npm test && node build.js`, commit, push — the Pages workflow publishes `dist/`; the installed app offers Reload on its next online open. The build version (Settings, bottom line) tells you which build a phone is on.
+- **Smoke hooks to keep** (tools/smoke.js): `#r-overall`, `#start-shift`, `#nav-settings` (the gear), `#nav-browse`, `#nav-blitz`, `#nav-stories`, `#nav-mock`, `#pause-shift`, `#export-state`, `#export-topics`, `#export-text`, `#import-paste`, `input.file`, `#settings-msg`, `#browse-search`, `#deck-mock-N`, `#mock-done`, `#mock-reveal`, `#mock-grade`, `#mock-headline`, `#update-note`, `#reload-app`, `#app-panel`, `.btn.rec`; button texts `Submit`, `Submit order`, `Submit matrix`, `Reveal`, `Grade it`, `Done speaking`, `This line`, `Reset progress`; `.result h2` starts with Clean / Slipped / Missed and Next / Finish is the last `.result button`; `energize.bootMs`, `energize.updateReady`, `energize.data.build.version` on `window.energize`.
+- **Rebuilding while the smoke runs** rewrites `dist/` under it — run them one after the other.
 
 ### Adding or fixing cards later
 
@@ -271,6 +286,15 @@ Phase 4 (accuracy audit):
 47. **The committed `audit-report.md`** is the default (lean) report; `--review` is for a reading pass and is not committed.
 48. **C2-num-01 keeps `IFC 901.6.2.2`** (decided Oct 24). "The documents" names only "the IFC" for the 10-year integrated retest; the section number is the Smoke control table's integrated-retest row, which K4 also uses. Allowlisted as an accepted cross-reference, no longer a decision item.
 
+Phase 5 (ship):
+
+49. **Companion files, not inlining.** The manifest and the service worker have to be real files on the server (a `data:` manifest is not installable everywhere, and a service worker must be a script URL), so the build writes six files beside `index.html`. `index.html` stays self-contained: nothing in it is needed from those files, so the single file still works from `file://`, where `pwa.js` registers nothing.
+50. **Cache-first, update behind.** The shell is served from the cache (instant, offline), and a new build takes over on install (`skipWaiting` + `claim`) rather than waiting for every tab to close; the page is told through `controllerchange` and offers Reload instead of reloading itself (never mid-card). The cache name carries the build version, so every rebuild is an update and old caches are deleted on activate.
+51. **Pages through Actions, not a committed `docs/` folder**, so the repo carries one copy of the build (`dist/`, kept committed for the plain-file route) and a push is the whole deploy. The workflow runs `npm test` first, so a card that fails the audit cannot ship.
+52. **Layout stability over compactness.** The slot label is a fixed 72 px block and the progress dots never wrap, so a card starts at the same y as the one before it even when the topic name is long or follow-ups have extended the shift. Topic names longer than two lines are clamped on the card (they are in full in the building view).
+53. **Boot work deferred, not removed.** The Browse search index (a walk over the rendered guide) is built on first open; the bank and the rendered guide are still parsed once, at load.
+54. **The smoke test owns its own http server** (`serveDist`) for the installable-app checks, and can serve a "second build" by rewriting the service worker's version and marking `index.html`, which is how the update path is exercised without a second build on disk.
+
 ## Open questions
 
 - Defect card, wrong line → Not Ready. If that feels too harsh for a recognition task, change one line in `gradeDefect` (`src/engine/grader.js`) to give `framework: true` (Needs Improvement).
@@ -286,9 +310,13 @@ Phase 4 (accuracy audit):
 - I4-scn-02 (transport time) could carry `codeRef: "NFPA 72"` for the +10 tick; left null.
 - Grader quirks, not card errors: "20-14" (hyphenated chapter) does not match "NFPA 20 Chapter 14"; "NFPA 20" alone fails on Chapter 14 cards; "9540A" needs the alias form (present).
 
+- **Hosting is not set up yet.** The repo has no remote; `gh` on this machine is signed in as `Soft-Ignite`, and you asked for the repo under **ShootC**. Run README › Hosting once (`gh auth login` as ShootC, `gh repo create ShootC/energize --public --source . --remote origin --push`, then the `pages` API call or Settings → Pages → GitHub Actions). Pages on a free account needs a public repo, and the repo holds the study guide and story scripts — say if that should stay private, in which case the plain-file route is the way onto the phone.
+
 ## Known rough edges
 
-- Story recording is unverified on a real phone (headless Chrome has no microphone, and `file://` usually refuses it).
+- Story recording is verified only with Chrome's fake microphone in the headless smoke run (granted and refused paths). On a real phone over https it should prompt once; on a plain `file://` open most browsers refuse it and the card says so.
+- An iPhone cannot usefully open `dist/index.html` from the Files app (Safari's local-file handling); the hosted link is the iOS route.
+- The "Install on this phone" button appears only where the browser fires `beforeinstallprompt` (Android Chrome); iOS has no such event, so the panel gives the Share → Add to Home Screen steps instead.
 - The Start shift label shows the planned cards and minutes; clean first answers add follow-ups (decision 4), so a strong day runs longer than the estimate. The hint under the button says so.
 - Number Blitz shuffles with `Math.random`, so two runs differ — on purpose.
 - Mock interview results are not saved; the debrief is one screen and gone when you leave it.
@@ -301,13 +329,13 @@ Phase 4 (accuracy audit):
 Needs Node ≥ 20 (built on 24). No npm install — there are no dependencies.
 
 ```
-npm test                                   # 94 engine / data / bank / mock / build / audit tests
+npm test                                   # 95 engine / data / bank / mock / build / audit tests
 node validate.js src/data/questions.json   # schema check for the bank (also sample.json, mock.json); add --strict
 node validate.js --headings                # headings a card's source may start with
 node scripts/audit.js [--review] [--card <id>]   # every fact against the guide → audit-report.md (exit 1 on findings)
-node build.js                              # → dist/index.html
-node tools/smoke.js [--shots <dir>]        # headless Chrome/Edge at 390×844, offline: sample deck, real bank, every screen
-npm run check                              # tests + validate + build
+node build.js                              # → dist/index.html + manifest, sw.js, icons
+node tools/smoke.js [--shots <dir>]        # headless Edge/Chrome: 390×844, 430×932, landscape, offline, install/update
+npm run check                              # tests + validate + audit + build
 ```
 
-Play: open `dist/index.html` in any browser (double-click works; `file://` is fine). Add `?date=2026-11-01` (or `2026-10-26`, `2026-11-02`, `2026-11-03`) to test special days; `?deck=sample` forces the 10-card sample deck; `?card=P2-num-01` opens one card. State lives in `localStorage` under `energize.state.v1`; Settings → Reset clears it.
+Play: open `dist/index.html` in any browser (double-click works; `file://` is fine), or serve `dist/` over http(s) for the installable, offline version (README › Get it on your phone). Add `?date=2026-11-01` (or `2026-10-26`, `2026-11-02`, `2026-11-03`) to test special days; `?deck=sample` forces the 10-card sample deck; `?card=P2-num-01` opens one card. State lives in `localStorage` under `energize.state.v1`; Settings → Reset clears it.

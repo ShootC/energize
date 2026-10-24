@@ -9,14 +9,21 @@
 // mock.json (if present), content/topics.json, and content/study-guide.md +
 // story-scripts.md rendered to HTML for the Browse screen.
 //
+// Next to index.html it also writes the installable-app files (Phase 5): the
+// web manifest, sw.js (the service worker, stamped with this build's version)
+// and the icons drawn by tools/icon.js. index.html alone still works from
+// file:// — those files only matter when the folder is served over http(s).
+//
 // Module rules the bundler relies on (keep to them in src/):
 //   import { a, b as c } from './relative.js';     — named imports only
 //   export function / export const / export class / export { a, b };
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { dirname, join, resolve, relative, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { renderMarkdown, plainText } from './tools/markdown.js';
+import { iconFiles } from './tools/icon.js';
 import { validateBank, validateMock } from './src/engine/schema.js';
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
@@ -124,12 +131,21 @@ export function parseChecklist(md) {
   return out;
 }
 
-// Anything that would make the page reach the network.
+// The files a <link href> in the page may point at: written next to index.html by build().
+export const COMPANION_FILES = ['manifest.webmanifest', 'sw.js', 'icon.svg', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
+
+// Local <link href> targets in the page (manifest, icons) — each must be a companion file.
+export function linkedFiles(html) {
+  return [...html.matchAll(/<link\b[^>]*\bhref\s*=\s*["']([^"']+)["']/gi)].map((m) => m[1]);
+}
+
+// Anything that would make the page reach the network. A <link> to a file beside
+// index.html (the manifest, an icon) is local; anything with a scheme or host is not.
 export function checkOffline(html) {
   const problems = [];
   const rules = [
     [/<script\b[^>]*\bsrc\s*=/i, '<script src>'],
-    [/<link\b[^>]*\bhref\s*=/i, '<link href>'],
+    [/<link\b[^>]*\bhref\s*=\s*["']?(?:[a-z][a-z0-9+.-]*:|\/\/|\/)/i, '<link href> off the page\'s folder'],
     [/<(img|iframe|source|audio|video|embed|object|track)\b[^>]*\b(src|data|srcset)\s*=\s*["']?(https?:)?\/\//i, 'remote media element'],
     [/url\(\s*['"]?(https?:)?\/\//i, 'CSS url() to the network'],
     [/@import\b/i, 'CSS @import'],
@@ -192,6 +208,11 @@ export function build({ root = ROOT, out = join(ROOT, 'dist/index.html'), write 
   const template = readFileSync(join(root, 'src/ui/index.html'), 'utf8');
   const docs = `<template id="doc-guide">${guide.html}</template>\n<template id="doc-scripts">${scripts.html}</template>`;
 
+  // The build version names the service worker's cache: any change to the content,
+  // the code or the styles (or just a rebuild) is a new version the phone picks up.
+  const version = createHash('sha256').update(JSON.stringify(data)).update(css).update(js.code).update(docs).update(template).digest('hex').slice(0, 10);
+  data.build.version = version;
+
   const html = template
     .replace('/*__STYLES__*/', () => css)
     .replace('<!--__DOCS__-->', () => docs)
@@ -201,13 +222,26 @@ export function build({ root = ROOT, out = join(ROOT, 'dist/index.html'), write 
   const offline = checkOffline(html.replace(/<template[\s\S]*?<\/template>/g, ''));
   if (offline.length) throw new Error(`Build stopped — the page would reach the network: ${offline.join(', ')}`);
 
+  // The installable-app files, written beside index.html.
+  const files = {
+    'manifest.webmanifest': readFileSync(join(root, 'src/pwa/manifest.webmanifest'), 'utf8'),
+    'sw.js': readFileSync(join(root, 'src/pwa/sw.js'), 'utf8').replace(/__VERSION__/g, version),
+    ...iconFiles(),
+  };
+  for (const href of linkedFiles(html)) if (!(href in files)) throw new Error(`Build stopped — index.html links to "${href}", which the build does not write`);
+  for (const name of COMPANION_FILES) if (!(name in files)) throw new Error(`Build stopped — companion file ${name} missing`);
+  const manifest = JSON.parse(files['manifest.webmanifest']);
+  for (const icon of manifest.icons) if (!(icon.src in files)) throw new Error(`Build stopped — the manifest names ${icon.src}, which the build does not write`);
+
   if (write) {
     mkdirSync(dirname(out), { recursive: true });
     writeFileSync(out, html);
-    log(`✓ ${rel(root, resolve(out))} · ${(Buffer.byteLength(html) / 1024).toFixed(0)} KB · ${js.modules.length} modules · ${questions.length} questions${questions.length ? '' : ` (sample deck: ${sample.length})`}${mock ? ` · ${mock.decks.length} mock decks` : ''} · ${data.plan.length} plan days`);
+    for (const [name, body] of Object.entries(files)) writeFileSync(join(dirname(out), name), body);
+    log(`✓ ${rel(root, resolve(out))} · ${(Buffer.byteLength(html) / 1024).toFixed(0)} KB · ${js.modules.length} modules · ${questions.length} questions${questions.length ? '' : ` (sample deck: ${sample.length})`}${mock ? ` · ${mock.decks.length} mock decks` : ''} · ${data.plan.length} plan days · build ${version}`);
+    log(`  + ${Object.keys(files).join(', ')} (installable app; index.html alone still works from file://)`);
     if (warnings.length) log(`  ${warnings.length} content warning(s) — node validate.js src/data/questions.json for details`);
   }
-  return { html, data, modules: js.modules, warnings };
+  return { html, data, modules: js.modules, warnings, files, version };
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
