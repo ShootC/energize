@@ -295,16 +295,12 @@ function finish(shift, ctx) {
   return { ...shift, slots: shift.slots.map((s) => ({ ...s, done: false })), estimatedMinutes: estimateMinutes(shift.slots, ctx.cardById) };
 }
 
-// Slots that may be pushed out of the shift to keep it at its planned size
-// when a follow-up card is inserted. Redos and out-loud cards stay.
-const DISPLACEABLE = ['fill', 'spot', 'coverage', 'sweep'];
-
 // Called after every graded card in a shift. `history` already contains the
 // new result. Returns the updated shift:
 //  - a clean first answer on a topic that needs 2 distinct clean cards gets a
 //    follow-up card on the same topic right after it (the "follow-up handled"
-//    of Locked In); to keep the shift at its planned size, the last
-//    lowest-priority card still to come is pushed back to Keep going;
+//    of Locked In); the shift grows by one card — nothing is displaced, so
+//    `slots.length` can exceed the planned `size`;
 //  - on Nov 1 (sweep) a missed card gets one redo at the end of the shift.
 export function afterResult(shift, slotIndex, { topics, cards, history, today }) {
   const ctx = makeCtx({ topics, cards, history, today });
@@ -326,14 +322,6 @@ export function afterResult(shift, slotIndex, { topics, cards, history, today })
     const card = pickCard(topic.id, ctx, { exclude: planned, avoidType: current.type });
     if (card) {
       slots.splice(slotIndex + 1, 0, { topicId: topic.id, cardId: card.id, type: card.type, slot: 'followup', done: false });
-      if (slots.length > shift.size) {
-        for (let i = slots.length - 1; i > slotIndex + 1; i--) {
-          if (!slots[i].done && DISPLACEABLE.includes(slots[i].slot)) {
-            slots.splice(i, 1);
-            break;
-          }
-        }
-      }
     }
   }
 

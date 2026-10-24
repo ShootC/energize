@@ -161,7 +161,7 @@ test('Nov 2: six confidence cards from Locked In topics plus the 60-second intro
   assert.equal(interviewDayPlan({ topics, cards, today: '2026-11-02' }).slots.length, 7);
 });
 
-test('a clean first card brings a follow-up on the same topic and pushes the last coverage card out', () => {
+test('a clean first card brings a follow-up on the same topic and the shift grows by one (nothing displaced)', () => {
   const topics = shippedTopics();
   const cards = syntheticBank(topics);
   const today = '2026-10-24';
@@ -171,19 +171,21 @@ test('a clean first card brings a follow-up on the same topic and pushes the las
   ({ state } = recordResult(state, { card: first, grade: { result: 'clean', framework: true, note: 'clean' }, date: today, cards }));
   const next = afterResult(shift, 0, { topics: state.topics, cards, history: state.history, today });
 
-  assert.equal(next.slots.length, 15);
+  assert.equal(next.slots.length, 16, 'the follow-up extends the shift');
+  assert.equal(next.size, 15, 'the planned size is unchanged');
   assert.equal(next.slots[0].done, true);
   assert.equal(next.slots[1].topicId, 'C1');
   assert.equal(next.slots[1].slot, 'followup');
   assert.equal(next.slots[1].cardId, 'C1-ord-01'); // a different card, preferring a different type
-  assert.ok(!ids(next.slots).includes('P8'), 'last coverage card displaced');
-  assert.equal(next.slots[14].slot, 'outloud', 'out-loud card is never displaced');
+  assert.ok(ids(next.slots).includes('P8'), 'the last coverage card is kept');
+  assert.deepEqual(ids(next.slots).filter((id, i) => i !== 1), ids(shift.slots), 'every planned card is still there, in order');
+  assert.equal(next.slots[15].slot, 'outloud', 'the out-loud card still closes the shift');
 
   // Second clean card → clean session → no more follow-ups; topic at Minor Refresh streak 1.
   const second = cards.find((c) => c.id === 'C1-ord-01');
   ({ state } = recordResult(state, { card: second, grade: { result: 'clean', framework: true, note: 'clean' }, date: today, cards }));
   const after2 = afterResult(next, 1, { topics: state.topics, cards, history: state.history, today });
-  assert.equal(after2.slots.length, 15);
+  assert.equal(after2.slots.length, 16);
   assert.equal(after2.slots[2].topicId, 'C2');
   const c1 = state.topics.find((t) => t.id === 'C1');
   assert.equal(c1.rating, 'Minor Refresh');
