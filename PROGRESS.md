@@ -56,7 +56,12 @@ Sub-sessions 2a–2d ran as four parallel forks of one session and were merged; 
 
 ## In progress
 
-- Nothing. Next: **Phase 3** (full UI + campus map, Opus).
+**Phase 3 · Full UI (Opus, started Oct 23) — 2 of 6 deliverables done.**
+
+- Done, committed: (1) design tokens and base styles in `src/ui/styles.css` (amber accent, warm white for energized / Locked In, red only for Not Ready, 17px body, 48px taps, safe-area padding; `dom.js` adds `s()` for SVG, `pill()`, `chime()`, `mmss()`); (2) the isometric campus map `src/ui/map.js` on the home screen (windows lit by weighted readiness, energize halo and light-up via `app.pendingCelebrate`, tappable buildings, building list, new header with settings gear `#nav-settings`). Tests 87/87, smoke 34/34.
+- Left: (3) card UIs for all six types per spec §4 (story audio record with MediaRecorder, scenario `fillIn` beats as disabled chips, matrix stacked per input for phones); (4) debrief, building view (use `buildingArt()` from map.js), browse, Number Blitz, Mock Interview from `mock.json` (replace `mockStub`; grade like a scenario, headline in the morning-quiz format), settings; (5) special-day polish, final screen with the map, haptics/chime on clean; (6) headless check at 390×844 and the screen-by-screen checklist here.
+- Keep the smoke hooks: `#r-overall`, `#start-shift`, `#nav-browse`, `#nav-settings`, `#export-state`, `#export-text`, `#import-paste`, `#settings-msg`, `#browse-search`, the button texts `Submit`, `Submit order`, `Submit matrix`, `Reveal`, `Grade it`, `Done speaking`, `This line`, `Reset progress`, `.result h2` starting with Clean/Slipped/Missed and the Next button as the last `.result button`.
+- A screenshot helper for any screen lives outside the repo; `node tools/smoke.js --shots <dir>` also saves screenshots.
 
 ## For the next session (Phase 3 — UI)
 
