@@ -1,8 +1,8 @@
 // ENERGIZE app controller: boot, state, the shift loop and screen routing.
 // All game rules live in src/engine; this file only wires them to the DOM.
 
-import { h, mount, vibrate } from './dom.js';
-import { renderCard, renderResult } from './cards.js';
+import { h, mount, vibrate, chime, pill } from './dom.js';
+import { renderCard, renderResult, stopCardActivity } from './cards.js';
 import {
   header, homeScreen, buildingScreen, debriefScreen, finalScreen, settingsScreen, browseScreen, blitzScreen, storyListScreen, mockStub,
 } from './screens.js';
@@ -116,12 +116,18 @@ function boot() {
   app.state = load(app.storage) || createState(app.data.topics, { today: app.today });
   persist();
   window.energize = app; // debugging / headless checks
+  app.go = go;
+  // ?card=P2-num-01 opens that one card as a practice drill (QA, audits).
+  const devCard = app.cardById.get(new URLSearchParams(location.search).get('card') || '');
+  if (devCard) return startShift('single', { card: devCard });
   go('home');
 }
 
 // ---------- routing ----------
 
 function go(route, arg) {
+  stopCardActivity();
+  releaseAudio();
   app.route = route;
   window.scrollTo(0, 0);
   const screens = { home, shift: showSlot, building, browse, settings, blitz, stories, mock, final };
@@ -221,13 +227,35 @@ function startShift(kind, opts = {}) {
 
 const SLOT_LABEL = { redo: 'Redo', coverage: 'Coverage', spot: 'Spot check', outloud: 'Out loud', followup: 'Follow-up', fill: 'Coverage', sweep: 'Sweep', confidence: 'Confidence', intro: 'Your 60-second intro', drill: 'Drill', keep: 'Keep going' };
 
-function shiftProgress(shift, idx) {
+function shiftProgress(shift, idx, { onPause = null } = {}) {
+  const done = shift.slots.filter((s) => s.done).length;
   return h(
     'div',
     { class: 'progress' },
-    h('div', { class: 'dots' }, shift.slots.map((s, i) => h('span', { class: `dot${s.done ? ' done' : ''}${i === idx ? ' now' : ''}` }))),
-    h('div', { class: 'progress-label' }, `Card ${idx + 1} of ${shift.slots.length}`),
+    h(
+      'div',
+      { class: 'progress-top' },
+      h('div', { class: 'progress-label num' }, `Card ${idx + 1} of ${shift.slots.length}`),
+      onPause ? h('button', { class: 'btn ghost small', type: 'button', id: 'pause-shift', onclick: onPause }, 'Pause') : null,
+    ),
+    h(
+      'div',
+      { class: 'dots', role: 'progressbar', 'aria-valuemin': '0', 'aria-valuemax': String(shift.slots.length), 'aria-valuenow': String(done) },
+      shift.slots.map((s, i) => h('span', { class: `dot${s.done ? ' is-done' : ''}${i === idx ? ' now' : ''}${s.slot === 'followup' ? ' follow' : ''}` })),
+    ),
   );
+}
+
+// A story recording is a blob URL held in memory; drop it when the screen changes.
+function releaseAudio() {
+  if (app.audioUrl) {
+    try {
+      URL.revokeObjectURL(app.audioUrl);
+    } catch {
+      /* gone already */
+    }
+    app.audioUrl = null;
+  }
 }
 
 function showSlot() {
@@ -247,10 +275,15 @@ function showSlot() {
   const view = renderCard(card, { seed: app.today, onSubmit: (response, seconds) => onGraded(idx, card, response, seconds) });
   mount(
     app.root,
-    shiftProgress(shift, idx),
-    h('p', { class: 'slot-label' }, `${SLOT_LABEL[slot.slot] || slot.slot} · ${t ? `${t.id} ${t.topic}` : card.topicId}`),
+    shiftProgress(shift, idx, { onPause: () => go('home') }),
+    h(
+      'div',
+      { class: 'slot-label' },
+      h('span', { class: `slot-kind s-${slot.slot}` }, SLOT_LABEL[slot.slot] || slot.slot),
+      t ? h('span', { class: 'slot-topic' }, h('b', {}, t.id), ` ${t.topic}`) : h('span', { class: 'slot-topic' }, card.topicId),
+      t ? pill(t.rating) : null,
+    ),
     view,
-    h('button', { class: 'btn quit', type: 'button', onclick: () => go('home') }, 'Pause shift'),
   );
   const first = view.querySelector('input, button.step, button.cell, button.line, button.chip, button.primary');
   if (first && first.tagName === 'INPUT') first.focus();
@@ -265,8 +298,14 @@ function onGraded(idx, card, response, seconds) {
   const next = afterResult(shift, idx, { topics: app.state.topics, cards: app.bank, history: app.state.history, today: app.today });
   app.state.currentShift = { ...shift, ...next, energizedDuring: [...(shift.energizedDuring || []), ...rec.newlyEnergized] };
   persist();
-  if (grade.result === 'clean') vibrate(app.state.settings.haptics);
+  if (grade.result === 'clean') {
+    vibrate(app.state.settings.haptics);
+    chime(app.state.settings.sound);
+  }
   const remaining = app.state.currentShift.slots.filter((s) => !s.done).length;
+  releaseAudio();
+  app.audioUrl = response.audioUrl || null;
+  window.scrollTo(0, 0);
   mount(
     app.root,
     shiftProgress(app.state.currentShift, idx),
@@ -274,6 +313,8 @@ function onGraded(idx, card, response, seconds) {
       card,
       grade,
       seconds,
+      response,
+      audioUrl: app.audioUrl,
       topicBefore: rec.topicBefore,
       topicAfter: rec.topicAfter,
       xp: rec.xp,
