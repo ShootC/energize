@@ -13,7 +13,7 @@ test('sample.json and questions.json validate clean (no errors)', () => {
   assert.deepEqual(sample.errors, []);
   const bank = validateFile(join(ROOT, 'src/data/questions.json'), ROOT);
   assert.deepEqual(bank.errors, []);
-  assert.deepEqual(readJson('src/data/questions.json'), []);
+  assert.ok(Array.isArray(readJson('src/data/questions.json')), 'questions.json is an array (coverage is checked in bank.test.js)');
 });
 
 test('sample deck: 10 cards covering all six types', () => {

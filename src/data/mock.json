@@ -1,0 +1,273 @@
+{
+ "decks": [
+  {
+   "id": "mock-1",
+   "title": "Mock 1",
+   "questions": [
+    {
+     "id": "mock-1-q1",
+     "kind": "values",
+     "prompt": "Something you owned end to end, including what went wrong.",
+     "followUp": "What would you do differently?",
+     "par": 120,
+     "beats": [
+      "Hook: three occupied towers lose their fire alarm for a few hours · 16 nodes · ~1,500 devices · crew of 12 · I own it end to end",
+      "Built every panel on site a month early → 4 missing critical parts caught in time to ship",
+      "Fiber never jumpered, no redlines → light source, panel by panel, every run labeled",
+      "Defined roles · bar for going home set before we started: proven, not sampled",
+      "Result: under 8 hours impaired, fire watch throughout → ownership starts a month before the outage",
+      "End on what you changed afterward (the radios)"
+     ],
+     "source": "Likely questions and day-of checklist › Values and judgment (the 65%)",
+     "topicId": "I3",
+     "cardId": "I3-sty-01"
+    },
+    {
+     "id": "mock-1-q2",
+     "kind": "technical",
+     "prompt": "Walk me through the Cx levels for a pre-action system.",
+     "followUp": "Which level proves the water delivery time, and what do you record there?",
+     "par": 105,
+     "beats": [
+      "L1 factory acceptance: releasing panel factory test — equipment meets spec before it ships",
+      "L2 delivery and installation verification: what arrived matches the submittal and is installed per design and listing",
+      "L3 start-up / pre-functional: dry / pre-action air test; program loaded; 100% point-to-point",
+      "L4 FPT: pre-action trip with water delivery time, every sequence including failure and degraded modes, against the BOD",
+      "L5 IST: fire alarm through a utility failure onto generator; release signals to BMS / EPMS; NFPA 4 integrated test",
+      "End on IST: \"At L4 I prove the system. At L5 I prove the building.\""
+     ],
+     "source": "Likely questions and day-of checklist › Commissioning technical (the 35%)",
+     "topicId": "C1"
+    },
+    {
+     "id": "mock-1-q3",
+     "kind": "values",
+     "prompt": "A decision you made without complete information.",
+     "followUp": "Why not wait for drawings?",
+     "par": 120,
+     "beats": [
+      "Name the unknown: 8 COLOs · 20 VESDAs · no drawings — waiting wasn't an option",
+      "Pulled data first: all 20 at factory defaults",
+      "Counted holes, paced runs → only 4 pipe variations → 4 designs, not 20 (80% less)",
+      "Thresholds, airflow, transport time on every pipe; damaged pipe found and fixed",
+      "Cause and effect caught a wrong-COLO release → every inherited system is unverified",
+      "Why waiting was worse, and how you contained the risk"
+     ],
+     "source": "Likely questions and day-of checklist › Values and judgment (the 65%)",
+     "topicId": "I4",
+     "cardId": "I4-sty-01"
+    },
+    {
+     "id": "mock-1-q4",
+     "kind": "technical",
+     "prompt": "How do sprinklers work with hot-aisle containment?",
+     "followUp": "A field reroute adds fittings to get around the containment — what then?",
+     "par": 90,
+     "beats": [
+      "It is an obstruction question first",
+      "Containment panels listed to drop away on heat",
+      "or sprinklers inside the contained aisle",
+      "Hazard classification is set by the owner's and insurer's standard — FM Data Sheet 5-32 wants sprinklers throughout",
+      "A reroute that adds fittings changes the calc: recalc against the supply test, not a judgment call on the ladder"
+     ],
+     "source": "Likely questions and day-of checklist › Commissioning technical (the 35%)",
+     "topicId": "S7"
+    },
+    {
+     "id": "mock-1-q5",
+     "kind": "values",
+     "prompt": "Why Fluidstack?",
+     "followUp": "You're a design engineer today — why move into commissioning?",
+     "par": 90,
+     "beats": [
+      "The loop: you build capacity in months and run what you build — 18 years in that loop on fire systems",
+      "Productizing the data center moves fire protection commissioning left: L1 scripts at the factory, the site tests interfaces",
+      "I build fire protection tools with frontier models; Fluidstack builds the infrastructure those models run on",
+      "Story 5 plus the research in the playbook",
+      "Follow-up: sell the bridge, not the switch — you design it, program it and commission it"
+     ],
+     "source": "Likely questions and day-of checklist › Values and judgment (the 65%)",
+     "topicId": "I2",
+     "cardId": "I2-sty-01"
+    }
+   ]
+  },
+  {
+   "id": "mock-2",
+   "title": "Mock 2 · technical deep dive",
+   "questions": [
+    {
+     "id": "mock-2-q1",
+     "kind": "technical",
+     "prompt": "Write the IST fire scenario for a data hall.",
+     "followUp": "What do you log if a panel throws troubles on transfer?",
+     "par": 120,
+     "beats": [
+      "Halls at full load-bank heat on normal power",
+      "ASD Fire 1, then Fire 2 or a second detector → pre-action valve trips",
+      "Inspector's test simulates a fused head",
+      "Verify notification, central station, valve trip and water delivery time, BMS / EPMS responses, cooling stays up",
+      "Drop utility mid-event → fire alarm on secondary power, pumps on generator, controllers transfer",
+      "Restore and verify every isolation reversed"
+     ],
+     "source": "Likely questions and day-of checklist › Commissioning technical (the 35%)",
+     "topicId": "A3"
+    },
+    {
+     "id": "mock-2-q2",
+     "kind": "values",
+     "prompt": "A time you rejected a standard approach.",
+     "followUp": "Explain the physics.",
+     "par": 120,
+     "beats": [
+      "Texas BESS · 20 flame detectors · fault appears past ~7 connected",
+      "Measured, didn't hunt: 0.5–4 V induced per leg → ~7 modules sum past 0.4 V",
+      "Shielded, untwisted: a shield blocks electric fields, twisting cancels magnetic",
+      "Client tried cheaper fixes → I proved it with twisted cable laid on the ground",
+      "Re-pull ~2 weeks, commissioned → check cable data sheets at submittal",
+      "Show the reasoning chain, not the rebellion"
+     ],
+     "source": "Likely questions and day-of checklist › Values and judgment (the 65%)",
+     "topicId": "I5",
+     "cardId": "I5-sty-01"
+    },
+    {
+     "id": "mock-2-q3",
+     "kind": "technical",
+     "prompt": "The fire pump misses the 150% point at acceptance.",
+     "followUp": "The test setup checks out and it still misses — what then?",
+     "par": 105,
+     "beats": [
+      "Check the test first: calibrated gauges, pitot readings, nozzle sizes, measured speed with affinity correction",
+      "Then suction: a partly closed valve, strainer debris, air entrainment",
+      "Then the pump: rotation, impeller debris",
+      "Compare to the certified shop curve",
+      "Genuine shortfall = manufacturer claim and an impairment plan"
+     ],
+     "source": "Likely questions and day-of checklist › Commissioning technical (the 35%)",
+     "topicId": "F8"
+    },
+    {
+     "id": "mock-2-q4",
+     "kind": "values",
+     "prompt": "The schedule says skip or compress a test. What do you do?",
+     "followUp": "What did that cost the schedule, and who signed the risk acceptance?",
+     "par": 90,
+     "beats": [
+      "Sort it three ways",
+      "Life-safety and code-required tests are not negotiable",
+      "Tests that can run in parallel get re-sequenced",
+      "Anything deferred gets a documented risk acceptance, an impairment entry and a fire watch",
+      "\"Velocity is knowing which unknowns actually block you\" — their words, your method"
+     ],
+     "source": "Likely questions and day-of checklist › Values and judgment (the 65%)",
+     "topicId": "C7"
+    },
+    {
+     "id": "mock-2-q5",
+     "kind": "values",
+     "prompt": "Tell me about working with a third-party commissioning agent or an AHJ.",
+     "followUp": "What makes a test day go right?",
+     "par": 90,
+     "beats": [
+      "High-rise lab: ran the subs, programmed the fire alarm, contractor's liaison to the third-party Cx FPE — on the receiving end of every Cx script",
+      "Tested smoke control and the generator backup for the emergency circuits; main troubleshooter on fan and damper monitoring",
+      "Ran the AHJ inspection and trained the owners before turnover",
+      "A script they've seen in advance, a pre-test that has already passed, one person running the room",
+      "That's how I'd run it from the commissioning seat"
+     ],
+     "source": "Backup scripts (45–70 seconds)",
+     "topicId": "I8",
+     "cardId": "I8-sty-01"
+    }
+   ]
+  },
+  {
+   "id": "mock-3",
+   "title": "Mock 3",
+   "questions": [
+    {
+     "id": "mock-3-q1",
+     "kind": "values",
+     "prompt": "A mistake you made.",
+     "followUp": "What would you do differently in the moment?",
+     "par": 90,
+     "beats": [
+      "Own your part first: 7 months in · SF data center · dirty head",
+      "No test mode, didn't pull the head, canned air from under the floor",
+      "Alarm → evacuation → fire department at rush hour",
+      "Didn't reset; confirmed, silenced, met the trucks and owned it",
+      "On test first · isolation-to-return-to-normal scripts · vacuum, don't blow → nobody learns about your test from an evacuation"
+     ],
+     "source": "Likely questions and day-of checklist › Values and judgment (the 65%)",
+     "topicId": "I6",
+     "cardId": "I6-sty-01"
+    },
+    {
+     "id": "mock-3-q2",
+     "kind": "technical",
+     "prompt": "A clean agent room fails its door fan test a week before turnover.",
+     "followUp": "Turnover is going ahead anyway — what do you document?",
+     "par": 105,
+     "beats": [
+      "Find leaks under depressurization (smoke pencil, thermal camera)",
+      "Cable and conduit penetrations, raised floor, ceiling plenum, dampers",
+      "Seal and retest",
+      "Never just add agent — that changes concentration against NOAEL and the overpressure vent sizing",
+      "If turnover proceeds, document the risk acceptance"
+     ],
+     "source": "Likely questions and day-of checklist › Commissioning technical (the 35%)",
+     "topicId": "G2"
+    },
+    {
+     "id": "mock-3-q3",
+     "kind": "values",
+     "prompt": "Tell me about a disagreement with a contractor or another trade during testing.",
+     "followUp": "What would you do differently?",
+     "par": 90,
+     "beats": [
+      "Facts in the script",
+      "Criteria from the BOD",
+      "Escalate on the issues log",
+      "Never in the hallway"
+     ],
+     "source": "Likely questions and day-of checklist › Values and judgment (the 65%)",
+     "topicId": "C7"
+    },
+    {
+     "id": "mock-3-q4",
+     "kind": "technical",
+     "prompt": "Why not clean agent on a lithium-ion battery fire?",
+     "followUp": "So what does protect the rack?",
+     "par": 90,
+     "beats": [
+      "Agent does not cool cells in thermal runaway",
+      "Re-ignition follows once concentration decays",
+      "Water cools",
+      "Off-gas detection buys minutes",
+      "Vent gas is flammable, so explosion control matters"
+     ],
+     "source": "Likely questions and day-of checklist › Commissioning technical (the 35%)",
+     "topicId": "B2"
+    },
+    {
+     "id": "mock-3-q5",
+     "kind": "values",
+     "prompt": "What keeps you in this field — what do you do outside work?",
+     "followUp": "Which tool matters most for this role?",
+     "par": 120,
+     "beats": [
+      "\"Turn what one expert knows into something the next person can repeat\"",
+      "4 playbooks in company use → fewer go-backs, more techs can go",
+      "Thermal detection training with the manufacturer + my own camera placement tool",
+      "Night tools: EST3→EST4 priced BOM; panel capture that checks off the points list",
+      "\"Productizing a data center is the same job\""
+     ],
+     "source": "Which story answers which question",
+     "topicId": "I7",
+     "cardId": "I7-sty-01"
+    }
+   ]
+  }
+ ]
+}

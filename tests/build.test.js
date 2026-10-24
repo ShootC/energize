@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { build, bundle, transformModule, checkOffline, parsePlan } from '../build.js';
 import { readiness } from '../src/engine/rating.js';
-import { ROOT, shippedTopics, readText } from './helpers.js';
+import { ROOT, shippedTopics, readText, readJson } from './helpers.js';
 
 test('build produces one self-contained page with the data inlined', () => {
   const { html, data, modules } = build({ root: ROOT, write: false });
@@ -14,7 +14,10 @@ test('build produces one self-contained page with the data inlined', () => {
   assert.ok(html.includes('<template id="doc-guide">') && html.includes('<template id="doc-scripts">'));
   assert.equal(data.topics.length, 65);
   assert.equal(data.sample.length, 10);
-  assert.deepEqual(data.questions, []);
+  // The real bank and the mock decks are inlined as written (Phase 2).
+  assert.equal(data.questions.length, readJson('src/data/questions.json').length);
+  assert.ok(data.questions.length >= 300, `${data.questions.length} questions`);
+  assert.equal(data.mock.decks.length, 3);
   assert.equal(data.plan.length, 14);
   assert.equal(data.checklist.length, 5);
   assert.ok(modules.includes('src/engine/scheduler.js') && modules.includes('src/ui/app.js'));

@@ -98,7 +98,9 @@ function boot() {
   app.storageOk = ok;
   Object.assign(app, resolveToday());
 
-  app.usingSample = !app.data.questions.length;
+  // ?deck=sample forces the sample deck (tools/smoke.js uses it); otherwise the
+  // sample deck is only a fallback while questions.json is empty.
+  app.usingSample = !app.data.questions.length || new URLSearchParams(location.search).get('deck') === 'sample';
   app.bank = app.usingSample ? app.data.sample : app.data.questions;
   app.cardById = new Map(app.bank.map((c) => [c.id, c]));
   app.countByTopic = {};
@@ -135,7 +137,7 @@ function topBar() {
     mode: dayMode(app.today),
     xp: app.state.xp,
     dayStreak: currentDayStreak(app.state, app.today),
-    deckNote: app.usingSample ? `Sample deck — ${app.bank.length} cards (src/data/questions.json is empty until Phase 2)` : '',
+    deckNote: app.usingSample ? `Sample deck — ${app.bank.length} cards (${app.data.questions.length ? '?deck=sample' : 'src/data/questions.json is empty'})` : '',
   });
 }
 

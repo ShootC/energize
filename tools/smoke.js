@@ -2,6 +2,8 @@
 // Headless smoke test of dist/index.html in real Chrome, over the DevTools
 // protocol (no npm dependencies). Plays a full shift at 390×844 with the
 // network disabled, then checks persistence, export/import and special days.
+// The first pass pins the sample deck (?deck=sample) so its expectations are
+// stable; the second pass plays the real bank (src/data/questions.json).
 //
 //   node tools/smoke.js [--chrome <path>] [--shots <dir>] [--keep]
 //
@@ -136,9 +138,9 @@ async function main() {
   const click = (sel) => evaluate(`(() => { const el = document.querySelector(${JSON.stringify(sel)}); if (!el) return false; el.click(); return true; })()`);
 
   // ---- first run: fresh state, Sat Oct 24 ----
-  await open('?date=2026-10-24');
+  await open('?date=2026-10-24&deck=sample');
   await evaluate('localStorage.clear()');
-  await open('?date=2026-10-24');
+  await open('?date=2026-10-24&deck=sample');
   await shot('01-home');
 
   const topics = JSON.parse(readFileSync(join(ROOT, 'content/topics.json'), 'utf8'));
@@ -226,7 +228,7 @@ async function main() {
   check('state: 9 results in history, shift completed, XP awarded', after.history === 9 && after.last === '2026-10-24' && after.xp > 50, `xp ${after.xp}`);
 
   // ---- persistence ----
-  await open('?date=2026-10-24');
+  await open('?date=2026-10-24&deck=sample');
   const persisted = await evaluate('({ history: energize.state.history.length, label: document.querySelector("#start-shift")?.textContent || document.querySelector(".done")?.textContent })');
   check('persistence: reload keeps history and knows the shift is done', persisted.history === 9 && /Shift done/.test(persisted.label), persisted.label);
   const overallAfter = await text('#r-overall');
@@ -251,7 +253,7 @@ async function main() {
   check('topics export has the topics.json shape', Array.isArray(topicsOut) && topicsOut.length === 65 && Object.keys(topicsOut[0]).join() === Object.keys(topics[0]).join());
 
   // ---- Browse + deep link ----
-  await open('?date=2026-10-24');
+  await open('?date=2026-10-24&deck=sample');
   await click('#nav-browse');
   const headings = await evaluate('document.querySelectorAll(".doc h2").length');
   check('browse: study guide rendered', headings > 10, `${headings} sections`);
@@ -266,18 +268,50 @@ async function main() {
     ['2026-11-01', /the sweep/, 'Nov 1 sweep'],
     ['2026-11-02', /Interview day/, 'Nov 2 interview day'],
   ]) {
-    await open(`?date=${d}`);
+    await open(`?date=${d}&deck=sample`);
     const t = await evaluate('document.body.innerText');
     check(`special day: ${name}`, expect.test(t), (t.match(expect) || [''])[0]);
     await shot(`08-${d}`);
   }
-  await open('?date=2026-11-02');
+  await open('?date=2026-11-02&deck=sample');
   const interviewSlots = await evaluate('(() => { document.getElementById("start-shift")?.click(); return energize.state.currentShift?.slots.map((s) => s.slot) || []; })()');
   // The sample deck has no I1 card, so no intro slot here.
   check('Nov 2: six confidence cards from Locked In / Minor Refresh topics', interviewSlots.length === 6 && interviewSlots.every((s) => s === 'confidence'), JSON.stringify(interviewSlots));
   await open('?date=2026-11-03');
   const finalText = await evaluate('document.body.innerText');
   check('after Nov 2: final campus screen', /The campus is commissioned/.test(finalText));
+
+  // ---- the real bank: play the Oct 24 shift with right answers ----
+  await open('?date=2026-10-24');
+  await evaluate('localStorage.clear()');
+  await open('?date=2026-10-24');
+  const bankInfo = await evaluate('({ n: energize.bank.length, sample: energize.usingSample, label: document.querySelector("#start-shift")?.textContent })');
+  check('bank: the app uses questions.json', bankInfo.sample === false && bankInfo.n >= 300, `${bankInfo.n} cards · ${bankInfo.label}`);
+  check('bank: the Oct 24 shift is 15 cards', /· 15 cards ·/.test(bankInfo.label || ''), bankInfo.label);
+  await click('#start-shift');
+  const bankPlanned = await evaluate('energize.state.currentShift.slots.map((s) => s.topicId + ":" + s.type + ":" + s.slot)');
+  console.log(`  bank shift: ${bankPlanned.join(' ')}`);
+  const bankPlayed = [];
+  for (let i = 0; i < 40; i++) {
+    const onCard = await evaluate('!!document.querySelector(".card")');
+    if (!onCard) break;
+    const r = await evaluate(`(${playCard})(false)`);
+    bankPlayed.push(r);
+    if (i === 0) await shot('09-bank-card');
+    const next = await evaluate(`(() => { const b = [...document.querySelectorAll('.result button')].pop(); b.click(); return b.textContent; })()`);
+    await evaluate('new Promise((r) => setTimeout(r, 30))');
+    if (next === 'Finish') break;
+  }
+  console.log(`  bank played: ${bankPlayed.map((p) => `${p.id}=${p.result}`).join(' ')}`);
+  const notClean = bankPlayed.filter((p) => p.result !== 'Clean' && !(/-sty-/.test(p.id) && p.result === 'Slipped'));
+  check('bank: every card in the shift rendered and graded', bankPlayed.length >= 15 && bankPlayed.every((p) => /^(Clean|Slipped|Missed)$/.test(p.result || '')), `${bankPlayed.length} cards`);
+  check('bank: right answers grade clean (a 0-second story may slip)', notClean.length === 0, notClean.map((p) => `${p.id}=${p.result}`).join(' '));
+  await shot('10-bank-debrief');
+  const bankHeadline = await text('.debrief .headline');
+  check('bank: debrief headline', /^\d+ of \d+ framework right · \d+ close · \d+ clean$/.test(bankHeadline || ''), bankHeadline);
+  await open('?date=2026-11-02');
+  const bankNov2 = await evaluate('(() => { document.getElementById("start-shift")?.click(); return energize.state.currentShift?.slots.map((s) => s.slot) || []; })()');
+  check('bank: Nov 2 = six confidence cards, then the 60-second intro', bankNov2.length === 7 && bankNov2.slice(0, 6).every((s) => s === 'confidence') && bankNov2[6] === 'intro', JSON.stringify(bankNov2));
 
   check('no console errors or exceptions', errors.length === 0, errors.slice(0, 3).join(' | '));
   const remote = requests.filter((u) => !/^(file|data|blob|about|chrome):/.test(u));
