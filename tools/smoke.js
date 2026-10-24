@@ -3,7 +3,8 @@
 // protocol (no npm dependencies). Plays a full shift at 390×844 with the
 // network disabled, then checks persistence, export/import and special days.
 // The first pass pins the sample deck (?deck=sample) so its expectations are
-// stable; the second pass plays the real bank (src/data/questions.json).
+// stable; the second pass plays the real bank (src/data/questions.json); the
+// third visits every screen and card type, checking none scrolls sideways.
 //
 //   node tools/smoke.js [--chrome <path>] [--shots <dir>] [--keep]
 //
@@ -312,6 +313,100 @@ async function main() {
   await open('?date=2026-11-02');
   const bankNov2 = await evaluate('(() => { document.getElementById("start-shift")?.click(); return energize.state.currentShift?.slots.map((s) => s.slot) || []; })()');
   check('bank: Nov 2 = six confidence cards, then the 60-second intro', bankNov2.length === 7 && bankNov2.slice(0, 6).every((s) => s === 'confidence') && bankNov2[6] === 'intro', JSON.stringify(bankNov2));
+
+  // ---- Phase 3: every screen reachable at 390×844 (real bank, offline) ----
+  const fits = () => evaluate('document.documentElement.scrollWidth <= window.innerWidth + 1');
+  const settle = (ms = 80) => evaluate(`new Promise((r) => setTimeout(r, ${ms}))`);
+  const screenCheck = async (name, ok, detail = '') => {
+    const noScroll = await fits();
+    check(`screen: ${name}`, ok && noScroll, `${detail}${noScroll ? '' : ' · scrolls sideways'}`);
+    await shot(`20-${name.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}`);
+  };
+
+  await open('?date=2026-10-24');
+  await evaluate('localStorage.clear()');
+  await open('?date=2026-10-24');
+  const homeInfo = await evaluate('({ blds: document.querySelectorAll(".map .bld").length, rows: document.querySelectorAll(".bld-row").length, lit: document.querySelectorAll(".map .win.on").length, gear: !!document.getElementById("nav-settings"), nav: document.querySelectorAll("nav.secondary .btn").length })');
+  await screenCheck('home campus map', homeInfo.blds === 10 && homeInfo.rows === 10 && homeInfo.lit > 0 && homeInfo.gear && homeInfo.nav === 4, JSON.stringify(homeInfo));
+
+  // Building view from a tap on the map, then Drill this.
+  await evaluate('document.querySelector(".map .bld[data-building=\\"hq\\"]").dispatchEvent(new MouseEvent("click", { bubbles: true }))');
+  await settle();
+  const bInfo = await evaluate('({ title: document.querySelector(".building-view h1")?.textContent, topics: document.querySelectorAll(".building-view .topic").length, art: !!document.querySelector(".map.art") })');
+  await screenCheck('building view', bInfo.title === 'Commissioning trailer' && bInfo.topics === 7 && bInfo.art, JSON.stringify(bInfo));
+  await click('.building-view .btn.drill');
+  await settle();
+  check('building: Drill this starts a drill', (await evaluate('energize.state.currentShift?.kind')) === 'drill' && !!(await text('.card')));
+  await click('#pause-shift');
+  await settle();
+
+  // Every card type renders with its control.
+  for (const [type, id, control] of [
+    ['number', 'S3-num-01', '#fcode'],
+    ['order', 'P5-ord-01', '.pool .btn.step'],
+    ['matrix', 'C4-mat-02', 'button.cell'],
+    ['scenario', 'P6-scn-01', '.timer'],
+    ['story', 'I3-sty-01', '.chip'],
+    ['defect', 'P5-def-02', '.lines .line'],
+  ]) {
+    await open(`?date=2026-10-24&card=${id}`);
+    const ok = await evaluate(`!!document.querySelector(".card.type-${type}") && !!document.querySelector(${JSON.stringify(control)})`);
+    await screenCheck(`card ${type}`, ok, id);
+  }
+
+  // A miss shows the hook and a re-read link that deep-links into Browse.
+  await open('?date=2026-10-24&card=S3-num-01');
+  await evaluate(`(() => { ['90','100','4','2'].forEach((v, i) => { const e = document.getElementById('f' + i); e.value = v; e.dispatchEvent(new Event('input', { bubbles: true })); }); const c = document.getElementById('fcode'); c.value = 'NFPA 72'; c.dispatchEvent(new Event('input', { bubbles: true })); [...document.querySelectorAll('button')].find((b) => b.textContent === 'Submit').click(); })()`);
+  await settle();
+  const rInfo = await evaluate('({ head: document.querySelector(".result h2")?.firstChild?.textContent, hook: !!document.querySelector(".result .hook"), level: document.querySelector(".result").className })');
+  await screenCheck('result after a miss', rInfo.head === 'Missed' && rInfo.hook && /lvl-ni/.test(rInfo.level), JSON.stringify(rInfo));
+  await click('.result .reread a');
+  await settle(300);
+  const dl = await evaluate('({ flashed: document.querySelector(".doc .flash")?.textContent, y: Math.round(scrollY) })');
+  await screenCheck('browse deep link', dl.flashed === 'Sprinkler and underground' && dl.y > 1000, JSON.stringify(dl));
+  await click('.browse-bar .btn.back');
+  await settle();
+  // A one-card drill is finished, so Back from Browse lands on its debrief.
+  check('browse: Back returns to the shift (its debrief, the drill being done)', !!(await text('.debrief, .card')));
+
+  // Stories, Blitz, settings from the home screen.
+  await open('?date=2026-10-24');
+  await click('#nav-stories');
+  await settle();
+  await screenCheck('stories', (await evaluate('document.querySelectorAll(".story-row").length')) === 10, '10 story cards');
+  await open('?date=2026-10-24');
+  await click('#nav-blitz');
+  await settle();
+  await click('.blitz-card .btn.primary');
+  await settle();
+  await screenCheck('number blitz', (await evaluate('!![...document.querySelectorAll(".blitz button")].find((b) => b.textContent === "Knew it")')), 'reveal → Knew it / Nope');
+  await open('?date=2026-10-24');
+  await click('#nav-settings');
+  await settle();
+  await screenCheck('settings', (await evaluate('!!document.getElementById("cards-per-shift") && !!document.getElementById("set-sound") && !!document.getElementById("set-haptics")')), 'cards per shift · sound · haptics');
+
+  // Mock interview: a whole deck to the debrief.
+  await open('?date=2026-10-25');
+  await click('#nav-mock');
+  await settle();
+  await screenCheck('mock deck list', (await evaluate('document.querySelectorAll(".deck-row").length')) === 3 && (await evaluate('!!document.querySelector(".deck-row.today")')), 'Mock 1 flagged on Oct 25');
+  await click('#deck-mock-1');
+  await settle();
+  await screenCheck('mock question', !!(await text('.mock-q')) && !!(await text('#mock-done')), 'prompt + timer');
+  for (let k = 0; k < 5; k++) {
+    await click('#mock-done');
+    await click('#mock-reveal');
+    await evaluate('(() => { document.querySelectorAll(".beats input").forEach((b) => (b.checked = true)); const n = document.getElementById("mbnum"); if (n) n.checked = true; })()');
+    await click('#mock-grade');
+  }
+  await settle();
+  const mh = await text('#mock-headline');
+  await screenCheck('mock debrief', /^5 of 5 framework right · 0 close · 5 clean$/.test(mh || ''), mh);
+
+  // Interview-day home offers nothing but the shift.
+  await open('?date=2026-11-02');
+  const nov2 = await evaluate('({ gear: !!document.getElementById("nav-settings"), nav: document.querySelectorAll("nav.secondary .btn").length, list: document.querySelectorAll(".bld-row").length, interactive: !!document.querySelector(".map.interactive") })');
+  await screenCheck('Nov 2 home', !nov2.gear && nov2.nav === 0 && nov2.list === 0 && !nov2.interactive, JSON.stringify(nov2));
 
   check('no console errors or exceptions', errors.length === 0, errors.slice(0, 3).join(' | '));
   const remote = requests.filter((u) => !/^(file|data|blob|about|chrome):/.test(u));

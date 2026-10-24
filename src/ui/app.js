@@ -464,7 +464,7 @@ function stories() {
 
 function mock() {
   const planRow = app.data.plan.find((x) => x.date === app.today);
-  const m = planRow && /Mock interviews*(d)/i.exec(planRow.interview || '');
+  const m = planRow && /Mock interview\s*(\d)/i.exec(planRow.interview || '');
   mount(
     app.root,
     mockScreen({

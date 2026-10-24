@@ -54,25 +54,56 @@ Sub-sessions 2a–2d ran as four parallel forks of one session and were merged; 
 - **App.** `?deck=sample` forces the sample deck (otherwise it is only the empty-bank fallback). `tools/smoke.js` now runs two passes: the original sample-deck checks (`?date=2026-10-24&deck=sample`) and a real-bank pass that plays the Oct 24 shift with right answers (every card clean; a 0-second story slips), checks the debrief, and checks Nov 2 = six confidence cards + the I1 intro. 34/34.
 - **Verified.** `npm test` 87/87 · `node build.js` → `dist/index.html` 678 KB · `node tools/smoke.js` 34/34 · a quick fact audit (every number field, every codeRef section token, every story paragraph found in the guide / scripts) reports nothing except deliberately planted defect values — Phase 4 writes the real `scripts/audit.js`.
 
+### Phase 3 · Full UI and campus map (Opus, Oct 23–24)
+
+Six commits, one per deliverable. Everything in `src/ui/` was rebuilt on the Phase 1 engine; one pure engine module was added (`src/engine/mock.js`).
+
+- **Design tokens and base styles** (`src/ui/styles.css`): dark campus palette as CSS variables — one amber accent (coming up, Minor Refresh, slipped), warm white (energized, Locked In, clean), amber-dim (Needs Improvement), red only for Not Ready; overtime and wrong items are amber, never red. 17px body, ≥48px tap targets, inputs ≥16px (no iOS zoom), safe-area padding, 640px page, reduced-motion guard. No external fonts or images.
+- **Campus map** (`src/ui/map.js`): an original flat isometric SVG, hand-rolled projection, ten buildings placed so the conference room is front and center. Each building's windows light in proportion to its area's weighted readiness (scattered by a seeded shuffle), amber while coming up; when the §3 energize rule is met the building turns warm white with a halo. A building that energized during a shift plays a light-up (windows flick on one by one, then the glow) on the next home visit (`app.pendingCelebrate`). Buildings are tappable and keyboard-focusable; the list below repeats them with readiness bars. `buildingArt()` draws one building alone for the building view.
+- **Header**: date, days to Nov 2, readiness overall / on tested / N of 65 tiles (with an 85% target tick), Core-below-Minor count, streak flame + XP, settings gear, special-day banner.
+- **Cards** (`src/ui/cards.js`, `src/ui/audio.js`): all six types per spec §4 — see the checklist below. Timers and the microphone stop on every route change (`stopCardActivity`).
+- **Result screen**: Clean / Slipped / Missed coloured by ladder level, animated check on clean, XP, the correction from the guide, the hook on a miss, a per-item review (fields, step positions, matrix cells with notes, ticked beats, the planted line), the story script with numbers highlighted and the recording to play back, the rating change as pills, the re-read deep link. Haptic tick and a soft Web Audio chime on clean (Settings → Haptics / Sound).
+- **Screens** (`src/ui/screens.js`, `src/ui/boss.js`): building view, shift debrief, Browse, Number Blitz, stories, Mock Interview, settings, Nov 2 and post-interview screens.
+- **Mock interview**: `src/engine/mock.js` grades an answer like a scenario — problems = beats missed + no number (only when the model answer carries one) + over par; 0 clean, 1 close, more missed; framework if ≥ half the beats. Headline in the morning-quiz format, weakest answer, re-read list. Practice only — no rating changes. 5 tests in `tests/mock.test.js`, including every shipped question grading clean on a perfect answer.
+- **Dev parameters**: `?date=YYYY-MM-DD`, `?deck=sample`, and new `?card=<id>` (opens one card as a practice drill — handy for Phase 4 and 5). `window.energize.go(route, arg)` navigates from the console.
+- **Verified**: `npm test` 92/92 · `node build.js` → `dist/index.html` 758 KB · `node tools/smoke.js` 53/53 — the third pass visits every screen and card type at 390×844 with the network disabled, checks each renders its key parts and none scrolls sideways, runs a full mock deck to its debrief, follows a missed card's re-read link into Browse (scrolls to and flashes the heading) and back, and checks the Nov 2 home offers nothing but the shift. No console errors, zero network requests. Screenshots of every screen were reviewed by eye during the build.
+
+#### Screen-by-screen checklist (Phase 3)
+
+| Screen | How to reach it | What it shows / does | Checked |
+| --- | --- | --- | --- |
+| Home | open the page | header tiles, campus map (tap a building), energize light-up, Start shift (cards · minutes), hint, Number Blitz · Stories · Mock interview · Browse, building list | smoke + shots |
+| Shift card | Start shift | progress dots (follow-ups smaller), slot kind + topic + rating pill, Pause | smoke + shots |
+| · Number | any `-num-` card | labelled blanks + code section, blank counter, Submit locked until all filled, Enter advances | smoke |
+| · Order | any `-ord-` card | numbered slots, tap to place, tap a placed step to send it back, Undo | smoke |
+| · Matrix | any `-mat-` card | stacked per input, tap cycles the card's options (custom ones too), "—" is an answer | smoke |
+| · Scenario | any `-scn-` card | par countdown (overtime amber), optional typed bullets, Reveal → beat checklist, fill-in beats shown not graded, said a number / named the code | smoke |
+| · Story | any `-sty-` card | elapsed bar with the shaded target window, beat chips, optional Record (local only), Done speaking | smoke (recording not automatable headless) |
+| · Defect | any `-def-` card | tap a line, confirm | smoke |
+| Result | after any card | see Done above; Next / Finish is the last button | smoke |
+| Debrief | finish a shift | headline, before → after tiles, energized buildings, re-read tonight links, tonight's plan, Keep going | smoke |
+| Building | tap a building | building art, readiness, distance to energize, quote, topics with Drill this | smoke |
+| Browse | nav or a re-read link | tabs, search with highlighted snippets, contents list, deep link scroll + flash | smoke |
+| Number Blitz | nav | 60 s from the first reveal, Knew it / Nope, best score | smoke |
+| Stories | nav | the 10 story cards with target windows and ratings | smoke |
+| Mock interview | nav | deck list (today's deck flagged from the plan), answer → follow-up → grade ×5, debrief | smoke |
+| Settings | gear | cards per shift, sound, haptics, import file / paste, export topics.json / state.json, reset | smoke |
+| Cutover / sweep | `?date=2026-10-27` / `2026-11-01` | banner, 10 / 20-card shifts, Mock N today | smoke + shots |
+| Nov 2 | `?date=2026-11-02` | quick confidence cards + the 60-second intro, nothing else; then "Stop. You're ready. Go win it." + day-of checklist | smoke + shots |
+| After Nov 2 | `?date=2026-11-03` | "The campus is commissioned.", the final campus, totals; gear kept for export | smoke + shots |
+
 ## In progress
 
-**Phase 3 · Full UI (Opus, started Oct 23) — 2 of 6 deliverables done.**
+- Nothing. Next: **Phase 4** (accuracy audit, Fable) — then Phase 5 (phone QA + ship, Opus).
 
-- Done, committed: (1) design tokens and base styles in `src/ui/styles.css` (amber accent, warm white for energized / Locked In, red only for Not Ready, 17px body, 48px taps, safe-area padding; `dom.js` adds `s()` for SVG, `pill()`, `chime()`, `mmss()`); (2) the isometric campus map `src/ui/map.js` on the home screen (windows lit by weighted readiness, energize halo and light-up via `app.pendingCelebrate`, tappable buildings, building list, new header with settings gear `#nav-settings`). Tests 87/87, smoke 34/34.
-- Left: (3) card UIs for all six types per spec §4 (story audio record with MediaRecorder, scenario `fillIn` beats as disabled chips, matrix stacked per input for phones); (4) debrief, building view (use `buildingArt()` from map.js), browse, Number Blitz, Mock Interview from `mock.json` (replace `mockStub`; grade like a scenario, headline in the morning-quiz format), settings; (5) special-day polish, final screen with the map, haptics/chime on clean; (6) headless check at 390×844 and the screen-by-screen checklist here.
-- Keep the smoke hooks: `#r-overall`, `#start-shift`, `#nav-browse`, `#nav-settings`, `#export-state`, `#export-text`, `#import-paste`, `#settings-msg`, `#browse-search`, the button texts `Submit`, `Submit order`, `Submit matrix`, `Reveal`, `Grade it`, `Done speaking`, `This line`, `Reset progress`, `.result h2` starting with Clean/Slipped/Missed and the Next button as the last `.result button`.
-- A screenshot helper for any screen lives outside the repo; `node tools/smoke.js --shots <dir>` also saves screenshots.
+## For the next sessions (Phase 4 audit, Phase 5 ship)
 
-## For the next session (Phase 3 — UI)
-
-What the bank contains that the UI has to render well (the stub UI handles all of it; make it good):
-
-- **Number cards**: 1–5 fields plus the code blank; some fields are **word answers** (string `value`, e.g. "detection", "OPR", "weekly") — render with `inputmode="text"`; labels carry units. `confirmInEdition` cards label the blank "Standard" and show the confirm line after grading.
-- **Matrix cards**: up to 6 columns (C4-mat-03, B2-mat-01) and custom `options` beyond ● / — / per BOD: "Supervisory" (C4-mat-02, K3-mat-01), "Trouble" (C4-mat-03, A3-mat-01), High / Low / Breathing zone (B3-mat-01), and several ●/— only grids. Tables need a sideways-scroll or stacked layout on a phone.
-- **Scenario cards**: `par` is the countdown and ranges 30 s (story follow-ups, "15 seconds each") to 120 s. Some beats are objects with `fillIn: true` (I3-scn-01, I4-scn-02, I7-scn-01/02, I11-scn-01): the grader ignores them, but the stub still renders a checkbox — show them as disabled "fill in" chips like story cards do.
-- **Story cards** (10): `answer.timing` varies — default 90/120/150; Story 4 60/100/150; backups 45/70/90; I1 45/60/75; I2 30/45/60. Scripts contain `[bracketed]` fill-in lines; `highlightScript` marks numbers.
-- **Mock interview**: `src/data/mock.json` is real now (3 decks); the screen is still a stub.
-- First-shift mix: bank order is the picker's last tie-break, so the merged file alternates type order by topic (decision 26). A fresh Oct 24 shift is C1 number · C2 defect · C4 order · C7 number · S2 number · S3 defect · C6 order · S6 number · P1 matrix · P2 number · P3 defect · P5 order · P6 number · P8 number · I3 story — 15 planned cards, and each clean first card adds a follow-up on its topic (decision 4), so an all-clean run plays up to 29. The progress label uses `slots.length`, so it already reads "Card 16 of 29".
+- **Phase 4** only touches `src/data/*.json` (and writes `scripts/audit.js`). To eyeball a card after fixing it: `node build.js`, then open `dist/index.html?card=<id>`. Decision 35 lists the hypothetical numbers in prompts and planted defect lines that are deliberately not guide facts.
+- **Phase 5** builds on this UI. Things it should know:
+  - Story recording uses `getUserMedia`, which most browsers refuse on `file://`; the card then says "Microphone not available here" and works without it. Served over https (GitHub Pages) it should prompt once — verify on a real phone.
+  - Smoke hooks to keep: `#r-overall`, `#start-shift`, `#nav-settings` (the gear), `#nav-browse`, `#nav-blitz`, `#nav-stories`, `#nav-mock`, `#pause-shift`, `#export-state`, `#export-topics`, `#export-text`, `#import-paste`, `#settings-msg`, `#browse-search`, `#deck-mock-N`, `#mock-done`, `#mock-reveal`, `#mock-grade`, `#mock-headline`; button texts `Submit`, `Submit order`, `Submit matrix`, `Reveal`, `Grade it`, `Done speaking`, `This line`, `Reset progress`; `.result h2` starts with Clean / Slipped / Missed and Next / Finish is the last `.result button`.
+  - Landscape and 430×932 are untested; the layout is a single 640px column, so it should hold.
+  - First paint: the page is one 758 KB file (the rendered guide is ~half of it, inside `<template>` so it isn't laid out until Browse opens).
 
 ### Adding or fixing cards later
 
@@ -233,27 +264,27 @@ Phase 2 (question bank):
 - I4-scn-02 (transport time) could carry `codeRef: "NFPA 72"` for the +10 tick; left null.
 - Grader quirks, not card errors: "20-14" (hyphenated chapter) does not match "NFPA 20 Chapter 14"; "NFPA 20" alone fails on Chapter 14 cards; "9540A" needs the alias form (present).
 
-## Known rough edges (for Phase 3)
+## Known rough edges
 
-- Looks: plain dark styles, a building *list* with text "windows" instead of the isometric SVG campus, no energize animation, no sound (the setting exists), haptics only on clean.
-- Story card: no audio record / playback yet (MediaRecorder is Phase 3).
-- Mock interview: stub screen (the data exists). Number Blitz: minimal.
-- Scenario `fillIn` beats render as checkboxes (ignored by the grader); they should be disabled "fill in" chips.
-- Matrix tables scroll sideways on a phone with long labels; the bank has 6-column grids.
-- Browse: search lists matching sections with a snippet; no in-text highlighting.
+- Story recording is unverified on a real phone (headless Chrome has no microphone, and `file://` usually refuses it).
+- The Start shift label shows the planned cards and minutes; clean first answers add follow-ups (decision 4), so a strong day runs longer than the estimate. The hint under the button says so.
+- Number Blitz shuffles with `Math.random`, so two runs differ — on purpose.
+- Mock interview results are not saved; the debrief is one screen and gone when you leave it.
+- Browse deep links go to the longest matching *heading*; sources that end in a bold label or "table" land on the section heading above it.
 - Story highlighting marks digits and number words in the script; it can over-mark (e.g. "one" in "nobody owned that gap").
+- The map's small buildings (Field office, HQ, Pump) are ~40px tap targets on a 390px screen; the building list below the map is the full-size alternative.
 
 ## How to run
 
 Needs Node ≥ 20 (built on 24). No npm install — there are no dependencies.
 
 ```
-npm test                                   # 87 engine / data / bank / build tests
+npm test                                   # 92 engine / data / bank / mock / build tests
 node validate.js src/data/questions.json   # schema check for the bank (also sample.json, mock.json); add --strict
 node validate.js --headings                # headings a card's source may start with
 node build.js                              # → dist/index.html
-node tools/smoke.js [--shots <dir>]        # headless Chrome/Edge: sample-deck pass + real-bank pass (390×844, offline)
+node tools/smoke.js [--shots <dir>]        # headless Chrome/Edge at 390×844, offline: sample deck, real bank, every screen
 npm run check                              # tests + validate + build
 ```
 
-Play: open `dist/index.html` in any browser (double-click works; `file://` is fine). Add `?date=2026-11-01` (or `2026-10-26`, `2026-11-02`, `2026-11-03`) to test special days; `?deck=sample` forces the 10-card sample deck. State lives in `localStorage` under `energize.state.v1`; Settings → Reset clears it.
+Play: open `dist/index.html` in any browser (double-click works; `file://` is fine). Add `?date=2026-11-01` (or `2026-10-26`, `2026-11-02`, `2026-11-03`) to test special days; `?deck=sample` forces the 10-card sample deck; `?card=P2-num-01` opens one card. State lives in `localStorage` under `energize.state.v1`; Settings → Reset clears it.
