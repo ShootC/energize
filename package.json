@@ -1,0 +1,16 @@
+{
+  "name": "energize",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ENERGIZE — single-file offline study game for the Fluidstack fire-protection Cx interview",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/",
+    "build": "node build.js",
+    "validate": "node validate.js src/data/questions.json",
+    "check": "node --test tests/ && node validate.js src/data/sample.json && node validate.js src/data/questions.json && node build.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

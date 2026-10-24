@@ -1,0 +1,8 @@
+# The original kit (duplicated into the repo root and content/)
+energize-kit/
+energize-kit.zip
+
+node_modules/
+.DS_Store
+Thumbs.db
+*.log
