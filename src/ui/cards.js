@@ -38,7 +38,7 @@ const isFillIn = (b) => !!(b && typeof b === 'object' && b.fillIn);
 // A bar that fills over `total` seconds. countdown: shows time left, then
 // "+0:12 over" (amber — overtime is a slip, never red). window: shows elapsed
 // time against a shaded target band [min, max] and a limit marker.
-function timerBar({ total, band = null, limit = null, kind = 'countdown' }) {
+export function timerBar({ total, band = null, limit = null, kind = 'countdown' }) {
   const fill = h('div', { class: 'timer-fill' });
   const text = h('span', { class: 'timer-label num' });
   const pct = (x) => `${Math.max(0, Math.min(100, (x / total) * 100))}%`;

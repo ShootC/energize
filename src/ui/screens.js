@@ -1,8 +1,8 @@
-// Screens (stubs — ugly but working). Phase 3 replaces the look and adds the
-// campus map; the data each screen needs is already computed by the engine.
+// Screens: header, home, building, debrief, final, stories, Blitz, settings,
+// browse. The data each screen needs is computed by the engine; these only draw.
 
-import { h, s } from './dom.js';
-import { campusMap } from './map.js';
+import { h, s, mount, pill, ratingClass, mmss } from './dom.js';
+import { campusMap, buildingArt } from './map.js';
 import { formatPercent, POINTS } from '../engine/rating.js';
 import { formatDay } from '../engine/dates.js';
 
@@ -135,28 +135,65 @@ export function homeScreen({ status, buildings, mode, primary, hint, secondary, 
   );
 }
 
-export function buildingScreen({ building, topics, cardCount, onDrill, onBack }) {
+// ---------- building view ----------
+
+function shortDate(iso) {
+  if (!iso) return '—';
+  try {
+    return formatDay(iso).replace(/^\w+\s/, '');
+  } catch {
+    return iso;
+  }
+}
+
+function topicCard(t, count, onDrill) {
+  return h(
+    'li',
+    { class: `topic ${ratingClass(t.rating)}` },
+    h('div', { class: 'topic-head' }, h('b', { class: 'topic-id' }, t.id), h('span', { class: 'topic-name' }, t.topic)),
+    h('div', { class: 'topic-meta' }, pill(t.rating, `${t.rating} · ${POINTS[t.rating]}`), h('span', {}, t.weight), h('span', {}, `streak ${t.streak}`), h('span', {}, `${t.tests} test${t.tests === 1 ? '' : 's'}`), h('span', {}, `next ${shortDate(t.next_review)}`)),
+    t.last_result ? h('p', { class: 'topic-last' }, `Last: ${t.last_result}`) : null,
+    h('button', { class: 'btn small drill', type: 'button', disabled: !count, onclick: () => onDrill(t.id) }, count ? `Drill this · ${count} card${count > 1 ? 's' : ''}` : 'No cards yet'),
+  );
+}
+
+export function buildingScreen({ building, status, topics, cardCount, onDrill, onBack }) {
   const own = topics.filter((t) => t.area === building.area);
+  const below = own.filter((t) => POINTS[t.rating] < POINTS['Minor Refresh']).length;
+  const rule = status.energized
+    ? h('p', { class: 'rule met' }, 'Energized: every topic is at least Minor Refresh and ', h('b', {}, `${Math.round(status.lockedShare * 100)}%`), ' of the weight is Locked In.')
+    : h(
+        'p',
+        { class: 'rule' },
+        'To energize: ',
+        below ? h('b', {}, `${below} topic${below > 1 ? 's' : ''} below Minor Refresh`) : 'every topic at Minor Refresh or better ✓',
+        ' · Locked In weight ',
+        h('b', {}, `${Math.round(status.lockedShare * 100)}%`),
+        ' of 60%.',
+      );
   return h(
     'main',
     { class: 'building-view' },
     h('button', { class: 'btn back', type: 'button', onclick: onBack }, '← Campus'),
-    h('h2', {}, building.name),
-    h('p', { class: 'quote' }, `“${building.quote}”`),
-    h(
-      'ul',
-      { class: 'topic-list' },
-      own.map((t) =>
-        h(
-          'li',
-          { class: `rating-${t.rating.replace(/\s+/g, '-').toLowerCase()}` },
-          h('div', { class: 't-head' }, h('b', {}, t.id), ` ${t.topic}`),
-          h('div', { class: 't-meta' }, `${t.weight} · ${t.rating} (${POINTS[t.rating]}) · streak ${t.streak} · tests ${t.tests} · next ${t.next_review || '—'}`),
-          t.last_result ? h('div', { class: 't-last' }, `Last: ${t.last_result}`) : null,
-          h('button', { class: 'btn', type: 'button', disabled: !cardCount(t.id), onclick: () => onDrill(t.id) }, cardCount(t.id) ? `Drill this (${cardCount(t.id)} card${cardCount(t.id) > 1 ? 's' : ''})` : 'No cards yet'),
-        ),
-      ),
-    ),
+    h('div', { class: `building-hero ${status.energized ? 'energized' : status.readiness > 0 ? 'warm' : 'dark'}` }, buildingArt({ id: building.id, status, name: building.name })),
+    h('h1', {}, building.name),
+    h('p', { class: 'b-sub' }, `${building.area} · ${formatPercent(status.readiness, 0)} weighted readiness`),
+    rule,
+    h('blockquote', { class: 'quote' }, `“${building.quote}”`, h('cite', {}, building.quoteSource)),
+    h('h2', { class: 'section-title' }, `${own.length} topics`),
+    h('ul', { class: 'topic-list' }, own.map((t) => topicCard(t, cardCount(t.id), onDrill))),
+  );
+}
+
+// ---------- shift debrief ----------
+
+function deltaTile(label, before, after) {
+  const up = after - before;
+  return h(
+    'div',
+    { class: 'stat delta-tile' },
+    h('b', { class: 'num' }, formatPercent(after)),
+    h('span', {}, label, h('em', { class: up > 0 ? 'up' : 'flat' }, up > 0 ? ` +${(up * 100).toFixed(1)}` : ' ±0')),
   );
 }
 
@@ -164,146 +201,236 @@ export function debriefScreen({ headline, before, after, weakest, planRow, energ
   return h(
     'main',
     { class: 'debrief' },
-    h('h2', {}, kind === 'daily' ? 'Shift debrief' : 'Debrief'),
+    h('h1', {}, kind === 'daily' ? 'Shift debrief' : 'Debrief'),
     h('p', { class: 'headline' }, headline.text),
-    h(
-      'p',
-      { class: 'delta' },
-      `Readiness ${formatPercent(before.overall)} → ${formatPercent(after.overall)} overall · ${formatPercent(before.onTested)} → ${formatPercent(after.onTested)} on tested · ${after.tested} of ${after.total} tested`,
-    ),
-    energized.length ? h('div', { class: 'energized' }, energized.map((b) => h('p', {}, h('b', {}, `${b.name} energized. `), `“${b.quote}”`))) : null,
+    h('div', { class: 'readiness' }, deltaTile('overall', before.overall, after.overall), deltaTile('on tested', before.onTested, after.onTested), h('div', { class: 'stat' }, h('b', { class: 'num' }, `${after.tested} of ${after.total}`), h('span', {}, 'tested'))),
+    h('p', { class: 'delta' }, `Readiness ${formatPercent(before.overall)} → ${formatPercent(after.overall)} overall · ${formatPercent(before.onTested)} → ${formatPercent(after.onTested)} on tested · ${after.tested} of ${after.total} tested`),
+    energized.length ? h('div', { class: 'energized-note static' }, energized.map((b) => h('p', {}, h('b', {}, `${b.name} energized. `), `“${b.quote}”`))) : null,
     weakest.length
       ? h(
           'section',
-          {},
-          h('h3', {}, 'Re-read tonight'),
-          h('ul', {}, weakest.map((w) => h('li', {}, h('b', {}, `${w.topic.id} · ${w.topic.rating}`), ` ${w.topic.topic} — `, w.source ? h('a', { href: '#', onclick: (e) => { e.preventDefault(); onSource(w.source); } }, w.source) : ''))),
+          { class: 'panel' },
+          h('h2', { class: 'section-title' }, 'Re-read tonight'),
+          h(
+            'ul',
+            { class: 'reread-list' },
+            weakest.map((w) =>
+              h(
+                'li',
+                {},
+                h('div', {}, h('b', {}, w.topic.id), ' ', pill(w.topic.rating)),
+                h('div', { class: 'rr-topic' }, w.topic.topic),
+                w.source ? h('a', { href: '#', onclick: (e) => { e.preventDefault(); onSource(w.source); } }, w.source) : null,
+              ),
+            ),
+          ),
+        )
+      : h('p', { class: 'hint' }, 'Every topic in this shift had a clean session.'),
+    planRow
+      ? h(
+          'section',
+          { class: 'panel' },
+          h('h2', { class: 'section-title' }, `Tonight · day ${planRow.day} of the plan`),
+          h('p', {}, planRow.technical),
+          planRow.interview && planRow.interview !== '—' ? h('p', { class: 'hint' }, planRow.interview) : null,
         )
       : null,
-    planRow ? h('section', {}, h('h3', {}, "Tonight's plan"), h('p', {}, `Day ${planRow.day} · ${planRow.technical}${planRow.interview && planRow.interview !== '—' ? ` · ${planRow.interview}` : ''}`)) : null,
     h(
       'div',
-      { class: 'actions' },
-      moreAvailable ? h('button', { class: 'btn primary big', type: 'button', onclick: onKeepGoing }, 'Keep going · 5 more') : h('p', {}, 'Queue empty for today.'),
+      { class: 'actions stack' },
+      moreAvailable ? h('button', { class: 'btn primary big', type: 'button', onclick: onKeepGoing }, 'Keep going · 5 more') : h('p', { class: 'hint center' }, 'Queue empty for today.'),
       !moreAvailable ? h('button', { class: 'btn', type: 'button', onclick: onBlitz }, 'Number Blitz') : null,
-      !moreAvailable ? h('button', { class: 'btn', type: 'button', onclick: onStory }, 'A story') : null,
+      !moreAvailable ? h('button', { class: 'btn', type: 'button', onclick: onStory }, 'Rehearse a story') : null,
       h('button', { class: 'btn', type: 'button', onclick: onHome }, 'Campus'),
     ),
   );
 }
 
-export function finalScreen({ checklist, rd, stats, after }) {
+// ---------- final screens (Nov 2 and after) ----------
+
+export function finalScreen({ checklist, rd, stats, after, map }) {
+  const boxes = checklist.map((c, i) =>
+    h('li', {}, h('label', { class: 'row-check', for: `dc${i}` }, h('input', { type: 'checkbox', id: `dc${i}` }), h('span', {}, c))),
+  );
   return h(
     'main',
-    { class: 'final' },
-    after ? h('h2', {}, 'The campus is commissioned.') : h('h2', { class: 'go' }, "Stop. You're ready. Go win it."),
-    h('p', {}, `Readiness ${formatPercent(rd.overall)} overall · ${formatPercent(rd.onTested)} on tested · ${rd.tested} of ${rd.total} tested`),
-    stats ? h('p', {}, stats) : null,
-    checklist.length ? h('section', {}, h('h3', {}, 'Day-of checklist'), h('ul', { class: 'checklist' }, checklist.map((c, i) => h('li', {}, h('label', {}, h('input', { type: 'checkbox', id: `dc${i}` }), ' ', c))))) : null,
+    { class: `final${after ? ' after' : ' go-day'}` },
+    after ? h('h1', {}, 'The campus is commissioned.') : h('h1', { class: 'go' }, "Stop. You're ready. Go win it."),
+    map ? h('figure', { class: 'campus' }, map) : null,
+    h('p', { class: 'final-stats' }, `Readiness ${formatPercent(rd.overall)} overall · ${formatPercent(rd.onTested)} on tested · ${rd.tested} of ${rd.total} tested`),
+    stats ? h('p', { class: 'hint' }, stats) : null,
+    checklist.length && !after ? h('section', { class: 'panel' }, h('h2', { class: 'section-title' }, 'Day-of checklist'), h('ul', { class: 'checklist' }, boxes)) : null,
   );
 }
 
+// ---------- stories ----------
+
 export function storyListScreen({ cards, topics, onPick, onBack }) {
   const stories = cards.filter((c) => c.type === 'story');
+  const timing = (c) => {
+    const t = { min: 90, max: 120, ...(c.answer.timing || {}) };
+    return `${mmss(t.min)}–${mmss(t.max)}`;
+  };
   return h(
     'main',
-    {},
+    { class: 'stories' },
     h('button', { class: 'btn back', type: 'button', onclick: onBack }, '← Campus'),
-    h('h2', {}, 'Stories'),
+    h('h1', {}, 'Stories'),
+    h('p', { class: 'hint' }, 'Rehearse one out loud. It counts toward the topic like any card: hook, decision with reason, a number, the lesson.'),
     stories.length
-      ? h('ul', { class: 'topic-list' }, stories.map((c) => {
-          const t = topics.find((x) => x.id === c.topicId);
-          return h('li', {}, h('button', { class: 'btn', type: 'button', onclick: () => onPick(c) }, `${t ? t.topic : c.topicId} — ${t ? t.rating : ''}`));
-        }))
+      ? h(
+          'ul',
+          { class: 'story-list' },
+          stories.map((c) => {
+            const t = topics.find((x) => x.id === c.topicId);
+            return h(
+              'li',
+              {},
+              h(
+                'button',
+                { class: 'story-row', type: 'button', onclick: () => onPick(c) },
+                h('span', { class: 'sr-title' }, c.prompt.split(' — ')[0].split('. ')[0]),
+                h('span', { class: 'sr-time num' }, timing(c)),
+                h('span', { class: 'sr-meta' }, t ? pill(t.rating) : null, h('span', {}, c.interviewerPhrasing || '')),
+              ),
+            );
+          }),
+        )
       : h('p', {}, 'No story cards in the bank yet.'),
   );
 }
 
-export function mockStub({ mock, onBack }) {
-  return h(
-    'main',
-    {},
-    h('button', { class: 'btn back', type: 'button', onclick: onBack }, '← Campus'),
-    h('h2', {}, 'Mock interview'),
-    h('p', {}, mock && mock.decks ? `${mock.decks.length} deck(s) loaded from src/data/mock.json. The boss fight UI arrives in Phase 3.` : 'src/data/mock.json is written in Phase 2d; the boss fight UI arrives in Phase 3.'),
-  );
-}
+// ---------- Number Blitz (§4.7) ----------
 
-export function blitzScreen({ deck, best, onDone, onBack }) {
+export function blitzScreen({ deck, best, onDone, onBack, onTick = () => {} }) {
   const root = h('main', { class: 'blitz' });
+  const back = h('button', { class: 'btn back', type: 'button' }, '← Campus');
   if (!deck.length) {
-    root.append(
-      h('button', { class: 'btn back', type: 'button', onclick: onBack }, '← Campus'),
-      h('h2', {}, 'Number Blitz'),
-      h('p', {}, 'Blitz uses number cards from Minor Refresh and Locked In topics. None in the bank yet.'),
-    );
+    back.addEventListener('click', onBack);
+    root.append(back, h('h1', {}, 'Number Blitz'), h('p', {}, 'Blitz draws number cards from Minor Refresh and Locked In topics only. Get a topic to Minor Refresh and its numbers join the deck.'));
     return root;
   }
+  const order = [...deck].sort(() => Math.random() - 0.5);
+  const SECONDS = 60;
   let score = 0;
   let seen = 0;
   let i = 0;
-  const t0 = performance.now();
-  const clock = h('p', { class: 'timer-label' });
-  const slot = h('div', {});
-  const tick = setInterval(() => {
-    const left = 60 - (performance.now() - t0) / 1000;
-    clock.textContent = `${Math.max(0, Math.ceil(left))} s · ${score} knew · best ${best}`;
-    if (left <= 0) end();
-  }, 200);
+  let over = false;
+  let started = null;
+  let tick = null;
+  const scoreEl = h('span', { class: 'b-score num' }, '0');
+  const timer = h('div', { class: 'timer countdown' }, h('div', { class: 'timer-fill' }), h('span', { class: 'timer-label num' }, `${SECONDS} s`));
+  const slot = h('div', { class: 'blitz-card' });
+  const stop = () => tick && clearInterval(tick);
+  onTick(stop);
+  back.addEventListener('click', () => {
+    stop();
+    onBack();
+  });
+
   function end() {
-    clearInterval(tick);
-    slot.replaceChildren(h('h3', {}, `${score} of ${seen}`), h('button', { class: 'btn primary', type: 'button', onclick: () => onDone(score) }, 'Done'));
+    over = true;
+    stop();
+    const newBest = score > best;
+    mount(
+      slot,
+      h('p', { class: 'b-final num' }, `${score}`),
+      h('p', { class: 'center' }, `knew it on ${score} of ${seen} · best ${Math.max(best, score)}${newBest ? ' · new best' : ''}`),
+      h('button', { class: 'btn primary big', type: 'button', onclick: () => onDone(score) }, 'Done'),
+    );
+  }
+  function startClock() {
+    started = performance.now();
+    tick = setInterval(() => {
+      const sec = (performance.now() - started) / 1000;
+      const left = Math.max(0, SECONDS - sec);
+      timer.firstChild.style.width = `${Math.min(100, (sec / SECONDS) * 100)}%`;
+      timer.lastChild.textContent = `${Math.ceil(left)} s`;
+      if (left <= 0) end();
+    }, 200);
   }
   function show() {
-    const c = deck[i++ % deck.length];
-    const answer = [...c.answer.fields.map((f) => `${f.label}: ${f.value}`), c.answer.codeRef ? `code: ${c.answer.codeRef}` : null].filter(Boolean).join(' · ');
+    if (over) return;
+    const c = order[i++ % order.length];
     const reveal = h('button', { class: 'btn primary big', type: 'button' }, 'Reveal');
     reveal.addEventListener('click', () => {
+      if (!started) startClock();
       reveal.replaceWith(
-        h('p', { class: 'blitz-answer' }, answer),
-        h('div', { class: 'actions' },
-          h('button', { class: 'btn primary', type: 'button', onclick: () => { score++; seen++; show(); } }, 'Knew it'),
-          h('button', { class: 'btn', type: 'button', onclick: () => { seen++; show(); } }, 'Nope')),
+        h(
+          'div',
+          { class: 'b-answer' },
+          h('ul', {}, c.answer.fields.map((f) => h('li', {}, h('span', {}, f.label), h('b', {}, String(f.value)))), c.answer.codeRef ? h('li', {}, h('span', {}, 'code'), h('b', {}, c.answer.codeRef)) : null),
+          h(
+            'div',
+            { class: 'actions' },
+            h('button', { class: 'btn', type: 'button', onclick: () => { seen++; show(); } }, 'Nope'),
+            h('button', { class: 'btn primary', type: 'button', onclick: () => { score++; seen++; scoreEl.textContent = String(score); show(); } }, 'Knew it'),
+          ),
+        ),
       );
     });
-    slot.replaceChildren(h('p', { class: 'prompt' }, c.prompt), reveal);
+    mount(slot, h('p', { class: 'tiny' }, c.topicId), h('p', { class: 'b-prompt' }, c.prompt), reveal);
   }
-  root.append(h('button', { class: 'btn back', type: 'button', onclick: () => { clearInterval(tick); onBack(); } }, '← Campus'), h('h2', {}, 'Number Blitz'), clock, slot);
+  root.append(
+    back,
+    h('div', { class: 'blitz-head' }, h('h1', {}, 'Number Blitz'), h('span', { class: 'b-best' }, 'knew it ', scoreEl, ` · best ${best}`)),
+    h('p', { class: 'hint' }, `60 seconds of numbers from ${deck.length} cards on Minor Refresh and Locked In topics. The clock starts on the first reveal. Doesn't change ratings.`),
+    timer,
+    slot,
+  );
   show();
   return root;
 }
 
+// ---------- settings ----------
+
 export function settingsScreen({ settings, onSetting, onImport, onExport, onReset, onBack, buildInfo, storageOk }) {
   const paste = h('textarea', { class: 'paste', rows: 4, placeholder: 'Paste topics.json or state.json here' });
-  const file = h('input', { type: 'file', accept: 'application/json,.json' });
-  const msg = h('p', { class: 'msg', id: 'settings-msg' });
+  const file = h('input', { type: 'file', accept: 'application/json,.json', class: 'file' });
+  const msg = h('p', { class: 'msg', id: 'settings-msg', 'aria-live': 'polite' });
   const say = (t, bad) => {
     msg.textContent = t;
     msg.classList.toggle('bad', !!bad);
   };
   file.addEventListener('change', async () => {
     const f = file.files && file.files[0];
-    if (f) say(onImport(await f.text()));
+    if (!f) return;
+    try {
+      say(onImport(await f.text()));
+    } catch (e) {
+      say(e.message, true);
+    }
   });
-  const out = h('textarea', { class: 'paste', rows: 4, readonly: true, id: 'export-text' });
-  const sel = h('select', { id: 'cards-per-shift' }, [['', 'Day default (15 · 10 cutover · 20 sweep)'], ['5', '5'], ['10', '10'], ['15', '15'], ['20', '20'], ['25', '25']].map(([v, l]) => h('option', { value: v, selected: String(settings.cardsPerShift ?? '') === v }, l)));
+  const out = h('textarea', { class: 'paste', rows: 4, readonly: true, id: 'export-text', placeholder: 'Exported JSON appears here (and downloads)' });
+  const sel = h(
+    'select',
+    { id: 'cards-per-shift' },
+    [['', 'Day default (15, 10, or 20)'], ['5', '5'], ['10', '10'], ['15', '15'], ['20', '20'], ['25', '25']].map(([v, l]) => h('option', { value: v, selected: String(settings.cardsPerShift ?? '') === v }, l)),
+  );
   sel.addEventListener('change', () => onSetting('cardsPerShift', sel.value ? Number(sel.value) : null));
-  const toggle = (key, label) => {
-    const box = h('input', { type: 'checkbox', checked: !!settings[key] });
+  const toggle = (key, label, sub) => {
+    const box = h('input', { type: 'checkbox', checked: !!settings[key], id: `set-${key}` });
     box.addEventListener('change', () => onSetting(key, box.checked));
-    return h('label', { class: 'row-check' }, box, ` ${label}`);
+    return h('label', { class: 'row-check toggle', for: `set-${key}` }, box, h('span', {}, label, sub ? h('small', { class: 'block' }, sub) : null));
   };
   return h(
     'main',
     { class: 'settings' },
     h('button', { class: 'btn back', type: 'button', onclick: onBack }, '← Campus'),
-    h('h2', {}, 'Settings'),
+    h('h1', {}, 'Settings'),
     storageOk ? null : h('p', { class: 'msg bad' }, 'This browser is blocking local storage — progress will not survive a reload. Export before you close.'),
-    h('section', {}, h('h3', {}, 'Shift'), h('label', { class: 'row' }, h('span', {}, 'Cards per shift'), sel), toggle('sound', 'Sound'), toggle('haptics', 'Haptics')),
     h(
       'section',
-      {},
-      h('h3', {}, 'Import'),
+      { class: 'panel' },
+      h('h2', { class: 'section-title' }, 'Shift'),
+      h('label', { class: 'row', for: 'cards-per-shift' }, h('span', {}, 'Cards per shift'), sel),
+      toggle('sound', 'Sound', 'A soft chime on a clean answer'),
+      toggle('haptics', 'Haptics', 'A tick on a clean answer, where the phone supports it'),
+    ),
+    h(
+      'section',
+      { class: 'panel' },
+      h('h2', { class: 'section-title' }, 'Import'),
       h('p', { class: 'hint' }, 'topics.json carries tracker ratings over (history and XP kept). state.json replaces everything.'),
       file,
       paste,
@@ -312,16 +439,38 @@ export function settingsScreen({ settings, onSetting, onImport, onExport, onRese
     ),
     h(
       'section',
-      {},
-      h('h3', {}, 'Export'),
-      h('div', { class: 'actions' },
+      { class: 'panel' },
+      h('h2', { class: 'section-title' }, 'Export'),
+      h('p', { class: 'hint' }, 'topics.json is the tracker shape — paste it back into the chat tracker. state.json is a full backup.'),
+      h(
+        'div',
+        { class: 'actions' },
+        h('button', { class: 'btn', type: 'button', id: 'export-topics', onclick: () => { out.value = onExport('topics'); } }, 'topics.json'),
         h('button', { class: 'btn', type: 'button', id: 'export-state', onclick: () => { out.value = onExport('state'); } }, 'state.json'),
-        h('button', { class: 'btn', type: 'button', id: 'export-topics', onclick: () => { out.value = onExport('topics'); } }, 'topics.json (for the tracker)')),
+      ),
       out,
     ),
-    h('section', {}, h('h3', {}, 'Reset'), h('button', { class: 'btn danger', type: 'button', onclick: () => { if (confirm('Reset all progress back to the shipped topics.json?')) onReset(); } }, 'Reset progress')),
-    h('p', { class: 'build' }, buildInfo),
+    h(
+      'section',
+      { class: 'panel' },
+      h('h2', { class: 'section-title' }, 'Reset'),
+      h('p', { class: 'hint' }, 'Back to the shipped topics.json ratings. History and XP are cleared.'),
+      h('button', { class: 'btn quiet', type: 'button', onclick: () => { if (confirm('Reset all progress back to the shipped topics.json?')) onReset(); } }, 'Reset progress'),
+    ),
+    h('p', { class: 'build tiny' }, buildInfo),
   );
+}
+
+// ---------- browse ----------
+
+function highlightSnippet(text, q) {
+  const i = text.toLowerCase().indexOf(q);
+  if (i < 0) return text.slice(0, 120);
+  const from = Math.max(0, i - 50);
+  const pre = (from > 0 ? '…' : '') + text.slice(from, i);
+  const hit = text.slice(i, i + q.length);
+  const post = text.slice(i + q.length, i + q.length + 70) + '…';
+  return [pre, h('mark', { class: 'hit' }, hit), post];
 }
 
 export function browseScreen({ docs, onBack, target }) {
@@ -329,36 +478,66 @@ export function browseScreen({ docs, onBack, target }) {
   let current = target?.doc || 'guide';
   const content = h('div', { class: 'doc' });
   const results = h('ul', { class: 'search-results' });
-  const search = h('input', { type: 'search', class: 'field', placeholder: 'Search the guide and scripts', id: 'browse-search' });
+  const search = h('input', { type: 'search', class: 'field', placeholder: 'Search the guide and scripts', id: 'browse-search', autocomplete: 'off', enterkeyhint: 'search' });
+  const toc = h('details', { class: 'toc' }, h('summary', {}, 'Contents'));
+  const tocList = h('ol', {});
+  toc.append(tocList);
   const tabBtns = Object.entries(tabs).map(([k, label]) => h('button', { class: 'btn tab', type: 'button', onclick: () => show(k) }, label));
+
+  function jump(id) {
+    const el = content.querySelector(`#${CSS.escape(id)}`);
+    if (!el) return;
+    el.scrollIntoView({ block: 'start' });
+    el.classList.remove('flash');
+    void el.offsetWidth;
+    el.classList.add('flash');
+  }
 
   function show(doc, anchor) {
     current = doc;
     tabBtns.forEach((b, i) => b.classList.toggle('on', Object.keys(tabs)[i] === doc));
     content.replaceChildren(docs[doc].template.content.cloneNode(true));
-    if (anchor) {
-      const el = content.querySelector(`#${CSS.escape(anchor)}`);
-      if (el) setTimeout(() => el.scrollIntoView({ block: 'start' }), 0);
-    } else window.scrollTo(0, 0);
+    mount(
+      tocList,
+      docs[doc].headings
+        .filter((x) => x.level >= 2 && x.level <= 3)
+        .map((x) => h('li', { class: `lv${x.level}` }, h('a', { href: '#', onclick: (e) => { e.preventDefault(); toc.open = false; jump(x.id); } }, x.text))),
+    );
+    if (anchor) setTimeout(() => jump(anchor), 0);
+    else window.scrollTo(0, 0);
   }
 
   search.addEventListener('input', () => {
     const q = search.value.trim().toLowerCase();
     results.replaceChildren();
     if (q.length < 2) return;
+    let n = 0;
     for (const [doc, d] of Object.entries(docs)) {
       for (const s of d.sections) {
-        const i = s.text.toLowerCase().indexOf(q);
-        if (i < 0) continue;
-        const snip = s.text.slice(Math.max(0, i - 50), i + 70).replace(/\s+/g, ' ');
-        results.append(h('li', {}, h('a', { href: '#', onclick: (e) => { e.preventDefault(); show(doc, s.id); results.replaceChildren(); } }, `${tabs[doc]} › ${s.path}`), h('small', {}, ` …${snip}…`)));
+        if (!s.text.toLowerCase().includes(q)) continue;
+        n++;
+        results.append(
+          h(
+            'li',
+            {},
+            h('a', { href: '#', onclick: (e) => { e.preventDefault(); show(doc, s.id); results.replaceChildren(); } }, `${tabs[doc]} › ${s.path}`),
+            h('p', { class: 'snip' }, highlightSnippet(s.text.replace(/\s+/g, ' '), q)),
+          ),
+        );
       }
     }
-    if (!results.children.length) results.append(h('li', {}, 'No match.'));
+    if (!n) results.append(h('li', { class: 'none' }, 'No match.'));
   });
 
-  const root = h('main', { class: 'browse' }, h('button', { class: 'btn back', type: 'button', onclick: onBack }, '← Back'), h('div', { class: 'tabs' }, tabBtns), search, results, content);
+  const root = h(
+    'main',
+    { class: 'browse' },
+    h('div', { class: 'browse-bar' }, h('button', { class: 'btn back', type: 'button', onclick: onBack }, '← Back'), h('div', { class: 'tabs' }, tabBtns)),
+    search,
+    results,
+    toc,
+    content,
+  );
   show(current, target?.id);
   return root;
 }
-

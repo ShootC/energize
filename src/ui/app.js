@@ -3,8 +3,10 @@
 
 import { h, mount, vibrate, chime, pill } from './dom.js';
 import { renderCard, renderResult, stopCardActivity } from './cards.js';
+import { mockScreen } from './boss.js';
+import { campusMap } from './map.js';
 import {
-  header, homeScreen, buildingScreen, debriefScreen, finalScreen, settingsScreen, browseScreen, blitzScreen, storyListScreen, mockStub,
+  header, homeScreen, buildingScreen, debriefScreen, finalScreen, settingsScreen, browseScreen, blitzScreen, storyListScreen,
 } from './screens.js';
 import { isIsoDate, localToday } from '../engine/dates.js';
 import { readiness, shiftHeadline, POINTS } from '../engine/rating.js';
@@ -127,6 +129,10 @@ function boot() {
 
 function go(route, arg) {
   stopCardActivity();
+  if (app.stopBlitz) {
+    app.stopBlitz();
+    app.stopBlitz = null;
+  }
   releaseAudio();
   app.route = route;
   window.scrollTo(0, 0);
@@ -375,12 +381,13 @@ function finishShift() {
 function building(id) {
   const b = BUILDINGS.find((x) => x.id === id);
   if (!b) return go('home');
-  mount(app.root, topBar(), buildingScreen({ building: b, topics: app.state.topics, cardCount: (tid) => app.countByTopic[tid] || 0, onDrill: (topicId) => startShift('drill', { topicId }), onBack: () => go('home') }));
+  const status = campusStatus(app.state.topics).find((x) => x.id === b.id);
+  mount(app.root, topBar(), buildingScreen({ building: b, status, topics: app.state.topics, cardCount: (tid) => app.countByTopic[tid] || 0, onDrill: (topicId) => startShift('drill', { topicId }), onBack: () => go('home') }));
 }
 
 function browse(arg = {}) {
   const target = arg.source ? findSource(arg.source, app.docs) : null;
-  mount(app.root, browseScreen({ docs: app.docs, target, onBack: () => go(arg.back === 'shift' ? 'shift' : 'home') }));
+  mount(app.root, browseScreen({ docs: app.docs, target, onBack: () => go(['shift', 'mock'].includes(arg.back) ? arg.back : 'home') }));
 }
 
 function settings() {
@@ -431,7 +438,20 @@ function download(name, text) {
 
 function blitz() {
   const deck = blitzDeck({ topics: app.state.topics, cards: app.bank });
-  mount(app.root, blitzScreen({ deck, best: app.state.blitzBest || 0, onDone: (score) => { app.state = setBlitzScore(app.state, score); persist(); go('home'); }, onBack: () => go('home') }));
+  mount(
+    app.root,
+    blitzScreen({
+      deck,
+      best: app.state.blitzBest || 0,
+      onTick: (stop) => (app.stopBlitz = stop),
+      onDone: (score) => {
+        app.state = setBlitzScore(app.state, score);
+        persist();
+        go('home');
+      },
+      onBack: () => go('home'),
+    }),
+  );
 }
 
 function stories() {
@@ -439,13 +459,28 @@ function stories() {
 }
 
 function mock() {
-  mount(app.root, mockStub({ mock: app.data.mock, onBack: () => go('home') }));
+  const planRow = app.data.plan.find((x) => x.date === app.today);
+  const m = planRow && /Mock interviews*(d)/i.exec(planRow.interview || '');
+  mount(
+    app.root,
+    mockScreen({
+      mock: app.data.mock,
+      todaysDeck: m ? Number(m[1]) : null,
+      onBack: () => go('home'),
+      onSource: (src) => go('browse', { source: src, back: 'mock' }),
+      onCard: (cardId) => {
+        const card = app.cardById.get(cardId);
+        if (card) startShift('single', { card });
+      },
+    }),
+  );
 }
 
 function final(arg = {}) {
   const rd = readiness(app.state.topics);
   const stats = `${app.state.history.length} cards answered · ${app.state.xp} XP · best Blitz ${app.state.blitzBest || 0}`;
-  mount(app.root, topBar(), finalScreen({ checklist: app.data.checklist, rd, stats, after: !!arg.after }));
+  const map = arg.after ? campusMap({ status: campusStatus(app.state.topics), buildings: BUILDINGS, interactive: false }) : null;
+  mount(app.root, topBar(), finalScreen({ checklist: app.data.checklist, rd, stats, after: !!arg.after, map }));
 }
 
 export function start() {
