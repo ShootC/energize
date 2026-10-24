@@ -1,0 +1,239 @@
+[
+ {
+  "id": "P2-num-01",
+  "topicId": "P2",
+  "type": "number",
+  "prompt": "Dry and double-interlock air test — pressure, duration, allowed loss, and the section.",
+  "interviewerPhrasing": "The 24-hour air test lost 3 psi. What next?",
+  "answer": {
+   "fields": [
+    { "label": "psi", "value": 40, "tolerance": 0 },
+    { "label": "hours", "value": 24, "tolerance": 0 },
+    { "label": "max loss psi", "value": 1.5, "tolerance": 0.01 }
+   ],
+   "codeRef": "NFPA 13 §29.2.2",
+   "codeRefAliases": ["13 29.2.2", "NFPA 13 29.2.2", "13 §29.2.2", "29.2.2"],
+   "explanation": "40 psi for 24 h, loss ≤ 1.5 psi (NFPA 13 §29.2.2) — a 3 psi loss fails. Common leaks: grooved couplings and threaded joints."
+  },
+  "hook": "40 · 24 · 1.5 — forty for a day, lose a buck-fifty.",
+  "source": "Sprinkler and underground › table",
+  "par": 25,
+  "confirmInEdition": false
+ },
+ {
+  "id": "S3-num-01",
+  "topicId": "S3",
+  "type": "number",
+  "prompt": "Waterflow alarm: initiating device within ___ s of one-sprinkler flow; electrical alarm within ___ s; mechanical within ___ min; a valve tamper switch reports within ___ turns of the handwheel. And the NFPA 13 section for the alarm times.",
+  "interviewerPhrasing": "How fast does the waterflow alarm have to come in, and when does a tamper switch have to report?",
+  "answer": {
+   "fields": [
+    { "label": "initiating device, s", "value": 90 },
+    { "label": "electrical alarm, s", "value": 100 },
+    { "label": "mechanical alarm, min", "value": 5 },
+    { "label": "tamper, handwheel turns", "value": 2 }
+   ],
+   "codeRef": "NFPA 13 §7.7",
+   "codeRefAliases": ["13 7.7", "NFPA 13 7.7", "13 §7.7", "7.7"],
+   "explanation": "Initiating device within 90 s of one-sprinkler flow (NFPA 72); electrical alarm within 100 s and mechanical within 5 min (NFPA 13 §7.7). Tamper switches report within two turns of the handwheel or one-fifth of stem travel."
+  },
+  "hook": "90 · 100 · 5 — then two turns and the tamper talks.",
+  "source": "Sprinkler and underground › table",
+  "par": 35,
+  "confirmInEdition": false
+ },
+ {
+  "id": "S2-num-01",
+  "topicId": "S2",
+  "type": "number",
+  "prompt": "Aboveground hydro: test pressure, duration, how far above working pressure once working pressure is high, the working pressure where that rule starts, and the section.",
+  "interviewerPhrasing": "What are the pass criteria on the aboveground hydro?",
+  "answer": {
+   "fields": [
+    { "label": "test psi", "value": 200 },
+    { "label": "hours", "value": 2 },
+    { "label": "psi above working pressure", "value": 50 },
+    { "label": "rule starts above, psi", "value": 150 }
+   ],
+   "codeRef": "NFPA 13 §29.2.1",
+   "codeRefAliases": ["13 29.2.1", "NFPA 13 29.2.1", "NFPA 13-2022 29.2.1", "13 §29.2.1", "29.2.1"],
+   "explanation": "200 psi for 2 h, or 50 psi above working pressure where it exceeds 150 psi; no gauge drop and no visible leakage; on pump systems, set from pump shutoff pressure (NFPA 13-2022 §29.2.1)."
+  },
+  "hook": "200 for 2 — or 50 over once you're past 150.",
+  "source": "Sprinkler and underground › table",
+  "par": 35,
+  "confirmInEdition": false
+ },
+ {
+  "id": "S1-num-01",
+  "topicId": "S1",
+  "type": "number",
+  "prompt": "Underground flush at the 10 ft/s table flow: gpm for 6 in. pipe, gpm for 8 in. pipe, and the table.",
+  "interviewerPhrasing": "What flow do you need to see on a 6-inch underground flush?",
+  "answer": {
+   "fields": [
+    { "label": "6 in., gpm", "value": 880 },
+    { "label": "8 in., gpm", "value": 1560 }
+   ],
+   "codeRef": "NFPA 24 Table 10.10.2.1.3",
+   "codeRefAliases": ["24 10.10.2.1.3", "NFPA 24 10.10.2.1.3", "Table 10.10.2.1.3", "10.10.2.1.3"],
+   "explanation": "Not less than one of: system demand including hose; the 10 ft/s table flow (4 in. 390 · 6 in. 880 · 8 in. 1,560 · 10 in. 2,440 · 12 in. 3,520 gpm); or the maximum flow available (NFPA 24 Table 10.10.2.1.3)."
+  },
+  "hook": "6 → 880, 8 → 1,560: the flush runs at 10 ft/s.",
+  "source": "Sprinkler and underground › table",
+  "par": 30,
+  "confirmInEdition": false
+ },
+ {
+  "id": "C1-ord-01",
+  "topicId": "C1",
+  "type": "order",
+  "prompt": "Put the commissioning ladder in order, L1 first.",
+  "answer": {
+   "steps": [
+    "Factory acceptance / factory witness test",
+    "Delivery and installation verification",
+    "Start-up / pre-functional",
+    "Functional performance test (FPT)",
+    "Integrated systems test (IST)"
+   ],
+   "codeRef": null,
+   "explanation": "L1 factory acceptance → L2 delivery and installation verification → L3 start-up / pre-functional → L4 FPT → L5 IST. L1–L5 is an industry convention, not a code."
+  },
+  "hook": "At L4 I prove the system. At L5 I prove the building.",
+  "source": "Data center commissioning language › table",
+  "par": 40,
+  "confirmInEdition": false
+ },
+ {
+  "id": "P5-ord-01",
+  "topicId": "P5",
+  "type": "order",
+  "prompt": "Order the double-interlock L4 script, start to restore.",
+  "interviewerPhrasing": "Walk me through your L4 functional test on a double-interlock pre-action system.",
+  "answer": {
+   "steps": [
+    "Prerequisites: hydro and air test passed, panel programmed, central station on test",
+    "Detection only: alarms annunciate, valve stays shut",
+    "Loss of air only: low-air supervisory, valve stays shut",
+    "Both: valve trips; record time to trip and time to water",
+    "Manual release per the design",
+    "Faults: solenoid and detection circuits, air, compressor, tamper, panel AC loss",
+    "Restore: drain, reset the valve, restore air, panel normal, sign-off"
+   ],
+   "codeRef": null,
+   "explanation": "Prerequisites → detection only (valve stays shut) → loss of air only (valve stays shut) → both: valve trips, record time to trip and time to water at the test connection → manual release → faults → restore."
+  },
+  "hook": "7 steps: prereqs, one input, the other, both, by hand, break it, put it back.",
+  "source": "Pre-action › Sample L4 script — double-interlock (the Day 12 exercise)",
+  "par": 60,
+  "confirmInEdition": false
+ },
+ {
+  "id": "C4-mat-01",
+  "topicId": "C4",
+  "type": "matrix",
+  "prompt": "Data Hall 1 IST matrix: for each input, does each output happen (●), must it not happen (—), or is it per BOD?",
+  "interviewerPhrasing": "Turn this IST matrix into test steps — which outputs must not happen?",
+  "answer": {
+   "grid": {
+    "inputs": [
+     "ASD Alert / Action, Hall 1",
+     "ASD Fire 1, Hall 1",
+     "ASD Fire 2 or 2nd detector, Hall 1",
+     "Pre-action waterflow, Hall 1"
+    ],
+    "outputs": ["Building alarm", "Central station", "Release / trip", "HVAC and dampers"],
+    "cells": [
+     ["—", "—", "—", "—"],
+     ["●", "●", "—", "per BOD"],
+     ["●", "●", "●", "per BOD"],
+     ["●", "●", "—", "per BOD"]
+    ],
+    "notes": [
+     ["", "", "", ""],
+     ["", "", "", "Per BOD — halls often keep cooling running"],
+     ["", "", "Pre-action solenoid (valve trips only on loss of air)", "Per BOD"],
+     ["", "", "", "Per BOD"]
+    ]
+   },
+   "codeRef": null,
+   "explanation": "ASD Alert / Action is an Ops alert only; Fire 1 alarms and reports but releases nothing; Fire 2 or a second detector opens the pre-action solenoid — the valve trips only on loss of air. Example only — the BOD decides every cell."
+  },
+  "hook": "Fire 1 talks, Fire 2 opens the solenoid, loss of air lets the water in.",
+  "source": "Data center commissioning language › IST matrix — the document the posting says you'll review.",
+  "par": 75,
+  "confirmInEdition": false
+ },
+ {
+  "id": "C3-def-01",
+  "topicId": "C3",
+  "type": "defect",
+  "prompt": "One line in this FPT script excerpt breaks a rule. Tap it.",
+  "answer": {
+   "lines": [
+    "1. Purpose and system; each acceptance criterion cites its code / BOD section.",
+    "2. Prerequisites: prior level signed off, AHJ notified, central station on test, impairment logged.",
+    "3. Safety isolation: actuators and solenoids replaced by test lamps or simulators; agent cylinders disconnected.",
+    "4. Shutdown circuits verified before anything is tripped.",
+    "5. Steps: expected result, actual result, pass/fail and initials on every line.",
+    "6. Return to normal: panel reset; test lamps stay in place for the next test.",
+    "7. Failure modes: open and ground faults on releasing circuits, loss of primary power, abort and manual release."
+   ],
+   "defectIndex": 5,
+   "codeRef": null,
+   "explanation": "Line 6 — return to normal means every isolation reversed and verified. The most dangerous outcome of a test is a system left disabled."
+  },
+  "hook": "Step 6 is put-it-all-back: every isolation reversed, every one verified.",
+  "source": "Data center commissioning language › Script development — what a good fire FPT script contains.",
+  "par": 40,
+  "confirmInEdition": false
+ },
+ {
+  "id": "P8-scn-01",
+  "topicId": "P8",
+  "type": "scenario",
+  "prompt": "Why double-interlock in a data hall, and what does it cost you?",
+  "interviewerPhrasing": "Why double-interlock in a data hall, and what does it cost you?",
+  "answer": {
+   "beats": [
+    "One false detection signal alone can't put water on IT",
+    "One damaged sprinkler alone can't either (mechanical damage)",
+    "Cost: delivery time",
+    "Cost: design area — the 30% increase",
+    "Cost: complexity",
+    "You prove the delivery time at acceptance, not assume it"
+   ],
+   "requiresNumber": true,
+   "codeRef": "FM Data Sheet 5-32",
+   "codeRefAliases": ["FM 5-32", "FM DS 5-32", "DS 5-32", "5-32"],
+   "explanation": "Protection against a single false signal or mechanical damage, paid for in delivery time, design area and complexity — and you prove the delivery time at acceptance, not assume it. FM Data Sheet 5-32 cautions that double-interlock can delay control."
+  },
+  "hook": "Two keys to open, 30% more area to pay — and you time the water.",
+  "source": "Pre-action › Data center points to make",
+  "par": 90,
+  "confirmInEdition": false
+ },
+ {
+  "id": "I3-sty-01",
+  "topicId": "I3",
+  "type": "story",
+  "prompt": "Something you owned end to end, including what went wrong.",
+  "interviewerPhrasing": "Tell me about something you owned end to end, including what went wrong.",
+  "answer": {
+   "script": "Three occupied high-rise towers had to lose their fire alarm for a few hours, and my job was to make that window as short and as safe as possible. It's a campus in Hawaii I'm finishing right now, fifteen to sixteen floors a tower. We're replacing the legacy fire alarm, bringing it to code and moving it onto a new fiber backbone, sixteen nodes and about fifteen hundred devices. I own it end to end, from the job walk and design through programming, and I'm leading a crew of twelve through cutover and testing.\n\nTwo things could have sunk it before we started. A month before cutover I flew out and built every panel on site. That caught four parts critical to the install that the warehouse had missed, early enough to get them shipped to the island. Then the fiber: the contractor pulled the runs but never jumpered the cassettes and left no redlines. Nobody owned that gap, so I did. A coworker and I went panel by panel with a light source, found every missing jumper and labeled every run end to end.\n\nFor cutover I gave the twelve defined roles and a schedule, and I set the bar for sending the crew home before we started: every waterflow and tamper, elevator recall and shunt trip, audibility, the sequence for every device type on every floor, and all manual paging. Proven, not sampled.\n\nThe result: three occupied towers were impaired for under eight hours, shutdown to waterflow back in service, with fire watch the whole time.\n\n[Result after Oct 30: we cut over on ___, ___ devices tested, ___ punch items open, most of the crew home on ___.]\n\nThe lesson I keep: ownership starts a month before the outage. That's where you buy the eight-hour window.",
+   "beats": [
+    { "label": "Hook", "kind": "hook", "quote": "Three occupied high-rise towers had to lose their fire alarm for a few hours, and my job was to make that window as short and as safe as possible." },
+    { "label": "Decision with reason", "kind": "decision", "quote": "A month before cutover I flew out and built every panel on site. That caught four parts critical to the install that the warehouse had missed, early enough to get them shipped to the island." },
+    { "label": "A number", "kind": "number", "quote": "The result: three occupied towers were impaired for under eight hours, shutdown to waterflow back in service, with fire watch the whole time." },
+    { "label": "Lesson", "kind": "lesson", "quote": "The lesson I keep: ownership starts a month before the outage. That's where you buy the eight-hour window." }
+   ],
+   "codeRef": null,
+   "explanation": "Hook: three occupied towers lose their fire alarm for a few hours → built every panel on site a month early, 4 missing parts caught → under 8 hours impaired, fire watch throughout → ownership starts a month before the outage."
+  },
+  "hook": "3 towers · 16 nodes · 1,500 devices · 12 people, then 1 month · 4 parts · under 8 hours.",
+  "source": "Story 1 — Three occupied towers, one cutover",
+  "par": 120,
+  "confirmInEdition": false
+ }
+]
