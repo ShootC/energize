@@ -40,8 +40,16 @@ export function validateFile(file, root = ROOT) {
 function main(argv) {
   const args = argv.filter((a) => !a.startsWith('--'));
   const strict = argv.includes('--strict');
+  if (argv.includes('--headings')) {
+    // Every heading a card's `source` may start with.
+    for (const f of ['content/study-guide.md', 'content/story-scripts.md']) {
+      console.log(`\n${f}`);
+      for (const hd of extractHeadings(readFileSync(join(ROOT, f), 'utf8'))) console.log(`${'  '.repeat(hd.level - 1)}${hd.text}`);
+    }
+    return 0;
+  }
   if (!args.length) {
-    console.error('usage: node validate.js <questions.json|mock.json> [--strict]');
+    console.error('usage: node validate.js <questions.json|mock.json> [--strict]   ·   node validate.js --headings');
     return 2;
   }
   let failed = false;
