@@ -523,8 +523,9 @@ async function main() {
   }
 
   // Spoken cards are graded by taps: with nothing tapped they ask first, and "Grade as a miss" grades a blank.
-  // (A1-scn-01: a Light topic, so it never gets a follow-up chain — Grade as a miss goes straight to the result.)
-  await open('?date=2026-10-24&card=I3-sty-01');
+  // These use cards that never get a follow-up chain, so Grade as a miss goes straight to the result:
+  // I8-sty-01 (a backup story — the scripts give backups no follow-ups) and A1-scn-01 (a Light topic).
+  await open('?date=2026-10-24&card=I8-sty-01');
   await evaluate(`[...document.querySelectorAll('button')].find((b) => b.textContent === 'Done speaking').click()`);
   await settle(300);
   const storyAsked = await evaluate('!!document.querySelector("#nudge") && !document.querySelector(".result") && [...document.querySelectorAll("button")].some((b) => b.textContent === "Grade it")');
@@ -532,7 +533,7 @@ async function main() {
   await click('#grade-miss');
   await settle(300);
   check('story: Done speaking with no beat tapped asks first; Grade as a miss grades it Missed', storyAsked && /^Missed/.test((await text('.result h2')) || ''), `${storyAsked} · ${await text('.result h2')}`);
-  await open('?date=2026-10-24&card=I3-sty-01');
+  await open('?date=2026-10-24&card=I8-sty-01');
   await evaluate(`[...document.querySelectorAll('button')].find((b) => b.textContent === 'Done speaking').click()`);
   await settle(200);
   await evaluate('document.querySelectorAll(".chip:not(.fill-in)").forEach((c) => c.click())');
@@ -548,6 +549,24 @@ async function main() {
   await click('#grade-miss');
   await settle(300);
   check('scenario: Grade it with nothing ticked asks first; Grade as a miss grades it Missed', scnAsked && /^Missed/.test((await text('.result h2')) || ''), `${scnAsked} · ${await text('.result h2')}`);
+
+  // A story's drill-down (session C): after Done speaking, the scripted follow-ups come one by
+  // one; a follow-up whose answer is still a [bracket] shows a fill-in chip and is not graded;
+  // the result shows one dot per layer and the script's "Keep out" line under "Don't say".
+  await open('?date=2026-10-24&card=I3-sty-01');
+  await evaluate('document.querySelectorAll(".chip:not(.fill-in)").forEach((c) => c.click())');
+  await evaluate(`[...document.querySelectorAll('button')].find((b) => b.textContent === 'Done speaking').click()`);
+  await settle(300);
+  const drills = await evaluate('energize.cardById.get("I3-sty-01").answer.followUps.length');
+  for (let k = 1; k <= drills; k++) {
+    await click(`#followup-${k}-reveal`);
+    await settle(30);
+    await evaluate(`document.querySelectorAll('#followup-${k} .beats input').forEach((x) => (x.checked = true))`);
+    await click(`#followup-${k}-next`);
+    await settle(60);
+  }
+  const drillRes = await evaluate('({ head: document.querySelector(".result h2")?.firstChild?.textContent, dots: [...document.querySelectorAll(".result .ldot")].map((d) => d.className.replace("ldot ", "")), dontSay: document.querySelector(".result .dont-say")?.textContent || "" })');
+  await screenCheck('story drill-down: scripted follow-ups, a fill-in layer not graded, "Don\'t say" after grading', drills === 4 && drillRes.dots.length === 5 && drillRes.dots[1] === 'l-open' && /blame on the warehouse/.test(drillRes.dontSay) && !!drillRes.head, JSON.stringify(drillRes));
 
   // Follow-up chain with interrupt mode (GAME_SPEC_ROUND2 §5): follow-up 1 cuts in at 1 s
   // (?interruptAt=1), the main clock pauses and resumes; after the main ticks, follow-up 1
@@ -611,7 +630,8 @@ async function main() {
   await open('?date=2026-10-24');
   await click('#nav-stories');
   await settle();
-  await screenCheck('stories', (await evaluate('document.querySelectorAll(".story-row").length')) === 10, '10 story cards');
+  const storyCount = await evaluate('energize.bank.filter((c) => c.type === "story").length');
+  await screenCheck('stories', (await evaluate('document.querySelectorAll(".story-row").length')) === storyCount, `${storyCount} story cards, the two drill ladders included`);
   await open('?date=2026-10-24');
   await click('#nav-blitz');
   await settle();
@@ -709,7 +729,7 @@ async function main() {
   check('reset: a fresh state in localStorage — no history, 0 XP, shipped ratings', afterReset.history === 0 && afterReset.xp === 0 && afterReset.c1 === 'Needs Improvement', JSON.stringify(afterReset));
 
   // ---- Phase 5: story recording — microphone granted (fake device), then refused ----
-  await open('?date=2026-10-24&card=I6-sty-01');
+  await open('?date=2026-10-24&card=I8-sty-02');
   check('audio: Record is offered where MediaRecorder exists', !!(await evaluate('document.querySelector(".btn.rec")')));
   await click('.btn.rec');
   await settle(600);
@@ -720,7 +740,7 @@ async function main() {
   const audio = await evaluate('(() => { const a = document.querySelector(".result audio"); return a ? { blob: a.src.startsWith("blob:"), controls: a.controls } : null; })()');
   await screenCheck('audio: Record → Done speaking → playback of the take', /Recording/.test(recLabel || '') && !!audio && audio.blob && audio.controls, `${recLabel} · ${JSON.stringify(audio)}`);
   const denyScript = await cdp.send('Page.addScriptToEvaluateOnNewDocument', { source: 'navigator.mediaDevices.getUserMedia = () => Promise.reject(new DOMException("denied", "NotAllowedError"));' });
-  await open('?date=2026-10-24&card=I6-sty-01');
+  await open('?date=2026-10-24&card=I8-sty-02');
   await click('.btn.rec');
   await settle(300);
   const refused = await evaluate('document.body.innerText.includes("Microphone not available here")');

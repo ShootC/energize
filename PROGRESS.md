@@ -259,6 +259,45 @@ All nine Core technical areas appear across the three decks. `node validate.js s
 
 Coverage targets (common block): every Core scenario card has 2 follow-ups with at least one why-not or what-if; every Core topic has ≥ 2 scenario cards with follow-ups (F2 and F1 through their new cards); no Core `confirmInEdition` scenario exists in these areas (the two Support ones got find-outs anyway); every area has an own-it (Fire pump 1 · Sprinkler 1 · Gaseous & ASD 1 · BESS 1 · Applied 2 from B1); every Support topic has one scenario card with 1–2 follow-ups; Light (F7, F9, S5, S8, A1, A5) untouched.
 
+### Round 2 · Session C · Behavioral slice (Opus, Nov 2)
+
+Transcribed and structured from `content/story-scripts.md`; no new story content. The round 1 debrief is still the blank template, so nothing came from "Facts about my own work".
+
+- **Story drill-downs.** Each story card got its script's "Follow-ups, 15 seconds each" as `followUps` (kind `drill`, par 20, source `Story N — … › Follow-ups, 15 seconds each`), beats = the scripted answer's clauses in the script's words; a bracketed answer is a fill-in beat, so a follow-up whose whole answer is still a bracket (Story 1 "How did you split the twelve?", Story 3 "Did it stay clean after the re-pull?", Story 4 "Did anything release?" and "How did the customer react?") is shown and not graded. Each script's **Keep out** line is the card's `answer.dontSay`, shown after grading under "Don't say". Story 4's "Something more recent?" ("Go to the radios backup") carries the radios backup's clauses (source: Backup scripts). I8 (the backups) has no scripted follow-ups and is unchanged.
+
+| Card | Story | Follow-ups (graded / fill-in only) | Don't say |
+| --- | --- | --- | --- |
+| `I3-sty-01` | 1 · Hawaii towers | 4 (3 / 1) | blame on the warehouse or the fiber contractor |
+| `I4-sty-01` | 2 · VESDA, no drawings | 4 (4 / 0) | who programmed the release wrong |
+| `I5-sty-01` | 3 · BESS ground faults | 4 (3 / 1) | that the designer approved the cable unread |
+| `I6-sty-01` | 4 · Canned air | 4 (2 / 2) | jokes or minimizing |
+| `I7-sty-01` | 5 · Playbooks and tools | 3 (3 / 0) | pricing or business details |
+
+- **Drill ladders** — `I3-sty-02-r2` (Story 1) and `I5-sty-02-r2` (Story 3): story cards with `ladder: true`, interviewer phrasing "What's the most difficult challenge you've faced?", the main answer the story itself (same script, beats and timing as the story card), then five drill layers: Why did you make that call? · What constrained you? · What did it cost, or what was the risk? · What would you do differently? · What did the client or crew think? Every graded beat is a clause of that story's script, beats list or follow-ups, verbatim (checked clause by clause); the open ones are fill-ins (below). I3 and I5 now hold 9 cards each (Core max 10).
+- **Round 3 mock decks** (`src/data/mock.json`, `round: "r3"`), about 12 minutes of answering each:
+  - `r3-a` · Round 3 · Deck A: the hardest challenge as the Story 1 ladder (5 layers) · Likely question 2, "A decision you made without complete information" (Story 2; follow-ups: why not wait for drawings, how you caught the wrong-COLO release) · Likely question 7, "Why Fluidstack?" (the v1 deck's beats; Story 5's follow-ups: which tool matters most, how you use AI) · close (I10: guide questions 2 and 5).
+  - `r3-b` · Round 3 · Deck B: the Story 3 ladder · Likely question 1, "Something you owned end to end, including what went wrong" (Story 1; why build the panels a month out, how you proved the fiber) · Likely question 4, "A mistake you made" (Story 4; what you'd do differently in the moment, something more recent → the radios) · close (I10: guide questions 3 and 4).
+  - The values questions' prompts and beats are the v1 decks' (already audited); every follow-up is the story card's scripted drill, copied. All five stories appear across the two decks.
+- **UI**: the mock reveal shows a fill-in beat as a chip instead of a tick box (the ladders have fill-in layers). `tools/smoke.js`: the "nothing tapped" and recording checks moved to the I8 backups (no follow-ups by design), the story list count comes from the bank (12 with the ladders), and a new check plays `I3-sty-01`'s drill-down to the result (a fill-in layer shown as an open dot, "Don't say" after grading).
+- **Verified**: `npm test` 124/124 · both strict validator runs clean · `node scripts/audit.js` 0 findings (181 review notes) · `node build.js` → 990 KB, 407 cards, 8 decks · `node tools/smoke.js` 101/101.
+
+#### Story gaps to fill
+
+Layers and follow-ups the scripts don't answer yet — each is a fill-in until you answer it (in chat, or under "Facts about my own work" in `content/round1-debrief.md`), matched to the scripts' "Open questions to finish the stories":
+
+| Where | What's open | Scripts' open question |
+| --- | --- | --- |
+| `I3-sty-02-r2` layer 5 (What did the client or crew think?) | the whole layer — what the client and the crew said once the towers were back in service | **Not on the list** — new |
+| `I3-sty-02-r2` layer 3 (What did it cost, or what was the risk?) | the one moment in the eight-hour window that nearly went wrong | Story 1: "how you split the twelve … and the one moment in the eight-hour window that nearly went wrong" |
+| `I3-sty-02-r2` layer 4 · `I3-sty-01` f2 · `I6-sty-01` f4 | what you do now about comms | Backups: "what you do differently about comms now" |
+| `I3-sty-01` f1 (How did you split the twelve?) | the whole answer | Story 1: "how you split the twelve (crews per tower, a test team, a programmer?)" |
+| `I5-sty-02-r2` layer 3 | how long the faults had gone on before the diagnosis; the site's size in MW or MWh | Story 3: "how long had the faults gone on before you diagnosed them, the site's size in MW or MWh" |
+| `I5-sty-01` f4 (Did it stay clean after the re-pull?) | the whole answer | Story 3: "zero faults after the re-pull?" |
+| `I6-sty-01` f2 (Did anything release?) | the whole answer | Story 4: "was any suppression or pre-action zone tied to that detector, and did the canned air reach two cross-zoned heads?" |
+| `I6-sty-01` f3 (How did the customer react?) | the whole answer | Story 4: "How did the customer react?" |
+| `I4-sty-01` f2 (How did you test transport time?) | your worst measured time | **Not on the list** — the script's own bracket |
+| `I7-sty-01` f1 (Which tool matters most?) | one number: devices per day, or hours saved per test | Story 5: "one number for the playbooks" (a sibling — the tool's number isn't asked there) |
+
 ### For the content sessions (B1, B2, C, D) — read this before writing cards
 
 **Card fields added in round 2** (validator-enforced; `node validate.js src/data/questions.json --strict`):
@@ -306,7 +345,7 @@ One follow-up chain as implemented (`src/data/sample.json`, E2-scn-01-r2 trimmed
 
 ## In progress
 
-- **Round 2 update.** Sessions A, B1 and B2 done (branch `round2`, not pushed). Next: C (Opus) — the behavioral slice: story follow-ups for I3–I7, the two drill ladders (Story 1, Story 3), two Round 3 mock decks (`round: "r3"`). Then D (Fable, audit) and E (Opus, ship) per `ROUND2_UPDATE_PROMPT.md`. The round 1 debrief step was skipped (template unfilled) and can be run later. `main` and the live site are still v1.0 until session E.
+- **Round 2 update.** Sessions A, B1, B2 and C done (branch `round2`, not pushed). Next: D (Fable) — audit every changed card, follow-up and r2/r3 deck (`content/guide-diff.md` lists 0 changed guide sections, so no older card needs a source re-audit). Then E (Opus, ship) per `ROUND2_UPDATE_PROMPT.md`. The round 1 debrief step was skipped (template unfilled) and can be run later. `main` and the live site are still v1.0 until session E.
 
 ## For later sessions (re-audits, re-deploys)
 
@@ -520,6 +559,14 @@ Round 2 · session B2 (technical follow-ups, everything else, and the Round 2 mo
 84. **Mock decks copy cards.** A technical question is its card's beats and both follow-ups verbatim with `cardId` set (so the audit's scope and the debrief's "Practice the card" button both resolve), par 120 for walkthroughs and 90 otherwise, follow-ups par 45 with their card kinds. The experience question is Story 2 in all three decks — the scripts' only data-center commissioning story — with its scripted follow-ups split across the decks as `own-it` layers; the intro's software number is a fill-in beat; intro and close carry no follow-ups. Prompts use the card's `interviewerPhrasing`.
 85. **No engine, audit or tools change.** G1 reached exactly 10 (the Core maximum), nothing exceeds a bound, so `CARD_MINIMUMS` stays; `scripts/audit-allow.json` is unchanged (no new hypothetical numbers). The stock `tools/smoke.js` runs 100/100 on this build (its nudge fixture is `A1-scn-01` since `65133e0`); its one failure in this session was a transient DevTools screenshot timeout on the first run.
 
+Round 2 · session C (behavioral slice):
+
+86. **All of a story's scripted follow-ups go on its card**, in the script's order (four for Stories 1–4, three for Story 5), not just two: the drill-down is the point of Round 3, and a follow-up whose answer is still a bracket costs nothing (shown, not graded). The beats keep the script's sentences, split at its clause breaks.
+87. **Story 4's "Something more recent?"** is answered in the scripts by "Go to the radios backup", so that layer's beats are the radios backup's clauses (source: Backup scripts) — the scripted answer, said in full.
+88. **A drill ladder is its own story card** (`ladder: true`, `-r2` id, next to the story card) with the same script and beats as the story, so the shift can serve it in the drill-down slot and the story card keeps its scripted follow-ups. The ladder's layers are re-sorted script clauses (the decisions, the constraints, the cost, the radios, the client); where nothing answers a layer it is a fill-in (decision 68: not graded).
+89. **The Round 3 decks reuse the v1 decks' values questions** (prompt and beats, already audited) and swap their single spoken follow-up for two scripted drills with beats. The hardest-challenge question's beats are the story's "beats to memorize" (the v1 deck's, minus their closing coaching line); the "Why Fluidstack?" beats drop the v1 line that answered its old follow-up.
+90. **The ladders are `values` questions in the mock**, so interrupt mode never cuts into them (decision 69); every r3 follow-up runs 20 s.
+
 ## Open questions
 
 - **Round 2 (session A):** `content/round1-debrief.md` is still the blank template. B1 turns it into cards and C/B use its "Facts about my own work" for own-it and drill beats — fill it in before B1, or B1 skips that step.
@@ -528,7 +575,8 @@ Round 2 · session B2 (technical follow-ups, everything else, and the Round 2 mo
 - **Round 2 (session A):** interrupt mode skips story cards (decision 69); say if the behavioral drill-downs should be cut in on too.
 - **Round 2 (B1):** the round 1 debrief step was skipped by your choice (`content/round1-debrief.md` is the blank template). To run it later: fill the file in and ask Fable to "turn content/round1-debrief.md into cards, the same way as the round 1 debrief" (ROUND2_UPDATE_PROMPT.md › After it ships), then D on those cards and E to redeploy.
 - **Round 2 (B1):** `A3-scn-01-f2` carries the beat "say plainly there's no direct story of a full data hall IST with load banks and a utility drop" because no script covers one. If you have run one, write it under "Facts about my own work" in the debrief file and the beat gets replaced with the facts.
-- **Round 2 (B1):** `tools/smoke.js` hard-codes `P6-scn-01` as its plain scenario (lines 500 and 525); that card now has follow-ups, so after Reveal its button is "Next — they follow up" and the stock smoke stops at "scenario: Grade it with nothing ticked". A copy with the fixture switched to `C6-scn-02` (a scenario without follow-ups) was run instead — result in the B1 section. Session E should make that one-line change in `tools/smoke.js` (B1 was told not to touch `tools/`).
+- ~~**Round 2 (B1):** `tools/smoke.js` hard-codes `P6-scn-01` as its plain scenario~~ — fixed in `65133e0` (the fixture is `A1-scn-01`, a Light topic that never gets follow-ups).
+- **Round 2 (C):** the story gaps — see "Story gaps to fill" in the session C section. One question isn't on the scripts' own list: what the client and the crew said after the Hawaii cutover (the Story 1 ladder's last layer is a fill-in until you answer it).
 - **Round 2 (B1):** nothing in the guide was found wrong while writing these cards; no guide fix is pending.
 - **Round 2 (B2):** the experience question ("Walk me through a fire system you commissioned in a data center — what failed and what did you do?") is Story 2 in all three r2 decks because the scripts hold no other data-center commissioning story. If you have one (the lab? a second COLO job?), write it under "Facts about my own work" in the debrief file and deck B or C can take it.
 - **Round 2 (B2):** `F3-scn-01-f2` ("Have you proven a fire pump's transfer to the alternate source yourself?") and `B2-scn-02-f2` (the off-gas IST) carry a "say plainly there's no direct story" beat, as `A3-scn-01-f2` does. If you have run a pump acceptance test or a BESS off-gas IST, write it under "Facts about my own work" and the beat gets replaced with the facts.

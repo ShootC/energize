@@ -13165,7 +13165,175 @@
         }
       ],
       "codeRef": null,
-      "explanation": "Hook: three occupied towers lose their fire alarm for a few hours → built every panel on site a month early, 4 missing parts caught → under 8 hours impaired, fire watch throughout → ownership starts a month before the outage."
+      "explanation": "Hook: three occupied towers lose their fire alarm for a few hours → built every panel on site a month early, 4 missing parts caught → under 8 hours impaired, fire watch throughout → ownership starts a month before the outage.",
+      "followUps": [
+        {
+          "id": "I3-sty-01-f1",
+          "kind": "drill",
+          "prompt": "How did you split the twelve?",
+          "beats": [
+            {
+              "label": "Crews per tower, test team, programmer, who ran each morning",
+              "fillIn": true
+            }
+          ],
+          "source": "Story 1 — Three occupied towers, one cutover › Follow-ups, 15 seconds each",
+          "par": 20
+        },
+        {
+          "id": "I3-sty-01-f2",
+          "kind": "drill",
+          "prompt": "What would you do differently?",
+          "beats": [
+            "The radios: I ordered them late",
+            "A coworker suggested a push-to-talk phone app; I bought licenses, the client let us on site Wi-Fi",
+            "It cost less than radios",
+            {
+              "label": "What you do now — e.g. comms goes on the mobilization list with the same lead time as materials",
+              "fillIn": true
+            }
+          ],
+          "source": "Story 1 — Three occupied towers, one cutover › Follow-ups, 15 seconds each",
+          "par": 20
+        },
+        {
+          "id": "I3-sty-01-f3",
+          "kind": "drill",
+          "prompt": "Why build the panels a month out?",
+          "beats": [
+            "On an island, a shortage found at cutover is a slipped date",
+            "A month gave shipping time, and it found four"
+          ],
+          "source": "Story 1 — Three occupied towers, one cutover › Follow-ups, 15 seconds each",
+          "par": 20
+        },
+        {
+          "id": "I3-sty-01-f4",
+          "kind": "drill",
+          "prompt": "How did you prove the fiber?",
+          "beats": [
+            "A light source at each panel, run by run",
+            "A label on both ends, since there were no redlines to trust"
+          ],
+          "source": "Story 1 — Three occupied towers, one cutover › Follow-ups, 15 seconds each",
+          "par": 20
+        }
+      ],
+      "dontSay": "Any blame on the warehouse or the fiber contractor. State what was missing and what you did."
+    },
+    "hook": "3 towers · 16 nodes · 1,500 devices · 12 people, then 1 month · 4 parts · under 8 hours.",
+    "source": "Story 1 — Three occupied towers, one cutover",
+    "par": 120,
+    "confirmInEdition": false
+  },
+  {
+    "id": "I3-sty-02-r2",
+    "topicId": "I3",
+    "type": "story",
+    "ladder": true,
+    "prompt": "Hardest challenge — Story 1, three occupied towers. Tell it in 90–120 s, then take the drill-down, layer by layer.",
+    "interviewerPhrasing": "What’s the most difficult challenge you’ve faced?",
+    "answer": {
+      "script": "Three occupied high-rise towers had to lose their fire alarm for a few hours, and my job was to make that window as short and as safe as possible. It's a campus in Hawaii I'm finishing right now, fifteen to sixteen floors a tower. We're replacing the legacy fire alarm, bringing it to code and moving it onto a new fiber backbone, sixteen nodes and about fifteen hundred devices. I own it end to end, from the job walk and design through programming, and I'm leading a crew of twelve through cutover and testing.\n\nTwo things could have sunk it before we started. A month before cutover I flew out and built every panel on site. That caught four parts critical to the install that the warehouse had missed, early enough to get them shipped to the island. Then the fiber: the contractor pulled the runs but never jumpered the cassettes and left no redlines. Nobody owned that gap, so I did. A coworker and I went panel by panel with a light source, found every missing jumper and labeled every run end to end.\n\nFor cutover I gave the twelve defined roles and a schedule, and I set the bar for sending the crew home before we started: every waterflow and tamper, elevator recall and shunt trip, audibility, the sequence for every device type on every floor, and all manual paging. Proven, not sampled.\n\nThe result: three occupied towers were impaired for under eight hours, shutdown to waterflow back in service, with fire watch the whole time.\n\n[Result after Oct 30: we cut over on ___, ___ devices tested, ___ punch items open, most of the crew home on ___.]\n\nThe lesson I keep: ownership starts a month before the outage. That's where you buy the eight-hour window.",
+      "beats": [
+        {
+          "label": "Hook",
+          "kind": "hook",
+          "quote": "Three occupied high-rise towers had to lose their fire alarm for a few hours, and my job was to make that window as short and as safe as possible."
+        },
+        {
+          "label": "Decision with reason",
+          "kind": "decision",
+          "quote": "A month before cutover I flew out and built every panel on site. That caught four parts critical to the install that the warehouse had missed, early enough to get them shipped to the island."
+        },
+        {
+          "label": "A number",
+          "kind": "number",
+          "quote": "The result: three occupied towers were impaired for under eight hours, shutdown to waterflow back in service, with fire watch the whole time."
+        },
+        {
+          "label": "Result line (after Oct 30)",
+          "kind": "number",
+          "fillIn": true
+        },
+        {
+          "label": "Lesson",
+          "kind": "lesson",
+          "quote": "The lesson I keep: ownership starts a month before the outage. That's where you buy the eight-hour window."
+        }
+      ],
+      "codeRef": null,
+      "explanation": "Hook: three occupied towers lose their fire alarm for a few hours → built every panel on site a month early, 4 missing parts caught → under 8 hours impaired, fire watch throughout → ownership starts a month before the outage.",
+      "followUps": [
+        {
+          "id": "I3-sty-02-r2-f1",
+          "kind": "drill",
+          "prompt": "Why did you make that call?",
+          "beats": [
+            "Built every panel on site a month early → on an island, a shortage found at cutover is a slipped date",
+            "Nobody owned that gap, so I did → light source, panel by panel, every run labeled",
+            "Bar for going home set before we started: proven, not sampled"
+          ],
+          "source": "Story 1 — Three occupied towers, one cutover",
+          "par": 20
+        },
+        {
+          "id": "I3-sty-02-r2-f2",
+          "kind": "drill",
+          "prompt": "What constrained you?",
+          "beats": [
+            "Three occupied high-rise towers had to lose their fire alarm for a few hours; my job is to make that short and safe",
+            "The contractor pulled the runs but never jumpered the cassettes and left no redlines",
+            "I’m leading a crew of twelve through cutover and testing"
+          ],
+          "source": "Story 1 — Three occupied towers, one cutover",
+          "par": 20
+        },
+        {
+          "id": "I3-sty-02-r2-f3",
+          "kind": "drill",
+          "prompt": "What did it cost, or what was the risk?",
+          "beats": [
+            "Three occupied towers were impaired for under eight hours, shutdown to waterflow back in service, with fire watch the whole time",
+            "4 missing critical parts caught in time to ship",
+            {
+              "label": "The one moment in the eight-hour window that nearly went wrong",
+              "fillIn": true
+            }
+          ],
+          "source": "Story 1 — Three occupied towers, one cutover",
+          "par": 20
+        },
+        {
+          "id": "I3-sty-02-r2-f4",
+          "kind": "drill",
+          "prompt": "What would you do differently?",
+          "beats": [
+            "The radios: I ordered them late",
+            "A coworker suggested a push-to-talk phone app; I bought licenses, the client let us on site Wi-Fi, and it cost less than radios",
+            {
+              "label": "What you do now — e.g. comms goes on the mobilization list with the same lead time as materials",
+              "fillIn": true
+            }
+          ],
+          "source": "Story 1 — Three occupied towers, one cutover",
+          "par": 20
+        },
+        {
+          "id": "I3-sty-02-r2-f5",
+          "kind": "drill",
+          "prompt": "What did the client or crew think?",
+          "beats": [
+            {
+              "label": "What the client and the crew said once the towers were back in service",
+              "fillIn": true
+            }
+          ],
+          "source": "Story 1 — Three occupied towers, one cutover",
+          "par": 20
+        }
+      ],
+      "dontSay": "Any blame on the warehouse or the fiber contractor. State what was missing and what you did."
     },
     "hook": "3 towers · 16 nodes · 1,500 devices · 12 people, then 1 month · 4 parts · under 8 hours.",
     "source": "Story 1 — Three occupied towers, one cutover",
@@ -13386,7 +13554,59 @@
         }
       ],
       "codeRef": null,
-      "explanation": "Hook: 8 COLOs, 20 VESDAs, no drawings — waiting wasn't an option → pulled the data (all 20 at defaults), walked it, 4 designs not 20 (80% less) → cause and effect caught a wrong-COLO release → about two weeks → every inherited system is unverified."
+      "explanation": "Hook: 8 COLOs, 20 VESDAs, no drawings — waiting wasn't an option → pulled the data (all 20 at defaults), walked it, 4 designs not 20 (80% less) → cause and effect caught a wrong-COLO release → about two weeks → every inherited system is unverified.",
+      "followUps": [
+        {
+          "id": "I4-sty-01-f1",
+          "kind": "drill",
+          "prompt": "What thresholds did you set, and why?",
+          "beats": [
+            "The factory defaults were Fire 1 at 2 %/ft and Fire 2 at 4 %/ft, no more sensitive than a spot photoelectric detector (roughly 0.5–4 %/ft)",
+            "We set Fire 1 to 0.0625 %/ft and Fire 2 to 1 %/ft for very early detection",
+            "Tie the new settings to the alarm philosophy: Alert and Action call Ops, Fire 1 is the building alarm, Fire 2 releases"
+          ],
+          "source": "Story 2 — A data center with no drawings › Follow-ups, 15 seconds each",
+          "par": 20
+        },
+        {
+          "id": "I4-sty-01-f2",
+          "kind": "drill",
+          "prompt": "How did you test transport time?",
+          "beats": [
+            "Smoke at the end cap of every pipe",
+            "Timed against the ASPIRE calc and NFPA 72’s 120-second limit",
+            {
+              "label": "Your worst measured time, if you remember it",
+              "fillIn": true
+            }
+          ],
+          "source": "Story 2 — A data center with no drawings › Follow-ups, 15 seconds each",
+          "par": 20
+        },
+        {
+          "id": "I4-sty-01-f3",
+          "kind": "drill",
+          "prompt": "How did you catch the wrong-COLO release?",
+          "beats": [
+            "Running cause and effect zone by zone against the sequence of operations",
+            "Watching which valve actually operated, not just that a release output went active"
+          ],
+          "source": "Story 2 — A data center with no drawings › Follow-ups, 15 seconds each",
+          "par": 20
+        },
+        {
+          "id": "I4-sty-01-f4",
+          "kind": "drill",
+          "prompt": "Why not wait for drawings?",
+          "beats": [
+            "None existed, and the detectors were at defaults",
+            "So the risk was in leaving it as it was"
+          ],
+          "source": "Story 2 — A data center with no drawings › Follow-ups, 15 seconds each",
+          "par": 20
+        }
+      ],
+      "dontSay": "Who programmed the release wrong. End on what you changed."
     },
     "hook": "8 COLOs · 20 VESDAs · 4 designs · 80% less · 2 weeks — and the wrong COLO's valve.",
     "source": "Story 2 — A data center with no drawings",
@@ -13595,7 +13815,167 @@
         }
       ],
       "codeRef": null,
-      "explanation": "Hook: Texas BESS, 20 flame detectors, fault past ~7 connected → measured, didn't hunt: 0.5–4 V per leg, ~7 modules sum past 0.4 V → shielded but untwisted → proved it with twisted cable on the ground → re-pull ~2 weeks → check cable data sheets at submittal."
+      "explanation": "Hook: Texas BESS, 20 flame detectors, fault past ~7 connected → measured, didn't hunt: 0.5–4 V per leg, ~7 modules sum past 0.4 V → shielded but untwisted → proved it with twisted cable on the ground → re-pull ~2 weeks → check cable data sheets at submittal.",
+      "followUps": [
+        {
+          "id": "I5-sty-01-f1",
+          "kind": "drill",
+          "prompt": "Explain the physics.",
+          "beats": [
+            "Induced voltage scales with the loop area between the two conductors",
+            "Twisting makes each half-twist’s pickup cancel the next, so the net loop area goes to nearly zero",
+            "A grounded foil shield drains capacitive pickup, but magnetic flux passes right through it"
+          ],
+          "source": "Story 3 — Ground faults nobody could ground out › Follow-ups, 15 seconds each",
+          "par": 20
+        },
+        {
+          "id": "I5-sty-01-f2",
+          "kind": "drill",
+          "prompt": "How did you handle the client pushing back?",
+          "beats": [
+            "I let them try their options, because each was cheaper than a re-pull if it worked",
+            "When they didn’t, I put the proof on the ground in front of them instead of arguing"
+          ],
+          "source": "Story 3 — Ground faults nobody could ground out › Follow-ups, 15 seconds each",
+          "par": 20
+        },
+        {
+          "id": "I5-sty-01-f3",
+          "kind": "drill",
+          "prompt": "Who approved that cable?",
+          "beats": [
+            "Treat it as a process gap: the cable was approved before anyone read its data sheet",
+            "My fix is reading cable sheets at submittal, every job"
+          ],
+          "source": "Story 3 — Ground faults nobody could ground out › Follow-ups, 15 seconds each",
+          "par": 20
+        },
+        {
+          "id": "I5-sty-01-f4",
+          "kind": "drill",
+          "prompt": "Did it stay clean after the re-pull?",
+          "beats": [
+            {
+              "label": "Zero ground faults through commissioning?",
+              "fillIn": true
+            }
+          ],
+          "source": "Story 3 — Ground faults nobody could ground out › Follow-ups, 15 seconds each",
+          "par": 20
+        }
+      ],
+      "dontSay": "That the designer approved the cable without reading the sheet. It’s a process story, not a blame story."
+    },
+    "hook": "20 detectors · fault past 7 · 0.5–4 V per leg · 0.4 V threshold · 2 weeks to re-pull.",
+    "source": "Story 3 — Ground faults nobody could ground out",
+    "par": 120,
+    "confirmInEdition": false
+  },
+  {
+    "id": "I5-sty-02-r2",
+    "topicId": "I5",
+    "type": "story",
+    "ladder": true,
+    "prompt": "Hardest challenge — Story 3, ground faults nobody could ground out. Tell it in 90–120 s, then take the drill-down, layer by layer.",
+    "interviewerPhrasing": "What’s the most difficult challenge you’ve faced?",
+    "answer": {
+      "script": "A battery storage site in Texas. I'd reviewed the design and the BACnet sequence matrix, ran the crew installing twenty flame detectors, and programmed the panel and the BACnet link to the client's control house. Once more than about seven detectors were connected, the panel threw a ground fault on the SLC.\n\nThe usual move with a ground fault is to hunt for a nicked wire. I measured instead. There was half a volt to four volts induced on each leg of the detector circuits. Each monitor module passed a fraction of that onto the SLC, and around seven of them added up past the panel's 0.4-volt ground-fault threshold. That explained the seven-detector pattern, and we had induction diagnosed the same day.\n\nThe root cause was the cable. It was shielded but not twisted. A shield stops electric-field pickup; it does nothing for magnetic pickup. Twisting the pair is what cancels that. So no amount of textbook shield grounding was going to fix it.\n\nThe client understandably wanted to try everything short of a re-pull, and each attempt failed. So rather than argue, I proved it. I laid twisted replacement cable on the ground out to the detectors, and the faults cleared. That made the decision easy. We re-pulled every run from the control house, about two weeks to pull and retest, and commissioned the system.\n\nWhat changed for me: I check cable data sheets at submittal review, not at start-up. The cheapest place to catch physics is on paper.",
+      "beats": [
+        {
+          "label": "Hook",
+          "kind": "hook",
+          "quote": "Once more than about seven detectors were connected, the panel threw a ground fault on the SLC."
+        },
+        {
+          "label": "Decision with reason",
+          "kind": "decision",
+          "quote": "The usual move with a ground fault is to hunt for a nicked wire. I measured instead."
+        },
+        {
+          "label": "A number",
+          "kind": "number",
+          "quote": "There was half a volt to four volts induced on each leg of the detector circuits. Each monitor module passed a fraction of that onto the SLC, and around seven of them added up past the panel's 0.4-volt ground-fault threshold."
+        },
+        {
+          "label": "Zero faults after the re-pull?",
+          "kind": "number",
+          "fillIn": true
+        },
+        {
+          "label": "Lesson",
+          "kind": "lesson",
+          "quote": "What changed for me: I check cable data sheets at submittal review, not at start-up. The cheapest place to catch physics is on paper."
+        }
+      ],
+      "codeRef": null,
+      "explanation": "Hook: Texas BESS, 20 flame detectors, fault past ~7 connected → measured, didn't hunt: 0.5–4 V per leg, ~7 modules sum past 0.4 V → shielded but untwisted → proved it with twisted cable on the ground → re-pull ~2 weeks → check cable data sheets at submittal.",
+      "followUps": [
+        {
+          "id": "I5-sty-02-r2-f1",
+          "kind": "drill",
+          "prompt": "Why did you make that call?",
+          "beats": [
+            "The usual move with a ground fault is to hunt for a nicked wire. I measured instead",
+            "Each monitor module passed a fraction of that onto the SLC, and around seven of them added up past the panel’s 0.4-volt ground-fault threshold",
+            "Shielded but not twisted: a shield stops electric-field pickup; it does nothing for magnetic pickup"
+          ],
+          "source": "Story 3 — Ground faults nobody could ground out",
+          "par": 20
+        },
+        {
+          "id": "I5-sty-02-r2-f2",
+          "kind": "drill",
+          "prompt": "What constrained you?",
+          "beats": [
+            "Once more than about seven detectors were connected, the panel threw a ground fault on the SLC",
+            "So no amount of textbook shield grounding was going to fix it",
+            "The client understandably wanted to try everything short of a re-pull, and each attempt failed"
+          ],
+          "source": "Story 3 — Ground faults nobody could ground out",
+          "par": 20
+        },
+        {
+          "id": "I5-sty-02-r2-f3",
+          "kind": "drill",
+          "prompt": "What did it cost, or what was the risk?",
+          "beats": [
+            "We had induction diagnosed the same day",
+            "We re-pulled every run from the control house, about two weeks to pull and retest, and commissioned the system",
+            {
+              "label": "How long the faults had gone on before the diagnosis, and the site’s size in MW or MWh",
+              "fillIn": true
+            }
+          ],
+          "source": "Story 3 — Ground faults nobody could ground out",
+          "par": 20
+        },
+        {
+          "id": "I5-sty-02-r2-f4",
+          "kind": "drill",
+          "prompt": "What would you do differently?",
+          "beats": [
+            "I check cable data sheets at submittal review, not at start-up",
+            "The cheapest place to catch physics is on paper",
+            "Treat it as a process gap: the cable was approved before anyone read its data sheet"
+          ],
+          "source": "Story 3 — Ground faults nobody could ground out",
+          "par": 20
+        },
+        {
+          "id": "I5-sty-02-r2-f5",
+          "kind": "drill",
+          "prompt": "What did the client or crew think?",
+          "beats": [
+            "I let them try their options, because each was cheaper than a re-pull if it worked",
+            "So rather than argue, I proved it. I laid twisted replacement cable on the ground out to the detectors, and the faults cleared",
+            "That made the decision easy"
+          ],
+          "source": "Story 3 — Ground faults nobody could ground out",
+          "par": 20
+        }
+      ],
+      "dontSay": "That the designer approved the cable without reading the sheet. It’s a process story, not a blame story."
     },
     "hook": "20 detectors · fault past 7 · 0.5–4 V per leg · 0.4 V threshold · 2 weeks to re-pull.",
     "source": "Story 3 — Ground faults nobody could ground out",
@@ -13776,7 +14156,65 @@
         "limit": 150
       },
       "codeRef": null,
-      "explanation": "7 months in, dirty head, no test mode, canned air from under the floor → alarm, evacuation, fire department at rush hour → didn't reset; confirmed, silenced, met the trucks and owned it → three habits: on test first, isolation-to-return-to-normal scripts, vacuum don't blow → nobody learns about your test from an evacuation."
+      "explanation": "7 months in, dirty head, no test mode, canned air from under the floor → alarm, evacuation, fire department at rush hour → didn't reset; confirmed, silenced, met the trucks and owned it → three habits: on test first, isolation-to-return-to-normal scripts, vacuum don't blow → nobody learns about your test from an evacuation.",
+      "followUps": [
+        {
+          "id": "I6-sty-01-f1",
+          "kind": "drill",
+          "prompt": "What would you do differently in the moment?",
+          "beats": [
+            "Call central station",
+            "Put the system on test with outputs disabled",
+            "Pull the head and clean it away from the base",
+            "Then restore and confirm normal before leaving"
+          ],
+          "source": "Story 4 — Canned air at a data center › Follow-ups, 15 seconds each",
+          "par": 20
+        },
+        {
+          "id": "I6-sty-01-f2",
+          "kind": "drill",
+          "prompt": "Did anything release?",
+          "beats": [
+            {
+              "label": "Was any suppression or pre-action zone tied to that detector? Did the canned air reach two cross-zoned detectors?",
+              "fillIn": true
+            }
+          ],
+          "source": "Story 4 — Canned air at a data center › Follow-ups, 15 seconds each",
+          "par": 20
+        },
+        {
+          "id": "I6-sty-01-f3",
+          "kind": "drill",
+          "prompt": "How did the customer react?",
+          "beats": [
+            {
+              "label": "How the customer reacted, in one line",
+              "fillIn": true
+            }
+          ],
+          "source": "Story 4 — Canned air at a data center › Follow-ups, 15 seconds each",
+          "par": 20
+        },
+        {
+          "id": "I6-sty-01-f4",
+          "kind": "drill",
+          "prompt": "Something more recent?",
+          "beats": [
+            "On the Hawaii job I was late ordering radios for a crew of twelve",
+            "A coworker suggested a push-to-talk app on our phones; I bought the licenses, got the client’s OK to use the site Wi-Fi, and we ran on it for less than radios would have cost",
+            "On a cutover, communication is part of the safety plan, not an afterthought",
+            {
+              "label": "What you do now — e.g. comms goes on the mobilization list with the same lead time as materials",
+              "fillIn": true
+            }
+          ],
+          "source": "Backup scripts (45–70 seconds)",
+          "par": 20
+        }
+      ],
+      "dontSay": "Jokes or minimizing. The calm, specific telling is what scores."
     },
     "hook": "7 months in · one can of air · three habits for life.",
     "source": "Story 4 — Canned air at a data center",
@@ -13959,7 +14397,48 @@
         }
       ],
       "codeRef": null,
-      "explanation": "Hook: turn what one expert knows into something the next person can repeat → 4 playbooks in company use (fewer go-backs, more techs can go) → thermal detection training and the camera placement tool → night tools: EST3→EST4 priced BOM, panel capture → productizing a data center is the same job."
+      "explanation": "Hook: turn what one expert knows into something the next person can repeat → 4 playbooks in company use (fewer go-backs, more techs can go) → thermal detection training and the camera placement tool → night tools: EST3→EST4 priced BOM, panel capture → productizing a data center is the same job.",
+      "followUps": [
+        {
+          "id": "I7-sty-01-f1",
+          "kind": "drill",
+          "prompt": "Which tool matters most for this role?",
+          "beats": [
+            "The panel-capture app",
+            "It records what the panel reports during testing and marks each device off the points list, so the test record builds itself",
+            {
+              "label": "One number: devices per day, or hours saved per test",
+              "fillIn": true
+            }
+          ],
+          "source": "Story 5 — Turning field lessons into something others can repeat › Follow-ups, 15 seconds each",
+          "par": 20
+        },
+        {
+          "id": "I7-sty-01-f2",
+          "kind": "drill",
+          "prompt": "How do you use AI in your work today?",
+          "beats": [
+            "I build these tools with frontier models",
+            "I’m the liaison for my company’s AI design tool",
+            "So I see both sides: what the model gets right and where an engineer has to check it"
+          ],
+          "source": "Story 5 — Turning field lessons into something others can repeat › Follow-ups, 15 seconds each",
+          "par": 20
+        },
+        {
+          "id": "I7-sty-01-f3",
+          "kind": "drill",
+          "prompt": "Won’t side projects pull focus?",
+          "beats": [
+            "Every tool starts as a field problem I hit on a job",
+            "The work feeds the tools, not the other way around"
+          ],
+          "source": "Story 5 — Turning field lessons into something others can repeat › Follow-ups, 15 seconds each",
+          "par": 20
+        }
+      ],
+      "dontSay": "Pricing or business details of the tools. Keep it about the work they make repeatable."
     },
     "hook": "4 playbooks · a camera tool · two night tools — and one number still to fill.",
     "source": "Story 5 — Turning field lessons into something others can repeat",

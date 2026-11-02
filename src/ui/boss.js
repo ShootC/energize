@@ -11,6 +11,7 @@ import { beatLabel } from '../engine/grader.js';
 import { gradeMockAnswer, mockHeadline, weakestAnswer, mockRequiresNumber, mockFollowUps } from '../engine/mock.js';
 
 const FOLLOW_UP_SECONDS = 45;
+const isFillIn = (b) => !!(b && typeof b === 'object' && b.fillIn);
 const RESULT_WORD = { clean: 'Clean', slipped: 'Close', missed: 'Missed' };
 const KIND_LABEL = { intro: 'Warm-up', technical: 'Technical', experience: 'Your experience', values: 'Values', close: 'Your questions' };
 const KIND_LETTER = { intro: 'I', technical: 'T', experience: 'E', values: 'V', close: 'Q' };
@@ -157,17 +158,24 @@ export function mockScreen({ mock, onBack, onSource, onCard, interrupt = false, 
       );
     }
 
+    // A fill-in beat (a story detail still to confirm) is shown as a chip, never ticked.
+    const beatItem = (b, box, id) =>
+      isFillIn(b)
+        ? h('li', { class: 'beat fill' }, h('span', { class: 'fill-in' }, `fill in: ${beatLabel(b)}`))
+        : h('li', { class: 'beat' }, h('label', { for: id }, box, h('span', {}, beatLabel(b))));
+
     function reveal(seconds) {
       window.scrollTo(0, 0);
       const q = deck.questions[i];
       const fus = mockFollowUps(q);
-      const boxes = q.beats.map((b, k) => h('input', { type: 'checkbox', id: `mb${k}` }));
-      const fuBoxes = fus.map((f, j) => (f.beats || []).map((b, k) => h('input', { type: 'checkbox', id: `mf${j + 1}b${k}` })));
+      const boxes = q.beats.map((b, k) => (isFillIn(b) ? null : h('input', { type: 'checkbox', id: `mb${k}` })));
+      const fuBoxes = fus.map((f, j) => (f.beats || []).map((b, k) => (isFillIn(b) ? null : h('input', { type: 'checkbox', id: `mf${j + 1}b${k}` }))));
+      const ticked = (list) => list.map((x) => !!(x && x.checked));
       const needNumber = mockRequiresNumber(q);
       const num = h('input', { type: 'checkbox', id: 'mbnum' });
       const grade = h('button', { class: 'btn primary big', type: 'button', id: 'mock-grade' }, i + 1 < deck.questions.length ? 'Grade it · next question' : 'Grade it · debrief');
       grade.addEventListener('click', () => {
-        grades.push(gradeMockAnswer(q, { hits: boxes.map((x) => x.checked), saidNumber: needNumber ? num.checked : true, seconds, followUps: fuBoxes.map((bs) => ({ hits: bs.map((x) => x.checked) })) }));
+        grades.push(gradeMockAnswer(q, { hits: ticked(boxes), saidNumber: needNumber ? num.checked : true, seconds, followUps: fuBoxes.map((bs) => ({ hits: ticked(bs) })) }));
         i += 1;
         if (i < deck.questions.length) ask();
         else debrief();
@@ -180,7 +188,7 @@ export function mockScreen({ mock, onBack, onSource, onCard, interrupt = false, 
           { class: 'card mock-card' },
           h('p', { class: 'mock-q small' }, `“${q.prompt}”`),
           h('p', { class: 'hint' }, `Answer ran ${mmss(seconds)} against a par of ${mmss(q.par)}${seconds > q.par ? ' — over par counts as a slip' : ''}. Tick only what you said.`),
-          h('ul', { class: 'beats' }, q.beats.map((b, k) => h('li', { class: 'beat' }, h('label', { for: `mb${k}` }, boxes[k], h('span', {}, beatLabel(b)))))),
+          h('ul', { class: 'beats' }, q.beats.map((b, k) => beatItem(b, boxes[k], `mb${k}`))),
           needNumber ? h('label', { class: 'row-check extra', for: 'mbnum' }, num, h('span', {}, 'I said a number')) : null,
           fus.map((f, j) =>
             (f.beats || []).length
@@ -189,7 +197,7 @@ export function mockScreen({ mock, onBack, onSource, onCard, interrupt = false, 
                   { class: 'fu-result' },
                   h('p', { class: 'fu-head' }, h('span', { class: 'fu-count num' }, `Follow-up ${j + 1}`), f.kind ? h('span', { class: `fu-kind k-${f.kind}` }, KIND_NAMES[f.kind] || f.kind) : null),
                   h('p', { class: 'fu-prompt small' }, `“${f.prompt}”`),
-                  h('ul', { class: 'beats' }, f.beats.map((b, k) => h('li', { class: 'beat' }, h('label', { for: `mf${j + 1}b${k}` }, fuBoxes[j][k], h('span', {}, beatLabel(b)))))),
+                  h('ul', { class: 'beats' }, f.beats.map((b, k) => beatItem(b, fuBoxes[j][k], `mf${j + 1}b${k}`))),
                 )
               : null,
           ),
