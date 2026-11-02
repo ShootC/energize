@@ -268,6 +268,699 @@
      "cardId": "I7-sty-01"
     }
    ]
+  },
+  {
+   "id": "r2-a",
+   "round": "r2",
+   "title": "Round 2 · Deck A",
+   "questions": [
+    {
+     "id": "r2-a-q1",
+     "kind": "intro",
+     "prompt": "Let's start easy — give me the 60-second version: who you are and why you're here.",
+     "par": 60,
+     "beats": [
+      "Fire protection engineer — PE, NICET IV fire alarm — 18 years taking fire alarm and special hazard systems from design through programming, installation and commissioning",
+      "The range: high-rises, campuses, labs, clean agent, BESS, ASRS, hangars, cold storage",
+      "Today: Everon's national technical team — performance-based design, PE-level review, liaison for the AI design tool",
+      {
+       "label": "Software that takes the hours out of design and estimating — [one number]",
+       "fillIn": true
+      },
+      "Why here: reliability is the product, at a scale where it matters. That's why I'm here."
+     ],
+     "source": "Your 60-second intro",
+     "topicId": "I1",
+     "cardId": "I1-sty-01"
+    },
+    {
+     "id": "r2-a-q2",
+     "kind": "technical",
+     "prompt": "Walk me through the Cx levels for a pre-action system — what each level proves and what you'd test there.",
+     "par": 120,
+     "beats": [
+      "L1 — factory acceptance / factory witness test: the equipment meets spec before it ships — the releasing panel factory test",
+      "L2 — delivery and installation verification: what arrived matches the submittal and is installed per design and listing — hangers and seismic bracing, sprinkler temperature ratings and obstructions around containment",
+      "L3 — start-up / pre-functional: each component runs on its own — the dry / pre-action air test, program loaded, 100% point-to-point",
+      "L4 — functional performance test: every sequence, including failure and degraded modes, against the Basis of Design — the pre-action trip with water delivery time",
+      "L5 — integrated systems test: all systems work together under simulated load and utility failure, the way Ops will live with them — release signals to BMS / EPMS, fire alarm through a utility failure onto generator. End on IST."
+     ],
+     "source": "Likely questions and day-of checklist › Commissioning technical (the 35%)",
+     "topicId": "C1",
+     "cardId": "C1-scn-04-r2",
+     "followUps": [
+      {
+       "prompt": "Say the L3 point-to-point was sampled, not 100%. Do you start L4?",
+       "beats": [
+        "L3 is 100% point-to-point, not a sample",
+        "The script's prerequisites: prior level signed off before L4 starts",
+        "A deferral is a documented risk acceptance, an impairment entry and a fire watch — not a quiet skip"
+       ],
+       "kind": "what-if",
+       "par": 45
+      },
+      {
+       "prompt": "The air test at L3 — numbers, and the section?",
+       "beats": [
+        "Dry and double-interlock air test: 40 psi for 24 h, loss ≤ 1.5 psi",
+        "NFPA 13 §29.2.2",
+        "Air supply: restores normal air pressure within 30 min (NFPA 13 §8.2.6.3)"
+       ],
+       "kind": "number",
+       "par": 45
+      }
+     ]
+    },
+    {
+     "id": "r2-a-q3",
+     "kind": "technical",
+     "prompt": "The 24-hour air test lost 3 psi. What next?",
+     "par": 90,
+     "beats": [
+      "It fails: the limit is 1.5 psi loss over 24 h at 40 psi (NFPA 13 §29.2.2)",
+      "Find the leak — grooved couplings and threaded joints are the usual places",
+      "Fix it and run the air test again",
+      "Check the air supply too: it has to restore normal pressure within 30 min"
+     ],
+     "source": "Pre-action",
+     "topicId": "P2",
+     "cardId": "P2-scn-01",
+     "followUps": [
+      {
+       "prompt": "Say it fails again on the retest. Now what?",
+       "beats": [
+        "Find the leak again — grooved couplings and threaded joints are the usual places",
+        "Fix it and run the full 24 h again; the criterion doesn't move: loss ≤ 1.5 psi at 40 psi",
+        "The L4 script's first prerequisite is hydro and air test passed — L4 doesn't start until it does"
+       ],
+       "kind": "what-if",
+       "par": 45
+      },
+      {
+       "prompt": "Why not just top the air up and keep going? The compressor can hold it.",
+       "beats": [
+        "The test is 40 psi for 24 h with loss ≤ 1.5 psi — the leak is what you're finding, at grooved couplings and threaded joints",
+        "The air supply is its own test: it must restore normal pressure within 30 minutes",
+        "Automatic air supervision is required above 20 sprinklers"
+       ],
+       "kind": "why-not",
+       "par": 45
+      }
+     ]
+    },
+    {
+     "id": "r2-a-q4",
+     "kind": "technical",
+     "prompt": "The fire pump misses the 150% point at acceptance. Walk me through what you check, in order.",
+     "par": 120,
+     "beats": [
+      "Check the test first: calibrated gauges, pitot readings, nozzle sizes",
+      "Measured speed with affinity correction",
+      "Then suction: a partly closed valve, strainer debris, air entrainment",
+      "Then the pump: rotation, impeller debris",
+      "Compare to the certified shop curve",
+      "Genuine shortfall = manufacturer claim and an impairment plan"
+     ],
+     "source": "Likely questions and day-of checklist › Commissioning technical (the 35%)",
+     "topicId": "F8",
+     "cardId": "F8-scn-03-r2",
+     "followUps": [
+      {
+       "prompt": "Say the speed correction alone brings the point onto the curve. Where does that leave you?",
+       "beats": [
+        "Correct every test point to rated speed with the affinity laws before you compare it to the shop curve",
+        "Plot net pressure, not discharge pressure",
+        "Curve match is within the accuracy of the test equipment — the 95% / 5% figure is NFPA 25's annual test, not acceptance"
+       ],
+       "kind": "what-if",
+       "par": 45
+      },
+      {
+       "prompt": "Say suction checks out, the pump checks out, and it's still short. What are you writing up?",
+       "beats": [
+        "Genuine shortfall = manufacturer claim",
+        "…and an impairment plan for the building while it's unresolved",
+        "Life-safety issues close before turnover; anything else carried into operations needs a documented risk acceptance"
+       ],
+       "kind": "what-if",
+       "par": 45
+      }
+     ]
+    },
+    {
+     "id": "r2-a-q5",
+     "kind": "experience",
+     "prompt": "Walk me through a fire system you commissioned in a data center — what failed and what did you do?",
+     "par": 120,
+     "beats": [
+      "8 COLOs · 20 VESDAs · no drawings — waiting wasn't an option",
+      "Pulled data first: all 20 at factory defaults",
+      "Counted holes, paced runs → only 4 pipe variations → 4 designs, not 20 (80% less)",
+      "Thresholds, airflow, transport time on every pipe; damaged pipe found and fixed",
+      "Cause and effect caught a wrong-COLO release → \"every inherited system is unverified\""
+     ],
+     "source": "Story 2 — A data center with no drawings",
+     "topicId": "I4",
+     "cardId": "I4-sty-01",
+     "followUps": [
+      {
+       "prompt": "How did you catch the wrong-COLO release?",
+       "kind": "own-it",
+       "par": 45,
+       "beats": [
+        "Running cause and effect zone by zone against the sequence of operations, watching which valve actually operated, not just that a release output went active",
+        "It was double interlock, so that system primed but never filled; the releases for two COLOs were swapped",
+        "I verified the release relay for every system and corrected the programming to the sequence of operations"
+       ]
+      },
+      {
+       "prompt": "What thresholds did you set, and why?",
+       "kind": "own-it",
+       "par": 45,
+       "beats": [
+        "The factory defaults were Fire 1 at 2 %/ft and Fire 2 at 4 %/ft, no more sensitive than a spot photoelectric detector (roughly 0.5–4 %/ft)",
+        "We set Fire 1 to 0.0625 %/ft and Fire 2 to 1 %/ft for very early detection",
+        "Tie the new settings to the alarm philosophy: Alert and Action call Ops, Fire 1 is the building alarm, Fire 2 releases"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "r2-a-q6",
+     "kind": "technical",
+     "prompt": "A clean agent room fails its door fan test a week before turnover. What do you do?",
+     "par": 90,
+     "beats": [
+      "Find leaks under depressurization (smoke pencil, thermal camera)",
+      "Where: cable and conduit penetrations, raised floor, ceiling plenum, dampers",
+      "Seal and retest",
+      "Never just add agent — that changes concentration against NOAEL and the overpressure vent sizing",
+      "If turnover proceeds, document the risk acceptance"
+     ],
+     "source": "Likely questions and day-of checklist › Commissioning technical (the 35%)",
+     "topicId": "G2",
+     "cardId": "G2-scn-01",
+     "followUps": [
+      {
+       "prompt": "Say you seal, retest, and it's still short.",
+       "beats": [
+        "Back under depressurization: cable and conduit penetrations, raised floor, ceiling plenum, dampers — seal and retest",
+        "Still never just add agent — that changes concentration against NOAEL and the overpressure vent sizing",
+        "If turnover proceeds, document the risk acceptance"
+       ],
+       "kind": "what-if",
+       "par": 45
+      },
+      {
+       "prompt": "Why not just add more agent and call it done?",
+       "beats": [
+        "It changes concentration against NOAEL",
+        "It changes the overpressure vent sizing",
+        "A fail means leaks: find them under depressurization with a smoke pencil and a thermal camera, seal and retest"
+       ],
+       "kind": "why-not",
+       "par": 45
+      }
+     ]
+    },
+    {
+     "id": "r2-a-q7",
+     "kind": "close",
+     "prompt": "We're about at time. What questions do you have for us?",
+     "par": 90,
+     "beats": [
+      "Which commissioning level ladder do you use, and who owns fire protection L4 and L5 — your team or a third-party agent?",
+      "How does commissioning feed back into the reference design — does the R&D team see what fails in the field?",
+      "Close with your strongest question and a one-line restatement of why you fit"
+     ],
+     "source": "Questions to ask (pick four)",
+     "topicId": "I10",
+     "cardId": "I10-scn-01"
+    }
+   ]
+  },
+  {
+   "id": "r2-b",
+   "round": "r2",
+   "title": "Round 2 · Deck B",
+   "questions": [
+    {
+     "id": "r2-b-q1",
+     "kind": "intro",
+     "prompt": "Before we dig in — give me your 60-second intro.",
+     "par": 60,
+     "beats": [
+      "Fire protection engineer — PE, NICET IV fire alarm — 18 years taking fire alarm and special hazard systems from design through programming, installation and commissioning",
+      "The range: high-rises, campuses, labs, clean agent, BESS, ASRS, hangars, cold storage",
+      "Today: Everon's national technical team — performance-based design, PE-level review, liaison for the AI design tool",
+      {
+       "label": "Software that takes the hours out of design and estimating — [one number]",
+       "fillIn": true
+      },
+      "Why here: reliability is the product, at a scale where it matters. That's why I'm here."
+     ],
+     "source": "Your 60-second intro",
+     "topicId": "I1",
+     "cardId": "I1-sty-01"
+    },
+    {
+     "id": "r2-b-q2",
+     "kind": "technical",
+     "prompt": "Walk me through the pull-the-plug IST, start to restore.",
+     "par": 120,
+     "beats": [
+      "Halls at load-bank heat; fire alarm normal. Then repeat with a fire scenario already in alarm",
+      "Open the utility main — or trip a generation block on an islanded campus",
+      "Time the transfer and walk every load in the table",
+      "Repeat with one generator failed (N+1) and with the fire pump running",
+      "Restore normal power. Every system should return to normal without a manual reset; log any that don't"
+     ],
+     "source": "Emergency power interface › The L5 pull-the-plug test",
+     "topicId": "E2",
+     "cardId": "E2-scn-01-r2",
+     "followUps": [
+      {
+       "prompt": "Say the campus is islanded — there's no utility to drop. What changes?",
+       "beats": [
+        "Trip a generation block instead of opening the utility main",
+        "\"Normal\" and \"alternate\" sources have to be defined with the AHJ before you can write the transfer test"
+       ],
+       "kind": "what-if",
+       "par": 45
+      },
+      {
+       "prompt": "What does fire alarm have to carry on secondary power, and where's that from?",
+       "beats": [
+        "24 h standby + 5 min alarm on batteries",
+        "Or an automatic-starting generator plus dedicated batteries with 4 h of capacity",
+        "NFPA 72-2019 §10.6.7.3.1 (renumbered in 2025)"
+       ],
+       "kind": "number",
+       "par": 45
+      }
+     ]
+    },
+    {
+     "id": "r2-b-q3",
+     "kind": "technical",
+     "prompt": "Stair pressurization reads high with all doors closed — what do you check?",
+     "par": 90,
+     "beats": [
+      "Barometric relief or relief damper",
+      "The fan's VFD setpoint",
+      "Sensor location",
+      "A stair tighter than designed",
+      "Then run the open-door case before retuning",
+      "Too high fails door force (30 lbf); too low lets smoke in"
+     ],
+     "source": "Smoke control › Likely question",
+     "topicId": "K1",
+     "cardId": "K1-scn-01",
+     "followUps": [
+      {
+       "prompt": "Why not just turn the fan's VFD down until the number's right?",
+       "beats": [
+        "Run the open-door case before retuning",
+        "Too high fails door force; too low lets smoke in",
+        "Check the other causes first: barometric relief or relief damper, sensor location, a stair tighter than designed"
+       ],
+       "kind": "why-not",
+       "par": 45
+      },
+      {
+       "prompt": "What's the door-force limit, and the NFPA 92 minimum across a barrier?",
+       "beats": [
+        "Door opening force ≤ 30 lbf",
+        "Pressure difference, sprinklered space (NFPA 92): ≥ 0.05 in. w.c.",
+        "At L4 you measure pressure across every barrier and every door force, zone by zone"
+       ],
+       "kind": "number",
+       "par": 45
+      }
+     ]
+    },
+    {
+     "id": "r2-b-q4",
+     "kind": "technical",
+     "prompt": "What's on your sprinkler acceptance checklist?",
+     "par": 90,
+     "beats": [
+      "Flush",
+      "Hydros — underground and aboveground",
+      "Air test if dry",
+      "Inspector's test and tamper timing",
+      "Main drain baseline",
+      "Backflow forward flow",
+      "Signals to central station, then certificates"
+     ],
+     "source": "Sprinkler and underground › Likely question",
+     "topicId": "S6",
+     "cardId": "S6-scn-01",
+     "followUps": [
+      {
+       "prompt": "Say it's a wet system. What drops off the list?",
+       "beats": [
+        "Air test if dry — drops off on a wet system",
+        "On dry systems, trip test: time to trip and time to water at the test connection — also dry only",
+        "Everything else stays: flush → hydros → inspector's test and tamper timing → main drain baseline → backflow forward flow → signals to central station → certificates"
+       ],
+       "kind": "what-if",
+       "par": 45
+      },
+      {
+       "prompt": "The backflow forward-flow test — at what flow?",
+       "beats": [
+        "Forward-flow test at system demand, including hose where applicable (NFPA 13 / NFPA 24)",
+        "Hose allowance: Light 100 gpm / 30 min · Ordinary 250 gpm / 60–90 min · Extra 500 gpm / 90–120 min (NFPA 13 Table 19.2.3.1.2)"
+       ],
+       "kind": "number",
+       "par": 45
+      }
+     ]
+    },
+    {
+     "id": "r2-b-q5",
+     "kind": "experience",
+     "prompt": "Walk me through a fire system you commissioned in a data center — what failed and what did you do?",
+     "par": 120,
+     "beats": [
+      "8 COLOs · 20 VESDAs · no drawings — waiting wasn't an option",
+      "Pulled data first: all 20 at factory defaults",
+      "Counted holes, paced runs → only 4 pipe variations → 4 designs, not 20 (80% less)",
+      "Thresholds, airflow, transport time on every pipe; damaged pipe found and fixed",
+      "Cause and effect caught a wrong-COLO release → \"every inherited system is unverified\""
+     ],
+     "source": "Story 2 — A data center with no drawings",
+     "topicId": "I4",
+     "cardId": "I4-sty-01",
+     "followUps": [
+      {
+       "prompt": "How did you test transport time?",
+       "kind": "own-it",
+       "par": 45,
+       "beats": [
+        "Smoke at the end cap of every pipe, timed against the ASPIRE calc and NFPA 72's 120-second limit",
+        "Normalized airflow and measured transport time on every pipe; the high-flow faults turned out to be damaged pipe above the ceiling, which we repaired"
+       ]
+      },
+      {
+       "prompt": "Why not wait for drawings?",
+       "kind": "own-it",
+       "par": 45,
+       "beats": [
+        "None existed, and the detectors were at defaults, so the risk was in leaving it as it was",
+        "Waiting for as-builts that didn't exist wasn't an option — I started with the data: pulled the configuration from all twenty detectors"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "r2-b-q6",
+     "kind": "technical",
+     "prompt": "Walk me through the Li-ion off-gas scenario at IST — off-gas, BMS trip, exhaust — through the utility drop.",
+     "par": 120,
+     "beats": [
+      "Off-gas alarm — off-gas detection (e.g., Li-ion Tamer) installed per the manufacturer, test-gas response proven; typically 2–30 min of warning before thermal runaway",
+      "BMS isolates the affected string — contactors open; E-stop works; status reaches the FACP or BMS",
+      "Exhaust starts and proves flow — sized to hold ≤ 25% LFL (or continuous ≥ 1 cfm/ft², supervised); airflow proven; fan failure alarms",
+      "Alarm to Ops",
+      "If smoke or heat follows: building alarm and sprinklers — 0.3 gpm/ft² over the room or 2,500 ft², whichever is smaller (IFC 1207.5.5)",
+      "Drop utility mid-event and confirm detection, BMS and exhaust stay powered"
+     ],
+     "source": "Battery and BESS › L5 scenario",
+     "topicId": "B2",
+     "cardId": "B2-scn-03-r2",
+     "followUps": [
+      {
+       "prompt": "Why not let the BMS handle it alone? It already trips on temperature.",
+       "beats": [
+        "It's a layered defense proven in order: off-gas detection catches a failing cell, the BMS isolates it, exhaust keeps vent gas below 25% LFL, explosion control handles what exhaust can't, and water controls the fire",
+        "Off-gas detection buys 2–30 min of warning before thermal runaway; the BMS trips on off-gas, over-temperature and voltage faults",
+        "Vent gas is flammable, so explosion control matters"
+       ],
+       "kind": "why-not",
+       "par": 45
+      },
+      {
+       "prompt": "Say the IST matrix row for Li-ion off-gas is blank under building alarm and central station. Do you test those cells?",
+       "beats": [
+        "The matrix row: Li-ion off-gas, UPS room → building alarm —, central station —, BMS trips the string, exhaust on, BMS / EPMS ●",
+        "The blank cells get tested too — proving an output does not happen is half the job",
+        "Example only — the BOD decides every cell"
+       ],
+       "kind": "what-if",
+       "par": 45
+      }
+     ]
+    },
+    {
+     "id": "r2-b-q7",
+     "kind": "close",
+     "prompt": "That's all I had. What would you like to ask me?",
+     "par": 90,
+     "beats": [
+      "Your guide says unreliable capacity costs more than late capacity. Where has fire protection been the constraint on recent sites?",
+      "At these rack densities with liquid cooling, which fire protection assumptions have you already rederived — pre-action vs wet, clean agent in white space, battery separation?",
+      "Close with your strongest question and a one-line restatement of why you fit"
+     ],
+     "source": "Questions to ask (pick four)",
+     "topicId": "I10",
+     "cardId": "I10-scn-01"
+    }
+   ]
+  },
+  {
+   "id": "r2-c",
+   "round": "r2",
+   "title": "Round 2 · Deck C",
+   "questions": [
+    {
+     "id": "r2-c-q1",
+     "kind": "intro",
+     "prompt": "Give me the short version of your background first — about a minute.",
+     "par": 60,
+     "beats": [
+      "Fire protection engineer — PE, NICET IV fire alarm — 18 years taking fire alarm and special hazard systems from design through programming, installation and commissioning",
+      "The range: high-rises, campuses, labs, clean agent, BESS, ASRS, hangars, cold storage",
+      "Today: Everon's national technical team — performance-based design, PE-level review, liaison for the AI design tool",
+      {
+       "label": "Software that takes the hours out of design and estimating — [one number]",
+       "fillIn": true
+      },
+      "Why here: reliability is the product, at a scale where it matters. That's why I'm here."
+     ],
+     "source": "Your 60-second intro",
+     "topicId": "I1",
+     "cardId": "I1-sty-01"
+    },
+    {
+     "id": "r2-c-q2",
+     "kind": "technical",
+     "prompt": "Write the IST fire scenario for a data hall — talk me through it, heat to restore.",
+     "par": 120,
+     "beats": [
+      "Halls at full load-bank heat on normal power",
+      "ASD Fire 1, then Fire 2 or a second detector",
+      "Pre-action valve trips; the inspector's test simulates a fused head",
+      "Verify notification, central station, valve trip and water delivery time, BMS / EPMS responses; cooling stays up",
+      "Drop utility mid-event: fire alarm on secondary power, pumps on generator, controllers transfer",
+      "Restore and verify every isolation reversed"
+     ],
+     "source": "Likely questions and day-of checklist › Commissioning technical (the 35%)",
+     "topicId": "A3",
+     "cardId": "A3-scn-03-r2",
+     "followUps": [
+      {
+       "prompt": "Water delivery time in that scenario — what number are you holding the hall to?",
+       "beats": [
+        "Double-interlock above 500 gal: water at the test connection within 60 s by test, or by calculation (NFPA 13 §8.3.2.3)",
+        "Or the table by hazard: light 60 s, ordinary 50 s, extra 45 s, high-piled storage 40 s",
+        "Record time to trip and time to water at the test connection"
+       ],
+       "kind": "number",
+       "par": 45
+      },
+      {
+       "prompt": "Why drop utility in the middle of the fire scenario? Run it as its own test.",
+       "beats": [
+        "The pull-the-plug test is repeated with a fire scenario already in alarm — an alarm in progress keeps sounding",
+        "Fire alarm on secondary power, pumps on generator, controllers transfer — that's what the mid-event drop proves",
+        "At L5 I prove the building: all systems together under simulated load and utility failure, the way Ops will live with them"
+       ],
+       "kind": "why-not",
+       "par": 45
+      }
+     ]
+    },
+    {
+     "id": "r2-c-q3",
+     "kind": "technical",
+     "prompt": "An ASD detector is in flow fault every morning. What's your list?",
+     "par": 90,
+     "beats": [
+      "Pressure-zone mismatch between sampling and exhaust is the most common source of flow faults",
+      "Return the detector exhaust to the sampled zone when it sits in a different pressure zone (under-floor, duct, plenum)",
+      "High-flow faults: damaged pipe — in Story 2 it was above the ceiling",
+      "Re-check flow with CRAHs in every mode, including one unit failed",
+      "Normalize airflow only after pipes are clean and HVAC runs in its normal mode"
+     ],
+     "source": "Aspirating smoke detection (ASD) › Data center points to make",
+     "topicId": "G5",
+     "cardId": "G5-scn-02",
+     "followUps": [
+      {
+       "prompt": "Why not just re-normalize the airflow every time it faults?",
+       "beats": [
+        "Normalize airflow only after pipes are clean and HVAC runs in its normal mode",
+        "Pressure-zone mismatch between sampling and exhaust is the most common source of flow faults — fix the cause: return the exhaust to the sampled zone",
+        "The faults themselves have to work: verify each pipe's flow reading, then force low-flow (block the inlet) and high-flow (break the pipe) faults"
+       ],
+       "kind": "why-not",
+       "par": 45
+      },
+      {
+       "prompt": "Say the faults only show up when one CRAH is down.",
+       "beats": [
+        "L5 — re-check flow with CRAHs in every mode, including one unit failed",
+        "Detector exhaust returned to the sampled zone if it sits in a different pressure zone (under-floor, duct, plenum)",
+        "Normalize airflow only after pipes are clean and HVAC runs in its normal mode"
+       ],
+       "kind": "what-if",
+       "par": 45
+      }
+     ]
+    },
+    {
+     "id": "r2-c-q4",
+     "kind": "technical",
+     "prompt": "What are the failure modes in a pre-action release sequence?",
+     "par": 90,
+     "beats": [
+      "Releasing solenoid open or ground fault",
+      "Detection zone fault",
+      "Loss of supervisory air",
+      "Compressor or nitrogen generator failure",
+      "Priming water lost",
+      "Panel power",
+      "Manual release path — each one gets a line in your script"
+     ],
+     "source": "Likely questions and day-of checklist › Commissioning technical (the 35%)",
+     "topicId": "P5",
+     "cardId": "P5-scn-01",
+     "followUps": [
+      {
+       "prompt": "Say you open the solenoid circuit and nothing shows at the panel. What do you do?",
+       "beats": [
+        "Each fault has to annunciate correctly — a silent open on the solenoid circuit is a failed line",
+        "It's written as pass/fail on the line, with initials",
+        "On the issues log with severity life safety first — it closes before turnover"
+       ],
+       "kind": "what-if",
+       "par": 45
+      },
+      {
+       "prompt": "Loss of supervisory air is on your list — where do the air numbers come from?",
+       "beats": [
+        "Automatic air supervision is required above 20 sprinklers",
+        "Low and high air each get a fault line in the script",
+        "The air supply must restore normal pressure within 30 minutes — compressor or nitrogen generator failure is its own line"
+       ],
+       "kind": "number",
+       "par": 45
+      }
+     ]
+    },
+    {
+     "id": "r2-c-q5",
+     "kind": "experience",
+     "prompt": "Walk me through a fire system you commissioned in a data center — what failed and what did you do?",
+     "par": 120,
+     "beats": [
+      "8 COLOs · 20 VESDAs · no drawings — waiting wasn't an option",
+      "Pulled data first: all 20 at factory defaults",
+      "Counted holes, paced runs → only 4 pipe variations → 4 designs, not 20 (80% less)",
+      "Thresholds, airflow, transport time on every pipe; damaged pipe found and fixed",
+      "Cause and effect caught a wrong-COLO release → \"every inherited system is unverified\""
+     ],
+     "source": "Story 2 — A data center with no drawings",
+     "topicId": "I4",
+     "cardId": "I4-sty-01",
+     "followUps": [
+      {
+       "prompt": "Walk me through the threshold numbers — defaults versus what you set.",
+       "kind": "own-it",
+       "par": 45,
+       "beats": [
+        "Defaults: Fire 1 at 2 %/ft and Fire 2 at 4 %/ft",
+        "Set: Fire 1 to 0.0625 %/ft and Fire 2 to 1 %/ft for very early detection",
+        "Alert and Action call Ops, Fire 1 is the building alarm, Fire 2 releases"
+       ]
+      },
+      {
+       "prompt": "What exactly was miswired, and what did you change?",
+       "kind": "own-it",
+       "par": 45,
+       "beats": [
+        "The releases for two COLOs were swapped, so in a real fire the COLO that needed water wouldn't have gotten it",
+        "I verified the release relay for every system and corrected the programming to the sequence of operations",
+        "Since then I treat every inherited system as unverified until I've tested cause and effect against the sequence, not just the devices"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "r2-c-q6",
+     "kind": "technical",
+     "prompt": "Does the fire code treat our in-hall lithium UPS as an energy storage system?",
+     "par": 90,
+     "beats": [
+      "Lithium-ion above 20 kWh triggers IFC 1207",
+      "Aggregated per fire area — AHJ interpretations vary",
+      "There's no blanket UPS exemption, so a Li-ion UPS above the threshold is an ESS",
+      "Exceptions are narrow — a UL 1778 lead-acid UPS is exempt from explosion control",
+      "NFPA 75-2024 moved its lithium-ion rules to NFPA 855 and added off-gas detection"
+     ],
+     "source": "Battery and BESS › When it applies.",
+     "topicId": "B1",
+     "cardId": "B1-scn-02",
+     "followUps": [
+      {
+       "prompt": "Why not take the vendor's word that a UPS isn't an ESS? It's not a BESS container.",
+       "beats": [
+        "There's no blanket UPS exemption, so a data center Li-ion UPS above the threshold is an ESS",
+        "Lithium-ion above 20 kWh triggers IFC 1207, aggregated per fire area",
+        "NFPA 75-2024 moved its lithium-ion rules to NFPA 855 and added off-gas detection"
+       ],
+       "kind": "why-not",
+       "par": 45
+      },
+      {
+       "prompt": "Once it's an ESS — what does the code want before you start, and how many items are in it?",
+       "beats": [
+        "The commissioning plan (IFC 1207.2.1): required and approved before work",
+        "12 items — including the OPR and BOD, integrated fire and safety testing, ventilation testing, training and a decommissioning plan",
+        "And a report to the fire code official"
+       ],
+       "kind": "number",
+       "par": 45
+      }
+     ]
+    },
+    {
+     "id": "r2-c-q7",
+     "kind": "close",
+     "prompt": "We've got a few minutes left — what do you want to know about the team?",
+     "par": 90,
+     "beats": [
+      "With Lake Mariner energizing and Cameron County breaking ground, where does fire protection commissioning sit in the modular build — at the factory, or on site?",
+      "Which commissioning level ladder do you use, and who owns fire protection L4 and L5 — your team or a third-party agent?",
+      "Close with your strongest question and a one-line restatement of why you fit"
+     ],
+     "source": "Questions to ask (pick four)",
+     "topicId": "I10",
+     "cardId": "I10-scn-01"
+    }
+   ]
   }
  ]
 }
