@@ -120,7 +120,12 @@ function loadDoc(file) {
 const DOCS = [loadDoc('content/study-guide.md'), loadDoc('content/story-scripts.md')];
 const SECTION_BY_HEADING = new Map();
 for (const d of DOCS) for (const s of d.sections) if (!SECTION_BY_HEADING.has(s.text)) SECTION_BY_HEADING.set(s.text, s);
-const docOf = (file) => DOCS.find((d) => d.file === file);
+// The round 1 debrief (GAME_SPEC_ROUND2 §6, §8): only its "Facts about my own work" list may
+// feed own-it / drill beats. It is not a source for anything else, so it stays out of DOCS.
+const DEBRIEF_FILE = 'content/round1-debrief.md';
+const DEBRIEF = existsSync(join(ROOT, DEBRIEF_FILE)) ? loadDoc(DEBRIEF_FILE) : null;
+const EXTRA_DOCS = DEBRIEF ? [DEBRIEF] : [];
+const docOf = (file) => DOCS.find((d) => d.file === file) || EXTRA_DOCS.find((d) => d.file === file);
 
 const isTableRow = (raw) => /^\s*\|/.test(raw);
 const isSeparatorRow = (raw) => /^\s*\|?\s*:?-{3,}/.test(raw) && /^[\s|:\-]+$/.test(raw);
@@ -618,6 +623,7 @@ const wordHit = (w, set) => set.has(w) || (w.length >= 4 && [...set].some((x) =>
 function locatePhrase(phrase, scope) {
   const words = contentWords(phrase);
   if (!words.length) return { ratio: 1, best: -1, candidates: [], snippet: '' };
+  if (!scope.lines.length) return { ratio: 0, best: -1, candidates: [], snippet: '', words: words.length };
   const scored = scope.lines.map((l, li) => {
     const set = new Set(contentWords(l.text));
     const hit = words.filter((w) => wordHit(w, set)).length;
@@ -1065,6 +1071,7 @@ function auditCard(card) {
         const loc = locatePhrase(label, sec);
         if (loc.ratio < 0.5 && (loc.words || 0) >= 3) review.push({ kind: 'paraphrase', card: card.id, where: `beats[${i}]`, token: label, detail: `paraphrased (${Math.round(loc.ratio * 100)}% of words on one line of "${sec.label}")` });
       });
+      if (card.walkthrough) checkWalkthroughOrder(card, sec, sub);
       break;
     }
     case 'story': {
@@ -1110,6 +1117,10 @@ function auditCard(card) {
   for (const [where, text] of [['prompt', card.prompt], ['interviewerPhrasing', card.interviewerPhrasing || '']]) {
     if (card.type !== 'matrix' && card.type !== 'defect' && MC_RE.test(text)) report({ kind: 'mc', card: card.id, where, token: text.match(MC_RE)[0].trim(), detail: 'prompt reads as multiple choice' });
   }
+
+  // Round 2: the follow-up chain and the "Don't say" note.
+  auditFollowUps(card, sec, sub);
+  if (a.dontSay != null) checkDontSay(card, chain);
 }
 
 function bestParagraph(p, hay) {
@@ -1161,12 +1172,390 @@ function auditMock(mock, cardsById, cards) {
         const loc = locatePhrase(label, joined);
         if ((loc.words || 0) >= 3 && loc.ratio < 0.5) review.push({ kind: 'paraphrase', card: q.id, where: `beats[${i}]`, token: label, detail: `paraphrased (${Math.round(loc.ratio * 100)}% of words on one line of the related sections)` });
       });
-      for (let k = before; k < findings.length; k++) findings[k].kind = 'mock';
+      // Round 2: the question's follow-up layers.
+      if (deck.round) auditMockFollowUps(q, fake, linked, chain, files);
+      for (let k = before; k < findings.length; k++) {
+        findings[k].kind = 'mock';
+        if (deck.round) findings[k].round2 = true;
+      }
       const loc = locatePhrase(q.prompt, allScope());
       if ((loc.words || 0) >= 3 && loc.ratio < 0.6) review.push({ kind: 'paraphrase', card: q.id, where: 'prompt', token: q.prompt, detail: `prompt paraphrases the guide (${Math.round(loc.ratio * 100)}% of words on one line)` });
-      if (MC_RE.test(q.prompt)) report({ kind: 'mock', card: q.id, where: 'prompt', token: q.prompt, detail: 'reads as multiple choice' });
+      if (MC_RE.test(q.prompt)) report({ kind: 'mock', card: q.id, where: 'prompt', token: q.prompt, detail: 'reads as multiple choice', round2: !!deck.round });
     }
   }
+}
+
+// ---------------------------------------------------------------------------
+// Round 2: follow-up chains (GAME_SPEC_ROUND2 §5, §8), mock follow-ups, coverage targets
+// ---------------------------------------------------------------------------
+
+// Everything a round-2 check reports is tagged `round2` so audit-report-r2.md can list it.
+const reportR2 = (f) => report({ ...f, round2: true });
+const reviewR2 = (f) => review.push({ ...f, round2: true });
+
+// Several section-level scopes as one scope that still counts as "in a section" (not a file scope).
+function mergeScopes(label, parts) {
+  return {
+    file: '*',
+    label,
+    lines: parts.flatMap((p) => p.lines),
+    text: parts.map((p) => p.text).join('\n'),
+    plainText: parts.map((p) => p.plainText).join('\n'),
+    norm: parts.map((p) => p.norm).join(' '),
+    normPlain: parts.map((p) => p.normPlain).join(' '),
+    values: new Set(parts.flatMap((p) => [...p.values])),
+    pairs: new Set(parts.flatMap((p) => [...p.pairs])),
+    refs: new Set(parts.flatMap((p) => [...p.refs])),
+    idents: new Set(parts.flatMap((p) => [...p.idents])),
+    byLine: parts.flatMap((p) => p.byLine),
+  };
+}
+
+const EMPTY_SCOPE = (label) => ({ file: '*', label, lines: [], text: '', plainText: '', norm: '', normPlain: '', values: new Set(), pairs: new Set(), refs: new Set(), idents: new Set(), byLine: [] });
+
+// The debrief's "Facts about my own work" list items (the template's own prose is not a fact).
+let factsScope = null;
+function debriefFactsScope() {
+  if (factsScope) return factsScope;
+  const label = 'round1-debrief.md › Facts about my own work';
+  const section = DEBRIEF && DEBRIEF.sections.find((s) => s.text === 'Facts about my own work');
+  if (!section) return (factsScope = EMPTY_SCOPE(label));
+  const idxs = [];
+  for (let i = section.start + 1; i < section.end; i++) if (/^\s*[-*]\s+\S/.test(DEBRIEF.rawLines[i])) idxs.push(i);
+  factsScope = idxs.length ? makeScope(DEBRIEF_FILE, idxs, label) : EMPTY_SCOPE(label);
+  return factsScope;
+}
+
+// Where Brandon's experience may come from (GAME_SPEC_ROUND2 §8.1): the story scripts (without
+// their "Open questions" list, which names what is still unknown), the guide's Interview playbook,
+// and the debrief facts. A hit here is "in a section", never "outside".
+let expScope = null;
+function experienceScope() {
+  if (expScope) return expScope;
+  const scripts = docOf('content/story-scripts.md');
+  const open = scripts.sections.find((s) => s.text === 'Open questions to finish the stories');
+  const idxs = scripts.lines.map((_, i) => i).filter((i) => !open || i < open.start || i >= open.end);
+  const playbook = SECTION_BY_HEADING.get('Interview playbook');
+  expScope = mergeScopes('story-scripts.md + Interview playbook + debrief facts', [makeScope(scripts.file, idxs, 'story-scripts.md (without the open questions)'), playbook ? sectionScope(playbook) : EMPTY_SCOPE('Interview playbook'), debriefFactsScope()]);
+  return expScope;
+}
+
+// Bracketed [open] items in the sources: a graded beat must never restate one.
+const BRACKETS = [];
+for (const d of [...DOCS, ...EXTRA_DOCS]) {
+  d.lines.forEach((l, i) => {
+    for (const m of l.matchAll(/\[([^\]]+)\]/g)) {
+      const words = contentWords(m[1]);
+      if (words.length >= 3) BRACKETS.push({ file: d.file.replace(/^content\//, ''), line: i + 1, text: m[1].trim(), words: new Set(words) });
+    }
+  });
+}
+function bracketHit(text) {
+  const words = contentWords(text);
+  if (words.length < 3) return null;
+  let best = null;
+  for (const b of BRACKETS) {
+    const hit = words.filter((w) => wordHit(w, b.words)).length / words.length;
+    if (hit >= 0.6 && (!best || hit > best.hit)) best = { ...b, hit };
+  }
+  return best;
+}
+
+// A follow-up's `source`: a heading path (as a card's), or one of the whole-document sources the
+// validator accepts (EXTRA_SOURCES). Returns section-level scopes, narrowest first.
+function resolveFollowUpSource(source) {
+  const first = String(source || '').split(SOURCE_SEP)[0].trim();
+  if (first === 'story-scripts.md' || first === 'study-guide.md') {
+    const file = `content/${first}`;
+    const doc = docOf(file);
+    return { scopes: [makeScope(file, doc.lines.map((_, i) => i), `${first} (whole file)`)], file, missing: [], label: first };
+  }
+  if (first === 'round1-debrief.md' || first === 'Round 1 debrief') return { scopes: [debriefFactsScope()], file: DEBRIEF_FILE, missing: [], label: first };
+  const { section, sub, missing } = resolveSource(source);
+  if (!section) return { scopes: [], file: null, missing: [first], label: source, unresolved: true };
+  return { scopes: sub ? [sub, sectionScope(section)] : [sectionScope(section)], file: section.file, missing, label: sub ? sub.label : section.text, section };
+}
+
+const EXPERIENCE_KINDS = new Set(['own-it', 'drill']);
+// The common block's shape for a test no story covers: "say plainly I haven't done that exact thing".
+const DISCLAIMER_RE = /\b(?:no direct story|haven'?t (?:done|run|had|seen|commissioned)|have not (?:done|run)|not something I'?ve done|never (?:run|done)|say plainly|say it straight)\b/i;
+// First-person experience: a claim about work he did, not a procedure he would follow.
+const EXPERIENCE_RE = /\b(?:I|we)\s+(?:ran|run|tested|found|built|proved|programmed|commissioned|did|was|were|had|have|caught|measured|set|wrote|laid|verified|corrected|owned|own|led|lead|flew|bought|pulled|installed|walked|checked|reviewed|modeled|designed|diagnosed|fixed|repaired|re-pulled|trained|treat|blew|silenced|confirmed|waited|ordered|gave|held|broke|went|saw|flagged|let|put|started|got|work|build|write)\b|\bon the (?:\w+[- ])?(?:job|site|towers|lab|campus)\b|\bmy (?:job|crew|bar|company|fix|tools?|career|own)\b/i;
+
+const FOLLOW_UP_PAR = { drill: 20 };
+const DEFAULT_FOLLOW_UP_PAR = 45;
+// "Pass, or punch item?" — a prompt that ends by naming two outcomes (not multiple choice by
+// decision 46, but worth a look: the beats, not the choice, are what is graded).
+const TWO_OPTION_RE = /[.!]\s+([A-Za-z][\w' -]{1,30},? or [A-Za-z][\w' -]{1,30}\?)\s*$/;
+
+// A story card's "Don't say" note is the script's own "Keep out" line (session C).
+function checkDontSay(card, chain) {
+  const list = Array.isArray(card.answer.dontSay) ? card.answer.dontSay : [card.answer.dontSay];
+  list.forEach((d, i) => {
+    const found = chain.some((s) => findWords(s, d));
+    trace.push({ card: card.id, where: `dontSay[${i}]`, token: d, result: found ? 'ok' : 'none', at: found ? 'verbatim' : null });
+    if (!found) reportR2({ kind: 'followup-source', card: card.id, where: `dontSay[${i}]`, token: d, detail: 'not a verbatim line of the scripts (the story\'s "Keep out" line) or the guide' });
+  });
+}
+
+// An own-it or drill beat must trace to the scripts, the playbook or the debrief facts; the only
+// other things it may be are the common block's disclaimer and a "how I'd run it" line from the guide.
+function checkExperienceBeat(card, where, label, guideScopes) {
+  const exp = experienceScope();
+  const loc = locatePhrase(label, exp);
+  const pct = Math.round(loc.ratio * 100);
+  trace.push({ card: card.id, where, token: label, result: `${pct}% of words in the experience sources`, at: loc.snippet });
+  if (loc.ratio >= 0.75) return 'traced';
+  if (loc.ratio >= 0.5) {
+    reviewR2({ kind: 'paraphrase', card: card.id, where, token: label, detail: `paraphrases the scripts / playbook (${pct}% of its words on one line: "${loc.snippet}")` });
+    return 'traced';
+  }
+  // A beat that joins clauses from two script lines ("…no drawings — I pulled the configuration…"):
+  // every clause of three or more content words must trace on its own.
+  const clauses = label.split(/\s[—–]\s|;\s|:\s/).filter((c) => contentWords(c).length >= 3);
+  if (clauses.length > 1) {
+    const each = clauses.map((c) => locatePhrase(c, exp));
+    if (each.every((l) => l.ratio >= 0.5)) {
+      reviewR2({ kind: 'paraphrase', card: card.id, where, token: label, detail: `joins ${clauses.length} clauses from separate script lines (${each.map((l) => `${Math.round(l.ratio * 100)}%`).join(' / ')} of their words)` });
+      return 'traced';
+    }
+  }
+  if (DISCLAIMER_RE.test(label)) {
+    reviewR2({ kind: 'bridge', card: card.id, where, token: label, detail: 'the "say plainly there\'s no direct story" bridge (common block) — not an experience claim' });
+    return 'bridge';
+  }
+  let best = { ratio: 0 };
+  for (const s of guideScopes) {
+    const l = locatePhrase(label, s);
+    if (l.ratio > best.ratio) best = { ...l, scope: s };
+  }
+  if (best.ratio >= 0.5) {
+    if (EXPERIENCE_RE.test(label)) {
+      reportR2({ kind: 'experience', card: card.id, where, token: label, detail: `reads as experience but is found only in the guide ("${best.scope.label}"), not in the scripts, the playbook or the debrief facts` });
+      return 'invented';
+    }
+    reviewR2({ kind: 'bridge', card: card.id, where, token: label, detail: `the "how I'd run it" bridge — guide procedure from "${best.scope.label}" (${Math.round(best.ratio * 100)}% of its words), not an experience claim` });
+    return 'bridge';
+  }
+  reportR2({ kind: 'experience', card: card.id, where, token: label, detail: `own-it / drill beat traces to neither the scripts, the playbook, the debrief facts nor the guide (${pct}% of its words on the best scripts line: "${loc.snippet}")` });
+  return 'invented';
+}
+
+const beatLabel = (b) => (typeof b === 'string' ? b : b.label || b.text);
+const isFillIn = (b) => typeof b !== 'string' && !!b.fillIn;
+
+// One graded follow-up beat: facts in the chain, no bracketed item, own-it / drill traced.
+function checkFollowUpBeat(card, where, label, chain, { experience, guideScopes, home, cardScope }) {
+  if (/\[[^\]]*\]/.test(label)) reportR2({ kind: 'bracket', card: card.id, where, token: label, detail: 'a graded beat carries a bracketed (open) item — make it a fill-in' });
+  const bh = bracketHit(label);
+  if (bh) reportR2({ kind: 'bracket', card: card.id, where, token: label, detail: `restates a bracketed (open) line of ${bh.file} line ${bh.line}: "[${bh.text}]" — make it a fill-in` });
+  checkText(card, where, label, chain);
+  if (experience) return checkExperienceBeat(card, where, label, guideScopes);
+  const loc = locatePhrase(label, home);
+  if (loc.ratio < 0.5 && (loc.words || 0) >= 3) {
+    const inCard = cardScope && cardScope !== home ? locatePhrase(label, cardScope) : { ratio: 0 };
+    if (inCard.ratio >= 0.5) reviewR2({ kind: 'outside', card: card.id, where, token: label, detail: `the beat's words sit in the card's section "${cardScope.label}", not in the follow-up's source "${home.label}"` });
+    else reviewR2({ kind: 'paraphrase', card: card.id, where, token: label, detail: `paraphrased (${Math.round(loc.ratio * 100)}% of words on one line of "${home.label}")` });
+  }
+  return 'ok';
+}
+
+// A number follow-up's prompt must not hand over the criterion it asks for. Numbers inside a
+// reference ("NFPA 92") are the standard's name, not a criterion.
+function checkNumberLeak(card, where, prompt, beats) {
+  const nums = (t) => {
+    const refs = extractRefPhrases(t);
+    return extractTokens(t)
+      .filter((x) => x.kind === 'num' && !isYear(x.value) && !refs.some((r) => x.index >= r.index && x.index < r.index + r.text.length))
+      .map((x) => x.value);
+  };
+  const beatNums = new Set(beats.flatMap(nums));
+  const leaked = [...new Set(nums(prompt).filter((v) => beatNums.has(v)))];
+  if (!leaked.length) return;
+  if (leaked.length >= beatNums.size) reportR2({ kind: 'followup-mc', card: card.id, where, token: leaked.join(', '), detail: 'the prompt contains every number the beats teach' });
+  else reviewR2({ kind: 'leak', card: card.id, where, token: leaked.join(', '), detail: `the prompt repeats ${leaked.join(', ')} from the beats — a setup number or the answer? (check by eye)` });
+}
+
+function auditFollowUps(card, sec, sub) {
+  const list = card.answer.followUps;
+  if (!Array.isArray(list) || !list.length) return;
+  const cardScopes = sub ? [sub, sec] : [sec];
+  const guideFile = fileScope('content/study-guide.md');
+  const scriptsFile = fileScope('content/story-scripts.md');
+  list.forEach((f, k) => {
+    const fid = f.id || `${card.id}-f${k + 1}`;
+    const fk = fid.startsWith(`${card.id}-`) ? fid.slice(card.id.length + 1) : fid;
+    const r = resolveFollowUpSource(f.source);
+    if (r.unresolved) reportR2({ kind: 'followup-source', card: card.id, where: `${fk}.source`, token: f.source, detail: 'first segment is neither a heading in the source files nor a whole-document source' });
+    for (const m of r.missing) reportR2({ kind: 'followup-source', card: card.id, where: `${fk}.source`, token: m, detail: `label not found under "${r.label}"` });
+    const experience = EXPERIENCE_KINDS.has(f.kind);
+    // Scope chain: the follow-up's own source → (the experience sources for own-it / drill) → the
+    // card's section → the files (a hit there is a review note, as for scenario beats) → both files.
+    const sectionScopes = [...r.scopes, ...(experience ? [experienceScope()] : []), ...cardScopes.filter((s) => !r.scopes.includes(s))];
+    const files = r.file === 'content/story-scripts.md' ? [scriptsFile, guideFile] : [guideFile, scriptsFile];
+    const chain = [...sectionScopes, ...files, allScope()];
+    const home = r.scopes[r.scopes.length - 1] || sec;
+    const guideScopes = [...r.scopes.filter((s) => s.file === 'content/study-guide.md'), ...cardScopes, guideFile];
+
+    // Kind rules.
+    if (f.kind === 'find-out' && !card.confirmInEdition) reportR2({ kind: 'followup-kind', card: card.id, where: `${fk}.kind`, token: f.kind, detail: 'find-out follow-ups belong only on confirmInEdition: true cards' });
+    if (card.ladder && f.kind !== 'drill') reportR2({ kind: 'followup-kind', card: card.id, where: `${fk}.kind`, token: f.kind, detail: 'a ladder layer must be a drill' });
+    const wantPar = FOLLOW_UP_PAR[f.kind] ?? DEFAULT_FOLLOW_UP_PAR;
+    if (f.par !== wantPar) reviewR2({ kind: 'par', card: card.id, where: `${fk}.par`, token: String(f.par), detail: `${f.kind} follow-ups run ${wantPar} s elsewhere` });
+
+    // Prompt: open recall in a peer's voice; its numbers are facts too (hypotheticals go in the allowlist).
+    checkText(card, `${fk}.prompt`, f.prompt, chain);
+    if (MC_RE.test(f.prompt)) reportR2({ kind: 'followup-mc', card: card.id, where: `${fk}.prompt`, token: f.prompt.match(MC_RE)[0].trim(), detail: 'prompt reads as multiple choice' });
+    else if (TWO_OPTION_RE.test(f.prompt)) reviewR2({ kind: 'options', card: card.id, where: `${fk}.prompt`, token: f.prompt.match(TWO_OPTION_RE)[1].trim(), detail: 'ends by naming two outcomes — the beats are the grade, not the choice; kept as peer speech (check by eye)' });
+
+    // Beats: fill-ins are open items (shown, never graded, never checked as fact).
+    const graded = [];
+    f.beats.forEach((b, i) => {
+      const where = `${fk}.beats[${i}]`;
+      const label = beatLabel(b);
+      if (isFillIn(b)) {
+        trace.push({ card: card.id, where, token: label, result: 'fill-in (not graded)', at: null });
+        return;
+      }
+      graded.push(label);
+      checkFollowUpBeat(card, where, label, chain, { experience, guideScopes, home, cardScope: sec });
+    });
+    if (!graded.length) reviewR2({ kind: 'fillin', card: card.id, where: `${fk}.beats`, token: `${f.beats.length} fill-in${f.beats.length === 1 ? '' : 's'}`, detail: 'every beat is a fill-in — the layer is shown and not graded' });
+    if (f.kind === 'number') checkNumberLeak(card, `${fk}.prompt`, f.prompt, graded);
+  });
+}
+
+// Walkthrough cards: the beats are the guide's steps in order (common block). Each beat opens with
+// the step ("Main drain baseline — record static and residual…"), then carries that level's numbers
+// from elsewhere in the section (decision 80), so the step names — not the whole beats — must sit in
+// the guide's order: monotone positions in the sub-label block (the list or line the source names),
+// else in the section. A matrix row turned into steps has no line order to check (one table row).
+function checkWalkthroughOrder(card, sec, sub) {
+  const beats = card.answer.beats.filter((b) => !isFillIn(b)).map(beatLabel);
+  const names = beats.map((b) => {
+    const head = b.split(/\s[—–]\s|:\s|;\s/)[0];
+    const n = contentWords(head).length;
+    return n >= 2 || (n === 1 && head.split(/\s+/).length <= 4) ? head : b;
+  });
+  const scope = sub || sec;
+  const located = names.map((p) => locatePhrase(p, scope));
+  const rows = new Set(located.filter((l) => l.ratio >= 0.5).map((l) => l.best));
+  if (rows.size === 1 && scope.lines.length && isTableRow(scope.lines[[...rows][0]].raw)) {
+    reviewR2({ kind: 'coverage', card: card.id, where: 'beats', token: scope.label, detail: 'walkthrough built from one table row — cell order cannot be checked by line position, read it by eye' });
+    return;
+  }
+  let prev = -1;
+  for (let i = 0; i < located.length; i++) {
+    const cands = located[i].candidates.map((c) => c.pos).sort((x, y) => x - y);
+    trace.push({ card: card.id, where: `walkthrough step ${i}`, token: names[i], result: `${Math.round(located[i].ratio * 100)}% of words`, at: `positions ${cands.join('/') || '—'} in "${scope.label}"` });
+    if (!cands.length || located[i].ratio < 0.5) {
+      reviewR2({ kind: 'paraphrase', card: card.id, where: `beats[${i}]`, token: beats[i], detail: `walkthrough step "${names[i]}" not located in "${scope.label}" (${Math.round(located[i].ratio * 100)}% of its words) — order not checked for this beat` });
+      continue;
+    }
+    const next = cands.find((p) => p > prev);
+    if (next == null) {
+      reportR2({ kind: 'walkthrough', card: card.id, where: `beats[${i}]`, token: beats[i], detail: `step "${names[i]}" comes before "${names[i - 1] ?? ''}" in "${scope.label}" — a walkthrough's beats are the guide's steps in order` });
+      return;
+    }
+    prev = next;
+  }
+}
+
+// Mock follow-ups: no source of their own. Scope = the question's chain plus, when the question
+// copies a card (decision 84), that card's follow-up sources; own-it / drill layers also get the
+// experience sources. Beats copied from the card are compared with the card's (a difference is a note).
+function auditMockFollowUps(q, fake, linked, chain, files) {
+  if (!Array.isArray(q.followUps)) return;
+  const guideFile = fileScope('content/study-guide.md');
+  const linkedFu = linked && Array.isArray(linked.answer.followUps) ? linked.answer.followUps : [];
+  const linkedBeats = new Set(linkedFu.flatMap((lf) => lf.beats.map(beatLabel)));
+  const extra = [];
+  for (const lf of linkedFu) for (const s of resolveFollowUpSource(lf.source).scopes) if (!chain.includes(s) && !extra.includes(s)) extra.push(s);
+  q.followUps.forEach((f, k) => {
+    const fk = `followUps[${k}]`;
+    const experience = EXPERIENCE_KINDS.has(f.kind);
+    const sectionScopes = [...chain, ...extra, ...(experience ? [experienceScope()] : [])];
+    const fchain = [...sectionScopes, ...files, allScope()];
+    const home = { label: 'the related sections', lines: sectionScopes.flatMap((s) => s.lines) };
+    checkText(fake, `${fk}.prompt`, f.prompt, fchain);
+    if (MC_RE.test(f.prompt)) reportR2({ kind: 'mock', card: q.id, where: `${fk}.prompt`, token: f.prompt.match(MC_RE)[0].trim(), detail: 'follow-up prompt reads as multiple choice' });
+    if (f.kind === 'find-out' && !(linked && linked.confirmInEdition)) reportR2({ kind: 'mock', card: q.id, where: `${fk}.kind`, token: f.kind, detail: 'find-out follow-ups belong only on confirmInEdition cards' });
+    if (f.par != null) {
+      const wantPar = FOLLOW_UP_PAR[f.kind] ?? DEFAULT_FOLLOW_UP_PAR;
+      if (f.par !== wantPar) reviewR2({ kind: 'par', card: q.id, where: `${fk}.par`, token: String(f.par), detail: `${f.kind || 'follow-up'} layers run ${wantPar} s elsewhere` });
+    }
+    if (!Array.isArray(f.beats) || !f.beats.length) {
+      reviewR2({ kind: 'fillin', card: q.id, where: `${fk}.beats`, token: f.prompt, detail: 'spoken follow-up without beats — asked, not graded' });
+      return;
+    }
+    const graded = [];
+    f.beats.forEach((b, i) => {
+      const where = `${fk}.beats[${i}]`;
+      const label = beatLabel(b);
+      if (isFillIn(b)) return;
+      graded.push(label);
+      checkFollowUpBeat(fake, where, label, fchain, { experience, guideScopes: [...sectionScopes.filter((s) => s.file === 'content/study-guide.md'), guideFile], home, cardScope: null });
+      if (linkedFu.length && !linkedBeats.has(label)) reviewR2({ kind: 'copy', card: q.id, where, token: label, detail: `not a verbatim copy of a beat on ${linked.id}'s follow-ups (decision 84) — scoped as a mock beat instead` });
+    });
+    if (!graded.length) reviewR2({ kind: 'fillin', card: q.id, where: `${fk}.beats`, token: f.prompt, detail: 'every beat is a fill-in — the layer is shown and not graded' });
+    if (f.kind === 'number') checkNumberLeak(fake, `${fk}.prompt`, f.prompt, graded);
+  });
+}
+
+// The session B common block's coverage targets, per technical topic, plus session C's shape for
+// the Interview topics. Returns one row per topic for the round-2 report.
+function checkCoverageR2(cards, topics) {
+  const rows = [];
+  const ownItByArea = new Map();
+  const problem = (id, text) => reportR2({ kind: 'coverage-r2', card: id, where: 'coverage', token: text, detail: 'session B common block (ROUND2_UPDATE_PROMPT.md)' });
+  for (const t of topics) {
+    const mine = cards.filter((c) => c.topicId === t.id);
+    const fus = (c) => (Array.isArray(c.answer.followUps) ? c.answer.followUps : []);
+    const scn = mine.filter((c) => c.type === 'scenario');
+    const withFu = mine.filter((c) => fus(c).length);
+    const kinds = {};
+    for (const c of mine) for (const f of fus(c)) kinds[f.kind] = (kinds[f.kind] || 0) + 1;
+    const r2 = mine.filter((c) => /-r\d$/.test(c.id)).map((c) => c.id);
+    const walk = mine.filter((c) => c.walkthrough);
+    const ladders = mine.filter((c) => c.ladder);
+    ownItByArea.set(t.area, (ownItByArea.get(t.area) || 0) + (kinds['own-it'] || 0));
+    const notes = [];
+    for (const c of walk) {
+      if (c.type !== 'scenario') problem(c.id, 'walkthrough is not a scenario card');
+      if (c.par !== 120) problem(c.id, `walkthrough par is ${c.par}, the brief says 120`);
+      if (fus(c).length < 1 || fus(c).length > 2) problem(c.id, `walkthrough wants 1–2 follow-ups (has ${fus(c).length})`);
+    }
+    if (t.area === 'Interview') {
+      for (const c of ladders) {
+        if (fus(c).length !== 5) problem(c.id, `drill ladder wants 5 layers (has ${fus(c).length})`);
+        if (fus(c).some((f) => f.kind !== 'drill')) problem(c.id, 'drill ladder layers must all be drills');
+      }
+      for (const c of withFu) if (c.type === 'story' && fus(c).some((f) => f.kind !== 'drill')) problem(c.id, 'story follow-ups are drills (session C)');
+      if (['I3', 'I4', 'I5', 'I6', 'I7'].includes(t.id) && !mine.some((c) => c.type === 'story' && !c.ladder && fus(c).length)) problem(t.id, "story card has no scripted follow-ups (session C: each story's \"Follow-ups, 15 seconds each\")");
+      if (t.id === 'I8' && withFu.length) problem(t.id, 'the backup stories have no scripted follow-ups — leave I8 as it was');
+    } else if (t.weight === 'Core') {
+      for (const c of scn) {
+        const n = fus(c).length;
+        if (c.walkthrough) continue;
+        if (n < 2) problem(c.id, `Core scenario card wants 2 follow-ups (has ${n})`);
+        if (n && !fus(c).some((f) => f.kind === 'why-not' || f.kind === 'what-if')) problem(c.id, 'no why-not or what-if follow-up');
+        if (c.confirmInEdition && !fus(c).some((f) => f.kind === 'find-out')) problem(c.id, 'Core confirmInEdition scenario without a find-out follow-up');
+      }
+      const scnFu = scn.filter((c) => fus(c).length);
+      if (scnFu.length < 2) problem(t.id, `Core topic wants ≥ 2 scenario cards with follow-ups (has ${scnFu.length})`);
+    } else if (t.weight === 'Support') {
+      const ok = scn.filter((c) => fus(c).length >= 1 && fus(c).length <= 2);
+      if (!ok.length) problem(t.id, 'Support topic wants at least one scenario card with 1–2 follow-ups');
+      for (const c of scn) if (fus(c).length > 2) notes.push(`${c.id} has ${fus(c).length} follow-ups (the brief says 1–2 on Support)`);
+      for (const c of scn) if (c.confirmInEdition && fus(c).length && !fus(c).some((f) => f.kind === 'find-out')) notes.push(`${c.id} is confirmInEdition without a find-out (required on Core only)`);
+    } else if (t.weight === 'Light') {
+      if (withFu.length || r2.length) problem(t.id, `Light topic changed (${[...withFu.map((c) => c.id), ...r2].join(', ')}) — the brief says no changes`);
+    }
+    for (const n of notes) reviewR2({ kind: 'coverage', card: t.id, where: 'coverage', token: n, detail: 'worth a look, not a target' });
+    rows.push({ topic: t.id, area: t.area, weight: t.weight, cards: mine.length, scenario: scn.length, withFu: withFu.length, followUps: mine.reduce((n, c) => n + fus(c).length, 0), kinds, r2, walkthroughs: walk.map((c) => c.id), ladders: ladders.map((c) => c.id) });
+  }
+  for (const [area, n] of ownItByArea) if (area !== 'Interview' && !n) problem(area, `area "${area}" has no own-it follow-up`);
+  return rows;
 }
 
 // ---------------------------------------------------------------------------
@@ -1184,7 +1573,131 @@ const SECTIONS = [
   ['coverage', 'Topics under (or over) the per-weight card minimum'],
   ['source', 'Source labels that do not resolve'],
   ['mock', 'mock.json'],
+  // Round 2 (follow-up chains); the same findings are laid out in audit-report-r2.md.
+  ['experience', 'own-it / drill beats that do not trace to the scripts, the playbook or the debrief facts'],
+  ['followup-kind', 'Follow-up kinds out of place (find-out off a confirmInEdition card, a non-drill ladder layer)'],
+  ['bracket', 'Bracketed (open) items presented as fact'],
+  ['followup-mc', 'Follow-up prompts that read as multiple choice or hand over the answer'],
+  ['followup-source', 'Follow-up sources that do not resolve'],
+  ['walkthrough', "Walkthrough beats out of the guide's order"],
+  ['coverage-r2', 'Round-2 coverage targets (session B common block) not met'],
 ];
+
+// audit-report-r2.md — the round-2 view: every check the audit session added, over every card
+// with follow-ups, every -r2 card and every round deck, with the reading-pass notes always included.
+const R2_SECTIONS = [
+  ['facts', 'Follow-up facts (numbers, units, references, steps) not located in the source they name'],
+  ['outside', "Follow-up graded facts found only outside the section"],
+  ['experience', 'own-it / drill beats that do not trace to story-scripts.md, the Interview playbook or the debrief facts'],
+  ['followup-kind', 'find-out follow-ups off confirmInEdition cards, non-drill ladder layers'],
+  ['bracket', 'Bracketed (open) items presented as fact'],
+  ['followup-mc', 'Follow-up prompts that read as multiple choice or hand over the answer'],
+  ['followup-source', 'Follow-up sources that do not resolve'],
+  ['walkthrough', "Walkthrough beats out of the guide's order"],
+  ['coverage-r2', 'Coverage targets (session B common block, session C shape) not met'],
+  ['mock', 'Round 2 / Round 3 mock decks (questions and follow-up layers)'],
+];
+const R2_REVIEW = [
+  ['bridge', 'own-it / drill beats that are bridges, not experience (the "no direct story" line and "how I\'d run it" guide procedure) — read each one'],
+  ['paraphrase', 'Beats and steps that paraphrase their source (follow-ups and their cards; checked by eye)'],
+  ['outside', "Facts found outside the named source (a follow-up's beat in the card's section, a card's fact elsewhere in the files)"],
+  ['unit', 'Counts whose noun is not on the same source line'],
+  ['ident', 'Identifiers not in either source file'],
+  ['leak', 'Number follow-ups whose prompt repeats a beat number (setup number or the answer?)'],
+  ['options', 'Follow-up prompts that end by naming two outcomes ("Pass, or punch item?") — kept as peer speech, the beats are the grade'],
+  ['copy', "Mock follow-up beats that are not verbatim copies of the linked card's (decision 84)"],
+  ['fillin', 'Layers that are shown and not graded (every beat a fill-in, or no beats)'],
+  ['par', 'Follow-ups whose par differs from the convention (45 technical, 20 drill)'],
+  ['coverage', 'Coverage notes (not targets)'],
+];
+
+function writeR2Report(outPath, { cards, mock, rows, active, decisions, allowedList, stamp }) {
+  const inScope = new Set(cards.filter((c) => (Array.isArray(c.answer.followUps) && c.answer.followUps.length) || /-r\d$/.test(c.id)).map((c) => c.id));
+  const roundDecks = mock.decks.filter((d) => d.round);
+  const roundQ = new Set(roundDecks.flatMap((d) => d.questions.map((q) => q.id)));
+  const r2 = (f) => f.round2 || inScope.has(f.card) || roundQ.has(f.card);
+  const mine = active.filter(r2);
+  const dec = decisions.filter(r2);
+  const allow = allowedList.filter(r2);
+  const notes = review.filter(r2);
+  const fuCards = cards.filter((c) => Array.isArray(c.answer.followUps) && c.answer.followUps.length);
+  const fus = fuCards.flatMap((c) => c.answer.followUps);
+  const byKind = {};
+  for (const f of fus) byKind[f.kind] = (byKind[f.kind] || 0) + 1;
+  const r2Cards = cards.filter((c) => /-r\d$/.test(c.id));
+  const walks = cards.filter((c) => c.walkthrough);
+  const ladders = cards.filter((c) => c.ladder);
+  const fillIns = fus.reduce((n, f) => n + f.beats.filter(isFillIn).length, 0);
+  const deckLine = (d) => `\`${d.id}\` (${d.round}) · ${d.questions.length} questions · ${d.questions.reduce((n, q) => n + (q.followUps || []).length, 0)} follow-up layers (${d.questions.reduce((n, q) => n + (q.followUps || []).filter((f) => Array.isArray(f.beats) && f.beats.length).length, 0)} graded)`;
+  const out = [];
+  out.push(`# ENERGIZE round-2 audit — ${stamp}`);
+  out.push('');
+  out.push('Generated by `node scripts/audit.js` beside `audit-report.md`. This is the round-2 view (session D of `ROUND2_UPDATE_PROMPT.md`): every card with `answer.followUps`, every `-r2` card and every mock deck with a `round`, checked against `content/study-guide.md`, `content/story-scripts.md` and the "Facts about my own work" list of `content/round1-debrief.md`.');
+  out.push('');
+  out.push(`**Scope.** ${fuCards.length} cards with follow-ups · ${fus.length} follow-ups (${Object.entries(byKind).map(([k, n]) => `${k} ${n}`).join(' · ')}) · ${fillIns} fill-in beats · ${r2Cards.length} \`-r2\` cards · ${walks.length} walkthroughs · ${ladders.length} drill ladders · ${roundDecks.length} round decks: ${roundDecks.map(deckLine).join('; ')}.`);
+  out.push('');
+  out.push(`**${mine.length} finding${mine.length === 1 ? '' : 's'}.** ${dec.length} item${dec.length === 1 ? '' : 's'} need${dec.length === 1 ? 's' : ''} your decision. ${allow.length} item${allow.length === 1 ? '' : 's'} allowlisted. ${notes.length} review note${notes.length === 1 ? '' : 's'} for the reading pass (appendix).`);
+  out.push('');
+  out.push('## What is checked');
+  out.push('');
+  out.push("- **Every follow-up beat and prompt** goes through the same fact extraction as a main answer — numbers with units, section references, identifiers, steps — and each fact must be found, verbatim or trivially reformatted, in the chain: the follow-up's `source` (a heading path, bold label, table or list number, or a whole document: `story-scripts.md`, `study-guide.md`, `round1-debrief.md`) → the experience sources for own-it / drill layers → the card's own section → the files → both files. Not found anywhere is a finding; found only outside the named source is a review note (as for scenario beats).");
+  out.push('- **own-it and drill beats** must trace (≥ 50% of their content words on one line) to `story-scripts.md` (its "Open questions" list excluded), the guide\'s Interview playbook, or the debrief\'s "Facts about my own work" list. A beat that does not is accepted only as the common block\'s disclaimer ("say plainly there\'s no direct story…") or as a "how I\'d run it" procedure that sits in the guide and does not read as first-person experience; anything else is a finding. Every bridge is listed in the appendix for the reading pass.');
+  out.push('- **find-out** layers only on `confirmInEdition: true` cards; a `ladder` card\'s layers are all drills.');
+  out.push('- **Bracketed items**: a graded beat may not carry `[…]` and may not restate a bracketed (open) line of the sources (≥ 60% of its content words in one bracket). Fill-in beats (`{ "label", "fillIn": true }`) are open items — shown, never graded — and are not checked as fact.');
+  out.push("- **Prompts**: no multiple choice (option markers, \"which of the following\", yes/no…); a `number` follow-up's prompt may not contain every number its beats teach.");
+  out.push("- **Walkthrough cards**: the beats' positions in the card's section are monotone (the guide's steps in order).");
+  out.push('- **Mock decks with a round**: each follow-up layer with beats is checked like a card follow-up, scoped to the question\'s section plus every section its topic\'s cards cite plus, when the question copies a card (`cardId`, decision 84), that card\'s follow-up sources; own-it / drill layers add the experience sources. A layer beat that is not a verbatim copy of the linked card\'s is noted.');
+  out.push('- **Coverage targets** (session B common block): every Core scenario card (walkthroughs aside) has 2 follow-ups with a why-not or what-if; every Core topic has ≥ 2 scenario cards with follow-ups; every Core `confirmInEdition` scenario has a find-out; every technical area has an own-it; every Support topic has a scenario card with 1–2 follow-ups; Light topics unchanged; walkthroughs are scenario cards at par 120 with 1–2 follow-ups. Session C: the I3–I7 story cards carry drill follow-ups, the two ladders have five drill layers, I8 is untouched.');
+  out.push('- **Not mechanical**: whether a beat that traces to a story line says something the story does not (a true clause with an invented tail), and whether a guide-procedure bridge is the right procedure. Those are the reading pass; the appendix lists every candidate.');
+  out.push('');
+  out.push(`## Needs your decision (${dec.length})`);
+  out.push('');
+  if (!dec.length) out.push('_none_');
+  for (const f of dec) out.push(`${fmt(f)} · _${f.allowed.why}_`);
+  out.push('');
+  const listed = new Set();
+  for (const [kind, title] of R2_SECTIONS) {
+    const list = mine.filter((f) => f.kind === kind);
+    list.forEach((f) => listed.add(f));
+    out.push(`## ${title} (${list.length})`);
+    out.push('');
+    if (!list.length) out.push('_none_');
+    else for (const f of list) out.push(fmt(f));
+    out.push('');
+  }
+  const rest = mine.filter((f) => !listed.has(f));
+  out.push(`## Other findings on round-2 cards (${rest.length})`);
+  out.push('');
+  if (!rest.length) out.push('_none_');
+  else for (const f of rest) out.push(`${fmt(f)} _(${f.kind})_`);
+  out.push('');
+  out.push('## Coverage per topic');
+  out.push('');
+  out.push('| Topic | Area | Weight | Cards | Scenario | With follow-ups | Follow-ups by kind | New cards | Walkthrough / ladder |');
+  out.push('| --- | --- | --- | --- | --- | --- | --- | --- | --- |');
+  for (const r of rows) {
+    const kinds = Object.entries(r.kinds).map(([k, n]) => `${k} ${n}`).join(' · ') || '—';
+    out.push(`| ${r.topic} | ${r.area} | ${r.weight} | ${r.cards} | ${r.scenario} | ${r.withFu} (${r.followUps}) | ${kinds} | ${r.r2.join(', ') || '—'} | ${[...r.walkthroughs, ...r.ladders].join(', ') || '—'} |`);
+  }
+  out.push('');
+  out.push('## Appendix — allowlisted round-2 items');
+  out.push('');
+  if (!allow.length) out.push('_none_');
+  for (const f of allow) out.push(`${fmt(f)} · _allowed: ${f.allowed.why}_`);
+  out.push('');
+  out.push('## Appendix — review notes for the reading pass');
+  out.push('');
+  for (const [kind, title] of R2_REVIEW) {
+    const list = notes.filter((f) => f.kind === kind);
+    out.push(`### ${title} (${list.length})`);
+    out.push('');
+    if (!list.length) out.push('_none_');
+    else for (const f of list) out.push(fmt(f));
+    out.push('');
+  }
+  writeFileSync(outPath, out.join('\n'));
+  return mine.length;
+}
 
 function fmt(f) {
   const tok = String(f.token).replace(/\n/g, ' ');
@@ -1199,11 +1712,13 @@ function main() {
 
   const only = opt('--card');
   for (const card of cards) if (!only || card.id === only) auditCard(card);
+  let rows = [];
   if (!only) {
     const v = validateBank(cards, { topics });
     for (const w of v.warnings) if (/spec wants|card types|interviewerPhrasing/.test(w)) findings.push({ kind: 'coverage', card: w.split(':')[0].split(' ')[0], where: 'bank', token: w.split(': ')[1] || w, detail: w });
     for (const e of v.errors) findings.push({ kind: 'coverage', card: 'bank', where: 'schema', token: e, detail: 'schema error' });
     auditMock(mock, cardsById, cards);
+    rows = checkCoverageR2(cards, topics);
   }
 
   if (only) {
@@ -1288,7 +1803,10 @@ function main() {
   }
   const outPath = resolve(opt('--out', join(ROOT, 'audit-report.md')));
   writeFileSync(outPath, out.join('\n'));
+  const r2Path = resolve(opt('--out-r2', join(dirname(outPath), 'audit-report-r2.md')));
+  const r2Count = writeR2Report(r2Path, { cards, mock, rows, active, decisions, allowedList, stamp });
   console.log(`${active.length} finding(s), ${allowedList.length} allowlisted, ${review.length} review note(s) → ${outPath}`);
+  console.log(`${r2Count} round-2 finding(s) → ${r2Path}`);
   for (const [kind, title] of SECTIONS) {
     const n = active.filter((f) => f.kind === kind).length;
     if (n) console.log(`  ${String(n).padStart(3)}  ${title}`);

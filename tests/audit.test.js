@@ -18,6 +18,11 @@ test('scripts/audit.js reports no findings against the current bank and mock dec
     assert.equal(r.status, 0, `audit exit ${r.status}\n${r.stdout}\n${r.stderr}`);
     const report = readFileSync(out, 'utf8');
     assert.match(report, /\*\*0 findings\.\*\*/, report.split('\n').slice(0, 6).join('\n'));
+    // Round 2 (session D): the follow-up chains, the round decks and the coverage targets are
+    // laid out in audit-report-r2.md beside the lean report, with the same zero.
+    const r2 = readFileSync(join(dir, 'audit-report-r2.md'), 'utf8');
+    assert.match(r2, /\*\*0 findings\.\*\*/, r2.split('\n').slice(0, 8).join('\n'));
+    assert.match(r2, /## Coverage per topic\n\n\| Topic \|/);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

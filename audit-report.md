@@ -48,6 +48,34 @@ _none_
 
 _none_
 
+## own-it / drill beats that do not trace to the scripts, the playbook or the debrief facts (0)
+
+_none_
+
+## Follow-up kinds out of place (find-out off a confirmInEdition card, a non-drill ladder layer) (0)
+
+_none_
+
+## Bracketed (open) items presented as fact (0)
+
+_none_
+
+## Follow-up prompts that read as multiple choice or hand over the answer (0)
+
+_none_
+
+## Follow-up sources that do not resolve (0)
+
+_none_
+
+## Walkthrough beats out of the guide's order (0)
+
+_none_
+
+## Round-2 coverage targets (session B common block) not met (0)
+
+_none_
+
 ## Appendix — allowlisted items
 
 - **C2-num-01** · codeRef · `IFC 901.6.2.2` — found only outside the card's section (content/study-guide.md) · _allowed: decided Oct 24: keep IFC 901.6.2.2 — the Cx section says only 'the IFC'; the section number is the Smoke control table's integrated-retest row_
