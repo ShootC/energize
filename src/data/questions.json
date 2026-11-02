@@ -10612,7 +10612,33 @@
       ],
       "requiresNumber": false,
       "codeRef": null,
-      "explanation": "UL 9540 says the system is listed. UL 9540A tells you how it fails: cell-to-module-to-unit propagation and vent gas composition and volume, which feed the explosion control calc, spacing and any sprinkler density relief."
+      "explanation": "UL 9540 says the system is listed. UL 9540A tells you how it fails: cell-to-module-to-unit propagation and vent gas composition and volume, which feed the explosion control calc, spacing and any sprinkler density relief.",
+      "followUps": [
+        {
+          "id": "B1-scn-01-f1",
+          "kind": "what-if",
+          "prompt": "Say the vendor hands you a UL 9540 listing and says that covers it.",
+          "beats": [
+            "UL 9540 says the system is listed",
+            "UL 9540A tells you how it fails: cell-to-module-to-unit propagation and vent gas composition and volume",
+            "Those feed the explosion control calc, spacing and any sprinkler density relief"
+          ],
+          "source": "Battery and BESS",
+          "par": 45
+        },
+        {
+          "id": "B1-scn-01-f2",
+          "kind": "number",
+          "prompt": "Which standards is explosion control commissioned against, and what's the sprinkler number?",
+          "beats": [
+            "NFPA 69 prevention verified against its design calc; NFPA 68 vents installed per design, unobstructed, discharging somewhere safe — check the published 2026 text, it may require both",
+            "Sprinklers at 0.3 gpm/ft² over the room or 2,500 ft², whichever is smaller (IFC 1207.5.5), unless large-scale fire testing justifies less",
+            "NFPA 855-2026 has explosion control commissioned per NFPA 3 and tested per NFPA 4"
+          ],
+          "source": "Battery and BESS › table",
+          "par": 45
+        }
+      ]
     },
     "hook": "9540 is the certificate; 9540A is the autopsy — propagation and vent gas, into the calc, the spacing and the density.",
     "source": "Battery and BESS › Likely question",
@@ -10641,7 +10667,33 @@
         "IFC Chapter 12",
         "ifc 1207"
       ],
-      "explanation": "Lithium-ion above 20 kWh triggers IFC 1207, aggregated per fire area (AHJ interpretations vary). There's no blanket UPS exemption, so a data center Li-ion UPS above the threshold is an ESS; exceptions are narrow (UL 1778 lead-acid UPS exempt from explosion control)."
+      "explanation": "Lithium-ion above 20 kWh triggers IFC 1207, aggregated per fire area (AHJ interpretations vary). There's no blanket UPS exemption, so a data center Li-ion UPS above the threshold is an ESS; exceptions are narrow (UL 1778 lead-acid UPS exempt from explosion control).",
+      "followUps": [
+        {
+          "id": "B1-scn-02-f1",
+          "kind": "why-not",
+          "prompt": "Why not take the vendor's word that a UPS isn't an ESS? It's not a BESS container.",
+          "beats": [
+            "There's no blanket UPS exemption, so a data center Li-ion UPS above the threshold is an ESS",
+            "Lithium-ion above 20 kWh triggers IFC 1207, aggregated per fire area",
+            "NFPA 75-2024 moved its lithium-ion rules to NFPA 855 and added off-gas detection"
+          ],
+          "source": "Battery and BESS › When it applies.",
+          "par": 45
+        },
+        {
+          "id": "B1-scn-02-f2",
+          "kind": "number",
+          "prompt": "Once it's an ESS — what does the code want before you start, and how many items are in it?",
+          "beats": [
+            "The commissioning plan (IFC 1207.2.1): required and approved before work",
+            "12 items — including the OPR and BOD, integrated fire and safety testing, ventilation testing, training and a decommissioning plan",
+            "And a report to the fire code official"
+          ],
+          "source": "Battery and BESS › The commissioning plan (IFC 1207.2.1).",
+          "par": 45
+        }
+      ]
     },
     "hook": "Above 20 kWh it's an ESS whatever the nameplate says — lead-acid gets the pass, lithium doesn't.",
     "source": "Battery and BESS › When it applies.",
@@ -10855,7 +10907,33 @@
       ],
       "requiresNumber": true,
       "codeRef": null,
-      "explanation": "Agent does not cool cells in thermal runaway; re-ignition follows once concentration decays. Water cools. Off-gas detection buys minutes. Vent gas is flammable, so explosion control matters."
+      "explanation": "Agent does not cool cells in thermal runaway; re-ignition follows once concentration decays. Water cools. Off-gas detection buys minutes. Vent gas is flammable, so explosion control matters.",
+      "followUps": [
+        {
+          "id": "B2-scn-01-f1",
+          "kind": "what-if",
+          "prompt": "Say the owner's insurer pushes back and wants agent in the UPS room anyway.",
+          "beats": [
+            "Clean agent and mist aren't accepted as primary protection for Li-ion racks in FM guidance",
+            "Agent does not cool cells in thermal runaway; re-ignition follows once concentration decays",
+            "Water is the answer because it cools: sprinklers at 0.3 gpm/ft² over the room or 2,500 ft², whichever is smaller (IFC 1207.5.5)"
+          ],
+          "source": "Battery and BESS",
+          "par": 45
+        },
+        {
+          "id": "B2-scn-01-f2",
+          "kind": "number",
+          "prompt": "How much warning does off-gas detection buy, and what's the exhaust holding?",
+          "beats": [
+            "Typically 2–30 min of warning before thermal runaway",
+            "Exhaust sized to hold ≤ 25% LFL (or continuous ≥ 1 cfm/ft², supervised)",
+            "Explosion control for what exhaust can't: NFPA 69 prevention, NFPA 68 vents"
+          ],
+          "source": "Battery and BESS › table",
+          "par": 45
+        }
+      ]
     },
     "hook": "Agent fades, the cell relights — water cools, minutes come from the sniffer, the vent gas wants a blow-out panel.",
     "source": "Commissioning technical (the 35%) › 12",
@@ -10878,11 +10956,89 @@
       ],
       "requiresNumber": false,
       "codeRef": null,
-      "explanation": "Off-gas alarm → BMS isolates the string → exhaust starts and proves flow → alarm to Ops → if smoke or heat follows, building alarm and sprinklers → drop utility mid-event and confirm detection, BMS and exhaust stay powered."
+      "explanation": "Off-gas alarm → BMS isolates the string → exhaust starts and proves flow → alarm to Ops → if smoke or heat follows, building alarm and sprinklers → drop utility mid-event and confirm detection, BMS and exhaust stay powered.",
+      "followUps": [
+        {
+          "id": "B2-scn-02-f1",
+          "kind": "what-if",
+          "prompt": "Say you drop utility and the exhaust fan stops. What's the finding, and where should it have been fed from?",
+          "beats": [
+            "Exhaust fans must be on a source that survives the event — ventilation on standby power",
+            "Through a utility failure, gas detection and battery-room exhaust: exhaust keeps running; detection stays powered",
+            "Drop utility mid-event and confirm detection, BMS and exhaust stay powered — a fan that stops is a failed step"
+          ],
+          "source": "Battery and BESS › L5 scenario",
+          "par": 45
+        },
+        {
+          "id": "B2-scn-02-f2",
+          "kind": "own-it",
+          "prompt": "You've commissioned a BESS site — what did the fire side look like there?",
+          "beats": [
+            "A battery storage site in Texas: I reviewed the design and the BACnet sequence matrix, ran the crew installing twenty flame detectors, and programmed the panel and the BACnet link to the client's control house",
+            "Once more than about seven detectors were connected, the panel threw a ground fault on the SLC — I measured instead of hunting: half a volt to four volts induced on each leg",
+            "Shielded but not twisted cable; I proved it with twisted replacement cable laid on the ground, and the faults cleared — re-pulled every run, about two weeks, and commissioned the system",
+            "Say plainly there's no direct story of an off-gas IST — then how I'd run it: off-gas alarm → BMS isolates the string → exhaust proves flow → alarm to Ops → drop utility mid-event"
+          ],
+          "source": "Story 3 — Ground faults nobody could ground out",
+          "par": 45
+        }
+      ]
     },
     "hook": "Trip, vent, tell, burn, unplug — and nothing in the chain goes dark.",
     "source": "Battery and BESS › L5 scenario",
     "par": 90,
+    "confirmInEdition": false
+  },
+  {
+    "id": "B2-scn-03-r2",
+    "topicId": "B2",
+    "type": "scenario",
+    "walkthrough": true,
+    "prompt": "Walk me through the Li-ion off-gas scenario at IST — off-gas, BMS trip, exhaust — through the utility drop.",
+    "interviewerPhrasing": "How do you prove the off-gas sequence end to end?",
+    "answer": {
+      "beats": [
+        "Off-gas alarm — off-gas detection (e.g., Li-ion Tamer) installed per the manufacturer, test-gas response proven; typically 2–30 min of warning before thermal runaway",
+        "BMS isolates the affected string — contactors open; E-stop works; status reaches the FACP or BMS",
+        "Exhaust starts and proves flow — sized to hold ≤ 25% LFL (or continuous ≥ 1 cfm/ft², supervised); airflow proven; fan failure alarms",
+        "Alarm to Ops",
+        "If smoke or heat follows: building alarm and sprinklers — 0.3 gpm/ft² over the room or 2,500 ft², whichever is smaller (IFC 1207.5.5)",
+        "Drop utility mid-event and confirm detection, BMS and exhaust stay powered"
+      ],
+      "requiresNumber": true,
+      "codeRef": null,
+      "explanation": "Off-gas alarm → BMS isolates the string → exhaust starts and proves flow (≤ 25% LFL) → alarm to Ops → if smoke or heat follows, building alarm and sprinklers (0.3 gpm/ft² over the room or 2,500 ft², IFC 1207.5.5) → drop utility mid-event and confirm detection, BMS and exhaust stay powered.",
+      "followUps": [
+        {
+          "id": "B2-scn-03-r2-f1",
+          "kind": "why-not",
+          "prompt": "Why not let the BMS handle it alone? It already trips on temperature.",
+          "beats": [
+            "It's a layered defense proven in order: off-gas detection catches a failing cell, the BMS isolates it, exhaust keeps vent gas below 25% LFL, explosion control handles what exhaust can't, and water controls the fire",
+            "Off-gas detection buys 2–30 min of warning before thermal runaway; the BMS trips on off-gas, over-temperature and voltage faults",
+            "Vent gas is flammable, so explosion control matters"
+          ],
+          "source": "Battery and BESS",
+          "par": 45
+        },
+        {
+          "id": "B2-scn-03-r2-f2",
+          "kind": "what-if",
+          "prompt": "Say the IST matrix row for Li-ion off-gas is blank under building alarm and central station. Do you test those cells?",
+          "beats": [
+            "The matrix row: Li-ion off-gas, UPS room → building alarm —, central station —, BMS trips the string, exhaust on, BMS / EPMS ●",
+            "The blank cells get tested too — proving an output does not happen is half the job",
+            "Example only — the BOD decides every cell"
+          ],
+          "source": "Data center commissioning language › IST matrix — the document the posting says you'll review.",
+          "par": 45
+        }
+      ]
+    },
+    "hook": "Sniff, trip, vent, tell, then water if it burns — and pull the plug mid-event to prove none of it goes dark.",
+    "source": "Battery and BESS › L5 scenario",
+    "par": 120,
     "confirmInEdition": false
   },
   {
@@ -11059,7 +11215,33 @@
       ],
       "requiresNumber": true,
       "codeRef": null,
-      "explanation": "Calibrated reading → alarm at setpoint → exhaust starts and airflow is proven → detector or fan failure is annunciated → all of it works on generator power. Exhaust holds ≤ 25% LFL (about 1% H2)."
+      "explanation": "Calibrated reading → alarm at setpoint → exhaust starts and airflow is proven → detector or fan failure is annunciated → all of it works on generator power. Exhaust holds ≤ 25% LFL (about 1% H2).",
+      "followUps": [
+        {
+          "id": "B3-scn-01-f1",
+          "kind": "number",
+          "prompt": "Where's the hydrogen exhaust setpoint, and what's that in percent by volume?",
+          "beats": [
+            "Exhaust holding ≤ 25% LFL",
+            "H2 LFL is 4%, so about 1% by volume",
+            "Or continuous ≥ 1 cfm/ft², supervised; sensors mount high, near the ceiling"
+          ],
+          "source": "Gas detection › table",
+          "par": 45
+        },
+        {
+          "id": "B3-scn-01-f2",
+          "kind": "what-if",
+          "prompt": "Say the cal gas on the truck is a surrogate, not hydrogen.",
+          "beats": [
+            "Calibrating with a surrogate gas needs the manufacturer's correction factor — note it on the sheet",
+            "Span-calibrate with certified, in-date, traceable cal gas; record as-found and as-left",
+            "Catalytic bead sensors are poisoned by silicones; electrochemical cells drift and expire"
+          ],
+          "source": "Gas detection › Traps an interviewer may probe",
+          "par": 45
+        }
+      ]
     },
     "hook": "Reads right, alarms at 25% LFL, fan proves flow, failures tell on themselves, and it all runs on the generator.",
     "source": "Gas detection › Likely question",
@@ -11225,7 +11407,33 @@
       ],
       "requiresNumber": true,
       "codeRef": null,
-      "explanation": "The listing replaces the density, cleanliness is critical, the pressure tests are higher, the calc method differs, and ventilation shutdown is part of the protection."
+      "explanation": "The listing replaces the density, cleanliness is critical, the pressure tests are higher, the calc method differs, and ventilation shutdown is part of the protection.",
+      "followUps": [
+        {
+          "id": "B4-scn-01-f1",
+          "kind": "number",
+          "prompt": "The hydro on a high-pressure mist system — numbers?",
+          "beats": [
+            "Intermediate and high pressure: 1.5 × working pressure for 10 min, then working pressure for 110 min, no loss",
+            "Low pressure (≤ 175 psi): 200 psi for 2 h (working pressure + 50 psi where working pressure exceeds 150 psi)",
+            "Dry or pre-action mist systems also get the 40 psi, 24-hour air test"
+          ],
+          "source": "Water mist › table",
+          "par": 45
+        },
+        {
+          "id": "B4-scn-01-f2",
+          "kind": "why-not",
+          "prompt": "Why not skip the flush? The pipe's brand-new stainless.",
+          "beats": [
+            "Flush before nozzles go in — small orifices clog, and debris is the most common mist failure",
+            "Strainers and filters in place is an L2 check",
+            "Then the hydrostatic test for the pressure class"
+          ],
+          "source": "Water mist › Acceptance sequence",
+          "par": 45
+        }
+      ]
     },
     "hook": "Listing not density, clean not just tight, 1.5× not 200, Darcy not Hazen, fans off.",
     "source": "Water mist › Likely question",
@@ -12145,7 +12353,33 @@
         "IFC 33",
         "Chapter 33"
       ],
-      "explanation": "NFPA 241 and IFC Chapter 33 expect a fire prevention program and a working water supply once combustibles arrive, so temporary protection is a commissioning deliverable, not a pre-L1 afterthought. Know Lake Mariner, don't lead with it — and ask rather than judge."
+      "explanation": "NFPA 241 and IFC Chapter 33 expect a fire prevention program and a working water supply once combustibles arrive, so temporary protection is a commissioning deliverable, not a pre-L1 afterthought. Know Lake Mariner, don't lead with it — and ask rather than judge.",
+      "followUps": [
+        {
+          "id": "A4-scn-01-f1",
+          "kind": "why-not",
+          "prompt": "Why not leave construction-phase protection to the GC's safety plan? It isn't commissioning.",
+          "beats": [
+            "Temporary protection is a commissioning deliverable, not a pre-L1 afterthought",
+            "NFPA 241 and IFC Chapter 33 expect a fire prevention program and a working water supply once combustibles arrive",
+            "If construction-phase fire protection comes up, it is your strongest first-principles point"
+          ],
+          "source": "Why Fluidstack › The Lake Mariner fire — know it, don't lead with it.",
+          "par": 45
+        },
+        {
+          "id": "A4-scn-01-f2",
+          "kind": "what-if",
+          "prompt": "Say they ask what you'd have wanted to see on that campus the day the building burned.",
+          "beats": [
+            "The fire chief reported no functional alarm or suppression, three hydrants that didn't work, and safety data sheets that had burned",
+            "A fire prevention program and a working water supply once combustibles arrive — NFPA 241 and IFC Chapter 33",
+            "Said as a question, not a judgment: \"What changed in construction-phase fire protection after Lake Mariner?\""
+          ],
+          "source": "Why Fluidstack › The Lake Mariner fire — know it, don't lead with it.",
+          "par": 45
+        }
+      ]
     },
     "hook": "Water and a program the day combustibles arrive — three dead hydrants is the lesson, asked as a question.",
     "source": "Why Fluidstack › The Lake Mariner fire — know it, don't lead with it.",
@@ -12166,7 +12400,33 @@
       ],
       "requiresNumber": false,
       "codeRef": null,
-      "explanation": "Know it, don't lead with it. If you raise it, ask rather than judge: \"What changed in construction-phase fire protection after Lake Mariner?\" Lake Mariner is live commissioning now (CB-3 delivered in July, later buildings energizing into early 2027)."
+      "explanation": "Know it, don't lead with it. If you raise it, ask rather than judge: \"What changed in construction-phase fire protection after Lake Mariner?\" Lake Mariner is live commissioning now (CB-3 delivered in July, later buildings energizing into early 2027).",
+      "followUps": [
+        {
+          "id": "A4-scn-02-f1",
+          "kind": "what-if",
+          "prompt": "Say they take the question and turn it around: what would you change?",
+          "beats": [
+            "A fire prevention program and a working water supply once combustibles arrive — NFPA 241 and IFC Chapter 33",
+            "Temporary protection as a commissioning deliverable, not a pre-L1 afterthought",
+            "Still ask rather than judge — the chief reported no functional alarm or suppression, three hydrants that didn't work, and safety data sheets that had burned"
+          ],
+          "source": "Why Fluidstack › The Lake Mariner fire — know it, don't lead with it.",
+          "par": 45
+        },
+        {
+          "id": "A4-scn-02-f2",
+          "kind": "number",
+          "prompt": "What do you know about where Lake Mariner is right now?",
+          "beats": [
+            "~360 MW; CB-3 delivered in July, later buildings energizing into early 2027 — live commissioning now",
+            "The fire was early June 2026: a former water treatment building burned while the site was still under construction",
+            "It sets up the modular-build question: with Lake Mariner energizing and Cameron County breaking ground, where does fire protection commissioning sit — at the factory, or on site?"
+          ],
+          "source": "Why Fluidstack › The Lake Mariner fire — know it, don't lead with it.",
+          "par": 45
+        }
+      ]
     },
     "hook": "A question, not a verdict — and it opens the door to 'factory or site?'",
     "source": "Why Fluidstack › The Lake Mariner fire — know it, don't lead with it.",
@@ -12189,7 +12449,33 @@
       ],
       "requiresNumber": false,
       "codeRef": null,
-      "explanation": "Prerequisites: prior level signed off, AHJ notified, central station on test, impairment logged, fire watch in place if the system goes out of service — and the script ends with every isolation reversed and verified."
+      "explanation": "Prerequisites: prior level signed off, AHJ notified, central station on test, impairment logged, fire watch in place if the system goes out of service — and the script ends with every isolation reversed and verified.",
+      "followUps": [
+        {
+          "id": "A4-scn-03-f1",
+          "kind": "why-not",
+          "prompt": "Why not skip the fire watch? The building's empty — it's still construction.",
+          "beats": [
+            "Fire watch in place if the system goes out of service — it's a script prerequisite",
+            "NFPA 241 and IFC Chapter 33 expect a fire prevention program and a working water supply once combustibles arrive — construction is exactly when it's needed",
+            "Anything deferred gets a documented risk acceptance, an impairment entry and a fire watch"
+          ],
+          "source": "Why Fluidstack › The Lake Mariner fire — know it, don't lead with it.",
+          "par": 45
+        },
+        {
+          "id": "A4-scn-03-f2",
+          "kind": "what-if",
+          "prompt": "Say the test runs long and the system's still impaired at the end of the shift.",
+          "beats": [
+            "Return to normal — every isolation reversed and verified; the most dangerous outcome of a test is a system left disabled",
+            "The impairment stays logged and the fire watch stays until it's back; log any system that doesn't return to normal",
+            "Life-safety issues close before turnover; anything else carried into operations needs a documented risk acceptance"
+          ],
+          "source": "Data center commissioning language › Script development — what a good fire FPT script contains.",
+          "par": 45
+        }
+      ]
     },
     "hook": "Signed, notified, on test, logged, watched — then put it all back.",
     "source": "Data center commissioning language › Script development — what a good fire FPT script contains.",
