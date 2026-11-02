@@ -1994,7 +1994,32 @@
         "Table 10.10.2.1.3",
         "10.10.2.1.3"
       ],
-      "explanation": "Not less than one of: system demand including hose; the 10 ft/s table flow; or the maximum flow available (NFPA 24 Table 10.10.2.1.3). Witness the underground flush before it connects to the riser, then both hydros."
+      "explanation": "Not less than one of: system demand including hose; the 10 ft/s table flow; or the maximum flow available (NFPA 24 Table 10.10.2.1.3). Witness the underground flush before it connects to the riser, then both hydros.",
+      "followUps": [
+        {
+          "id": "S1-scn-01-f1",
+          "kind": "why-not",
+          "prompt": "Why not flush it after it's tied into the riser? You'd get the whole run in one go.",
+          "beats": [
+            "Witness the underground flush before it connects to the riser — then both hydros",
+            "Not less than one of: system demand including hose; the 10 ft/s table flow; or the maximum flow available",
+            "Sprinkler acceptance proves the water gets there: a clean underground first"
+          ],
+          "source": "Sprinkler and underground › Acceptance sequence",
+          "par": 45
+        },
+        {
+          "id": "S1-scn-01-f2",
+          "kind": "number",
+          "prompt": "An 8-inch main — what's the table flow?",
+          "beats": [
+            "8 in. 1,560 gpm — the 10 ft/s table (NFPA 24 Table 10.10.2.1.3)",
+            "4 in. 390 · 6 in. 880 · 10 in. 2,440 · 12 in. 3,520 gpm"
+          ],
+          "source": "Sprinkler and underground › table",
+          "par": 45
+        }
+      ]
     },
     "hook": "Demand-plus-hose, the 10 ft/s table, or all you've got — and watch it before it meets the riser.",
     "source": "Sprinkler and underground › Acceptance sequence",
@@ -2186,7 +2211,33 @@
         "29.2.1",
         "NFPA 13 §29.2.1"
       ],
-      "explanation": "200 psi for 2 h, or 50 psi above working pressure where it exceeds 150 psi; no gauge drop and no visible leakage; on pump systems, set from pump shutoff pressure (NFPA 13-2022 §29.2.1)."
+      "explanation": "200 psi for 2 h, or 50 psi above working pressure where it exceeds 150 psi; no gauge drop and no visible leakage; on pump systems, set from pump shutoff pressure (NFPA 13-2022 §29.2.1).",
+      "followUps": [
+        {
+          "id": "S2-scn-01-f1",
+          "kind": "what-if",
+          "prompt": "Say the gauge drops a hair over the two hours but nobody can find a leak.",
+          "beats": [
+            "No gauge drop and no visible leakage — both; a drop fails it",
+            "200 psi for 2 h, or 50 psi above working pressure where it exceeds 150 psi (NFPA 13-2022 §29.2.1)",
+            "The aboveground test gets no makeup allowance — only the underground hydro has one (L = S·D·√P / 148,000 gph, NFPA 24)"
+          ],
+          "source": "Sprinkler and underground › table",
+          "par": 45
+        },
+        {
+          "id": "S2-scn-01-f2",
+          "kind": "why-not",
+          "prompt": "Why not test the pump system at 200 psi too? That's the number everyone knows.",
+          "beats": [
+            "On pump systems, set from pump shutoff pressure",
+            "50 psi above working pressure where it exceeds 150 psi",
+            "NFPA 13-2022 §29.2.1 — acceptance is Chapter 29 in 2022, Chapter 28 in 2019"
+          ],
+          "source": "Sprinkler and underground › table",
+          "par": 45
+        }
+      ]
     },
     "hook": "200 for 2, no drop, no drip — and on a pump job, start from shutoff.",
     "source": "Sprinkler and underground › table",
@@ -2210,7 +2261,32 @@
       ],
       "requiresNumber": true,
       "codeRef": null,
-      "explanation": "Both run 200 psi for 2 h. Underground: 50 psi above static where static exceeds 150 psi, with a makeup allowance of L = S·D·√P / 148,000 gph (NFPA 24). Aboveground: 50 psi above working pressure where it exceeds 150 psi, no gauge drop and no visible leakage, set from pump shutoff pressure on pump systems (NFPA 13-2022 §29.2.1)."
+      "explanation": "Both run 200 psi for 2 h. Underground: 50 psi above static where static exceeds 150 psi, with a makeup allowance of L = S·D·√P / 148,000 gph (NFPA 24). Aboveground: 50 psi above working pressure where it exceeds 150 psi, no gauge drop and no visible leakage, set from pump shutoff pressure on pump systems (NFPA 13-2022 §29.2.1).",
+      "followUps": [
+        {
+          "id": "S2-scn-02-f1",
+          "kind": "what-if",
+          "prompt": "Say the static on the underground is above 150. What's your test pressure?",
+          "beats": [
+            "50 psi above static where static exceeds 150 psi, for 2 h (NFPA 24)",
+            "Makeup allowance L = S·D·√P / 148,000 gph",
+            "Witness the flush before the underground connects to the riser, then both hydros; signed certificates for underground and aboveground"
+          ],
+          "source": "Sprinkler and underground › table",
+          "par": 45
+        },
+        {
+          "id": "S2-scn-02-f2",
+          "kind": "number",
+          "prompt": "The certificates for both tests — what are they, and where do they end up?",
+          "beats": [
+            "Contractor's Material and Test Certificates for underground and aboveground, signed at L3 — prove the pipe",
+            "They go in the turnover package with as-builts, the calc, main drain and pump baselines, spare sprinklers, and the NFPA 25 schedule loaded into the CMMS"
+          ],
+          "source": "Sprinkler and underground › Acceptance sequence",
+          "par": 45
+        }
+      ]
     },
     "hook": "Underground gets an allowance (148,000); aboveground gets none — no drop, no leak.",
     "source": "Sprinkler and underground › table",
@@ -2359,7 +2435,33 @@
         "13 §7.7",
         "7.7"
       ],
-      "explanation": "Initiating device within 90 s of one-sprinkler flow (NFPA 72); electrical alarm within 100 s and mechanical within 5 min (NFPA 13 §7.7); tamper within two turns of the handwheel or one-fifth of stem travel."
+      "explanation": "Initiating device within 90 s of one-sprinkler flow (NFPA 72); electrical alarm within 100 s and mechanical within 5 min (NFPA 13 §7.7); tamper within two turns of the handwheel or one-fifth of stem travel.",
+      "followUps": [
+        {
+          "id": "S3-scn-01-f1",
+          "kind": "what-if",
+          "prompt": "Say the inspector's test gets the horn inside 100 seconds but the flow switch itself was slow to make.",
+          "beats": [
+            "Initiating device within 90 s of one-sprinkler flow (NFPA 72) — that's its own limit",
+            "Electrical alarm within 100 s and mechanical within 5 min (NFPA 13 §7.7)",
+            "Record the time to alarm on the script — it's an L4 item"
+          ],
+          "source": "Sprinkler and underground › table",
+          "par": 45
+        },
+        {
+          "id": "S3-scn-01-f2",
+          "kind": "what-if",
+          "prompt": "Say the tamper only reports once the valve's nearly closed.",
+          "beats": [
+            "Valve tamper switches report within two turns of the handwheel or one-fifth of stem travel",
+            "An L4 item — prove the system — and a finding on the issues log if it doesn't",
+            "At L5 waterflow reaches the FACP, central station and BMS on normal and generator power"
+          ],
+          "source": "Sprinkler and underground › Acceptance sequence",
+          "par": 45
+        }
+      ]
     },
     "hook": "90 to the switch, 100 to the horn, 5 minutes to the gong, 2 turns to the tamper.",
     "source": "Sprinkler and underground › table",
@@ -2387,7 +2489,33 @@
         "13 §7.7",
         "7.7"
       ],
-      "explanation": "Electrical alarm within 100 s and mechanical within 5 min (NFPA 13 §7.7); initiating device within 90 s of one-sprinkler flow (NFPA 72). 130 s fails the electrical limit."
+      "explanation": "Electrical alarm within 100 s and mechanical within 5 min (NFPA 13 §7.7); initiating device within 90 s of one-sprinkler flow (NFPA 72). 130 s fails the electrical limit.",
+      "followUps": [
+        {
+          "id": "S3-scn-02-f1",
+          "kind": "what-if",
+          "prompt": "Say it fails again on the retest at the same number.",
+          "beats": [
+            "The limit doesn't move: electrical alarm within 100 s (NFPA 13 §7.7)",
+            "The initiating device itself must operate within 90 s of one-sprinkler flow (NFPA 72)",
+            "A finding on the issues log: ID, system, level found, severity (life safety first), owner, due date and closure evidence — life-safety issues close before turnover"
+          ],
+          "source": "Sprinkler and underground › table",
+          "par": 45
+        },
+        {
+          "id": "S3-scn-02-f2",
+          "kind": "why-not",
+          "prompt": "Why not accept it under the 5-minute number? An alarm's an alarm.",
+          "beats": [
+            "The 5 min limit is the mechanical alarm's",
+            "The electrical alarm is 100 s (NFPA 13 §7.7)",
+            "The initiating device: 90 s of one-sprinkler flow (NFPA 72)"
+          ],
+          "source": "Sprinkler and underground › table",
+          "par": 45
+        }
+      ]
     },
     "hook": "Past 100 seconds the horn is late; only the gong gets five minutes.",
     "source": "Sprinkler and underground › table",
@@ -2515,7 +2643,33 @@
         "NFPA-25",
         "NFPA 25 baseline"
       ],
-      "explanation": "Main drain test: record static and residual — that's the NFPA 25 baseline; a reading more than 10% below acceptance has to be investigated. The baselines go to Ops in the turnover package."
+      "explanation": "Main drain test: record static and residual — that's the NFPA 25 baseline; a reading more than 10% below acceptance has to be investigated. The baselines go to Ops in the turnover package.",
+      "followUps": [
+        {
+          "id": "S4-scn-01-f1",
+          "kind": "why-not",
+          "prompt": "Why not skip the main drain test on a new system? Nothing's changed since the hydro.",
+          "beats": [
+            "Record static and residual — that's the NFPA 25 baseline you hand to Ops",
+            "A later reading more than 10% below acceptance has to be investigated — without your number there's nothing to compare against",
+            "It's an L4 item; the main drain and pump baselines go in the turnover package with the NFPA 25 schedule loaded into the CMMS"
+          ],
+          "source": "Pre-action › Test-day details an interviewer will probe",
+          "par": 45
+        },
+        {
+          "id": "S4-scn-01-f2",
+          "kind": "number",
+          "prompt": "What's the number Ops will hold your baseline to, and where's it from?",
+          "beats": [
+            "A main drain reading more than 10% below acceptance has to be investigated",
+            "NFPA 25 — the baseline you're setting",
+            "Same standard: dry and pre-action valves get a partial trip test every year and a full-flow trip test every 3 years"
+          ],
+          "source": "Pre-action › Test-day details an interviewer will probe",
+          "par": 45
+        }
+      ]
     },
     "hook": "You’re not testing the drain — you’re writing the number Ops compares against; more than 10% below it means investigate.",
     "source": "Sprinkler and underground › Acceptance sequence",
@@ -2541,7 +2695,32 @@
         "NFPA-25",
         "NFPA 25 baseline"
       ],
-      "explanation": "A main drain reading more than 10% below acceptance has to be investigated — so the static and residual you recorded at acceptance are the reference."
+      "explanation": "A main drain reading more than 10% below acceptance has to be investigated — so the static and residual you recorded at acceptance are the reference.",
+      "followUps": [
+        {
+          "id": "S4-scn-02-f1",
+          "kind": "what-if",
+          "prompt": "Say Ops can't find your acceptance reading.",
+          "beats": [
+            "The main drain and pump baselines go in the turnover package with the NFPA 25 schedule loaded into the CMMS — that's where it lives",
+            "Record static and residual at acceptance — that's why you record yours carefully",
+            "More than 10% below acceptance has to be investigated"
+          ],
+          "source": "Pre-action › Test-day details an interviewer will probe",
+          "par": 45
+        },
+        {
+          "id": "S4-scn-02-f2",
+          "kind": "number",
+          "prompt": "Where does that 10% rule live, and what else does the same standard want from the dry and pre-action valves?",
+          "beats": [
+            "NFPA 25 — a main drain reading more than 10% below acceptance has to be investigated",
+            "Dry and pre-action valves get a partial trip test every year and a full-flow trip test every 3 years"
+          ],
+          "source": "Pre-action › Test-day details an interviewer will probe",
+          "par": 45
+        }
+      ]
     },
     "hook": "Ten percent under your number and somebody has to go look.",
     "source": "Pre-action › Test-day details an interviewer will probe",
@@ -2564,7 +2743,33 @@
       ],
       "requiresNumber": false,
       "codeRef": null,
-      "explanation": "Turnover: certificates, as-builts, the calc, main drain and pump baselines, spare sprinklers, and the NFPA 25 schedule loaded into the CMMS."
+      "explanation": "Turnover: certificates, as-builts, the calc, main drain and pump baselines, spare sprinklers, and the NFPA 25 schedule loaded into the CMMS.",
+      "followUps": [
+        {
+          "id": "S4-scn-03-f1",
+          "kind": "what-if",
+          "prompt": "Say the contractor hands over as-builts and certificates but no calc.",
+          "beats": [
+            "Turnover: certificates, as-builts, the calc, main drain and pump baselines, spare sprinklers, and the NFPA 25 schedule loaded into the CMMS — the calc is on the list",
+            "The hydraulic nameplate at the riser is an L2 item; the calc is what a field reroute gets checked against",
+            "Every finding gets an ID, system, level found, severity, owner, due date and closure evidence"
+          ],
+          "source": "Sprinkler and underground › Acceptance sequence",
+          "par": 45
+        },
+        {
+          "id": "S4-scn-03-f2",
+          "kind": "why-not",
+          "prompt": "Why load the NFPA 25 schedule into the CMMS yourself? Isn't that Ops' job?",
+          "beats": [
+            "The NFPA 25 schedule loaded into the CMMS is part of turnover",
+            "NFPA 25 is the baseline you hand to Ops — the main drain and pump baselines",
+            "The turnover package also carries the ITM schedule loaded into the CMMS, the impairment procedure, and recorded Ops training"
+          ],
+          "source": "Sprinkler and underground › Acceptance sequence",
+          "par": 45
+        }
+      ]
     },
     "hook": "Paper, drawings, calc, two baselines, spares, and a schedule in the CMMS.",
     "source": "Sprinkler and underground › Acceptance sequence",
@@ -2811,7 +3016,32 @@
       ],
       "requiresNumber": true,
       "codeRef": null,
-      "explanation": "Flush → hydros → air test if dry → inspector's test and tamper timing → main drain baseline → backflow forward flow → signals to central station → certificates."
+      "explanation": "Flush → hydros → air test if dry → inspector's test and tamper timing → main drain baseline → backflow forward flow → signals to central station → certificates.",
+      "followUps": [
+        {
+          "id": "S6-scn-01-f1",
+          "kind": "what-if",
+          "prompt": "Say it's a wet system. What drops off the list?",
+          "beats": [
+            "Air test if dry — drops off on a wet system",
+            "On dry systems, trip test: time to trip and time to water at the test connection — also dry only",
+            "Everything else stays: flush → hydros → inspector's test and tamper timing → main drain baseline → backflow forward flow → signals to central station → certificates"
+          ],
+          "source": "Sprinkler and underground › Likely question",
+          "par": 45
+        },
+        {
+          "id": "S6-scn-01-f2",
+          "kind": "number",
+          "prompt": "The backflow forward-flow test — at what flow?",
+          "beats": [
+            "Forward-flow test at system demand, including hose where applicable (NFPA 13 / NFPA 24)",
+            "Hose allowance: Light 100 gpm / 30 min · Ordinary 250 gpm / 60–90 min · Extra 500 gpm / 90–120 min (NFPA 13 Table 19.2.3.1.2)"
+          ],
+          "source": "Sprinkler and underground › table",
+          "par": 45
+        }
+      ]
     },
     "hook": "Eight stops, and the last one is paper.",
     "source": "Sprinkler and underground › Likely question",
@@ -2834,11 +3064,90 @@
       ],
       "requiresNumber": false,
       "codeRef": null,
-      "explanation": "L5 — prove it in the building: waterflow reaches the FACP, central station and BMS on normal and generator power; the fire pump (if any) starts and carries the demand."
+      "explanation": "L5 — prove it in the building: waterflow reaches the FACP, central station and BMS on normal and generator power; the fire pump (if any) starts and carries the demand.",
+      "followUps": [
+        {
+          "id": "S6-scn-02-f1",
+          "kind": "what-if",
+          "prompt": "Say waterflow reaches the FACP fine on normal power, and the generator test is scheduled for next month.",
+          "beats": [
+            "L5 proves waterflow reaches the FACP, central station and BMS on normal and generator power — both",
+            "Fire alarm has to ride through on its own batteries: no lost points or trouble storms",
+            "A deferral is a documented risk acceptance, an impairment entry and a fire watch — not a quiet skip"
+          ],
+          "source": "Sprinkler and underground › Acceptance sequence",
+          "par": 45
+        },
+        {
+          "id": "S6-scn-02-f2",
+          "kind": "own-it",
+          "prompt": "Have you proven waterflow signals through to the panel on a live building?",
+          "beats": [
+            "On the Hawaii towers my bar for sending the crew home: every waterflow and tamper, elevator recall and shunt trip, audibility, the sequence for every device type on every floor, and all manual paging",
+            "Proven, not sampled",
+            "We held the shutdown-to-waterflow window under 8 hours, with security on fire watch"
+          ],
+          "source": "Story 1 — Three occupied towers, one cutover",
+          "par": 45
+        }
+      ]
     },
     "hook": "Three destinations, two power sources, one pump carrying the load.",
     "source": "Sprinkler and underground › Acceptance sequence",
     "par": 75,
+    "confirmInEdition": false
+  },
+  {
+    "id": "S6-scn-03-r2",
+    "topicId": "S6",
+    "type": "scenario",
+    "walkthrough": true,
+    "prompt": "Walk me through your sprinkler acceptance checklist, flush to certificates — what each stop proves and the number you hold it to.",
+    "interviewerPhrasing": "What's on your sprinkler acceptance checklist?",
+    "answer": {
+      "beats": [
+        "Flush — the underground, witnessed before it connects to the riser: not less than system demand including hose, the 10 ft/s table flow, or the maximum flow available (NFPA 24 Table 10.10.2.1.3)",
+        "Hydros — underground and aboveground: 200 psi for 2 h (50 psi above static or working pressure where it exceeds 150 psi); no gauge drop and no visible leakage aboveground; signed certificates",
+        "Air test if dry — 40 psi for 24 h, loss ≤ 1.5 psi (NFPA 13 §29.2.2)",
+        "Inspector's test and tamper timing — initiating device within 90 s of one-sprinkler flow, electrical alarm within 100 s, mechanical within 5 min; tamper within two turns of the handwheel or one-fifth of stem travel",
+        "Main drain baseline — record static and residual; that's the NFPA 25 baseline",
+        "Backflow forward flow — at system demand, including hose where applicable",
+        "Signals to central station — waterflow reaches the FACP, central station and BMS on normal and generator power",
+        "Certificates — Contractor's Material and Test Certificates for underground and aboveground; then as-builts, the calc, baselines, spare sprinklers and the NFPA 25 schedule loaded into the CMMS"
+      ],
+      "requiresNumber": true,
+      "codeRef": null,
+      "explanation": "Flush (witnessed before the riser) → hydros (200 psi for 2 h) → air test if dry (40 psi, 24 h, ≤ 1.5 psi) → inspector's test and tamper timing (90 s / 100 s / 5 min; two turns or one-fifth of stem travel) → main drain baseline (static and residual) → backflow forward flow at system demand → signals to central station → certificates and the turnover package.",
+      "followUps": [
+        {
+          "id": "S6-scn-03-r2-f1",
+          "kind": "why-not",
+          "prompt": "Why not witness the flush after the underground's tied into the riser? One mobilization.",
+          "beats": [
+            "Witness the underground flush before it connects to the riser — then both hydros",
+            "Sprinkler acceptance proves the water gets there: a clean underground, tight piping, a supply that meets demand with margin",
+            "Signed certificates for underground and aboveground"
+          ],
+          "source": "Sprinkler and underground › Acceptance sequence",
+          "par": 45
+        },
+        {
+          "id": "S6-scn-03-r2-f2",
+          "kind": "number",
+          "prompt": "Dry system — the trip test. What do you record?",
+          "beats": [
+            "On dry systems, trip test: time to trip and time to water at the test connection",
+            "Starting air pressure, air pressure at trip, time to trip, time to water at the test connection, and water pressure there once flow is steady",
+            "Water at the inspector's test connection within 60 s by test, or calculated delivery meeting the table"
+          ],
+          "source": "Pre-action › Test-day details an interviewer will probe",
+          "par": 45
+        }
+      ]
+    },
+    "hook": "Flush before the riser, 200 for 2, 40 for 24, 90 and 100 seconds then 5 minutes to the alarms, two baselines, demand through the backflow, three destinations, then paper.",
+    "source": "Sprinkler and underground › Likely question",
+    "par": 120,
     "confirmInEdition": false
   },
   {
@@ -2912,7 +3221,32 @@
       ],
       "requiresNumber": false,
       "codeRef": null,
-      "explanation": "Containment panels either drop away on heat (listed) or sprinklers go inside the contained aisle; it is an obstruction question first."
+      "explanation": "Containment panels either drop away on heat (listed) or sprinklers go inside the contained aisle; it is an obstruction question first.",
+      "followUps": [
+        {
+          "id": "S7-scn-01-f1",
+          "kind": "what-if",
+          "prompt": "Say the containment vendor tells you their panels drop at a certain temperature. What do you want to see?",
+          "beats": [
+            "Panels listed to drop away on heat — the listing, not the vendor's word",
+            "Or sprinklers inside the contained aisle",
+            "L2 — install vs design: obstructions from containment panels, cable tray, busway and ductwork"
+          ],
+          "source": "Sprinkler and underground › Data center points to make",
+          "par": 45
+        },
+        {
+          "id": "S7-scn-01-f2",
+          "kind": "why-not",
+          "prompt": "Why not lean on the clean agent in the hall and stop worrying about the aisle?",
+          "beats": [
+            "Hazard classification is set by the owner's and insurer's standard — FM Data Sheet 5-32 wants sprinklers throughout; gaseous systems are a supplement",
+            "At gigawatt scale, holding concentration in a hall with containment and high-airflow cooling is impractical"
+          ],
+          "source": "Sprinkler and underground › Data center points to make",
+          "par": 45
+        }
+      ]
     },
     "hook": "The aisle is a ceiling — either it falls away hot, or the heads go inside it.",
     "source": "Likely questions and day-of checklist › Commissioning technical (the 35%)",
