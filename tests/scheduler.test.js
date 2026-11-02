@@ -87,15 +87,15 @@ for (const c of TECH_CASES) {
     assert.deepEqual(slotsOf(shift, 'spot'), c.spot || []);
     assert.deepEqual(slotsOf(shift, 'walkthrough'), ['E2']);
     assert.deepEqual(slotsOf(shift, 'story'), ['I4']);
-    assert.deepEqual(slotsOf(shift, 'drill'), ['I8']);
+    assert.deepEqual(slotsOf(shift, 'ladder'), ['I8']);
     // Order in the shift: redos, coverage (spot check last), walkthrough, then the two behavioral.
-    assert.deepEqual(shift.slots.map((s) => s.slot), [...c.redo.map(() => 'redo'), ...c.coverage.map(() => 'coverage'), ...(c.spot || []).map(() => 'spot'), 'walkthrough', 'story', 'drill']);
+    assert.deepEqual(shift.slots.map((s) => s.slot), [...c.redo.map(() => 'redo'), ...c.coverage.map(() => 'coverage'), ...(c.spot || []).map(() => 'spot'), 'walkthrough', 'story', 'ladder']);
     assert.equal(shift.slots.find((s) => s.slot === 'walkthrough').cardId, 'E2-scn-02');
     assert.equal(shift.slots.find((s) => s.slot === 'story').cardId, 'I4-sty-03');
     // Technical slots take the scenario first (the synthetic bank has no defect / matrix
     // cards), so every card in this shift is said out loud.
     assert.equal(shift.outLoud, 15);
-    assert.ok(shift.slots.every((s) => topics.find((t) => t.id === s.topicId).area !== 'Interview' || ['story', 'drill'].includes(s.slot)));
+    assert.ok(shift.slots.every((s) => topics.find((t) => t.id === s.topicId).area !== 'Interview' || ['story', 'ladder'].includes(s.slot)));
   });
 }
 
@@ -134,7 +134,7 @@ test('no walkthrough card in the bank: the walkthrough slot takes a scenario on 
   assert.notEqual(topics.find((t) => t.id === w.topicId).rating, 'Locked In');
   // No story has follow-ups: slot A falls back to any story, slot B to a backup (I8).
   assert.equal(shift.slots.find((s) => s.slot === 'story').type, 'story');
-  assert.equal(shift.slots.find((s) => s.slot === 'drill').topicId, 'I8');
+  assert.equal(shift.slots.find((s) => s.slot === 'ladder').topicId, 'I8');
 });
 
 test('walkthroughs rotate and prefer topics below Locked In', () => {

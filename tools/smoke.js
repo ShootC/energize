@@ -10,6 +10,11 @@
 // (Chrome's fake device) and refused, the installable app served over http
 // (service worker, offline reload, a new build's Reload note), boot time under
 // 4× CPU throttling, and card-top stability across a shift.
+// Round 2: the next round's date through the ?round= / ?focus= overrides (unset, 7 days
+// out, the sweep, day-of in both focuses played to the stop screen, the day after and
+// setting the next round), a follow-up chain with interrupt mode (?interruptAt=1), the
+// walkthrough label, Settings' next-round form, and the mock screen grouped by round with
+// an injected r2 deck run end to end.
 //
 //   node tools/smoke.js [--chrome <path>] [--shots <dir>] [--keep]
 //
@@ -105,16 +110,30 @@ async function launch() {
   const profile = mkdtempSync(join(tmpdir(), 'energize-chrome-'));
   // The fake media flags give the story card a microphone to record from.
   const proc = spawn(exe, ['--headless=new', '--remote-debugging-port=0', `--user-data-dir=${profile}`, '--no-first-run', '--no-default-browser-check', '--disable-gpu', '--allow-file-access-from-files', '--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', 'about:blank'], { stdio: ['ignore', 'ignore', 'pipe'] });
+  // The port comes on stderr ("DevTools listening on ws://…") or, where the browser hands
+  // off to another process and prints nothing (current Edge on Windows), in the profile's
+  // DevToolsActivePort file.
   const wsUrl = await new Promise((ok, reject) => {
     let buf = '';
-    const t = setTimeout(() => reject(new Error('Chrome did not report a DevTools port')), 20000);
+    const done = (url) => {
+      clearTimeout(t);
+      clearInterval(poll);
+      ok(url);
+    };
+    const t = setTimeout(() => {
+      clearInterval(poll);
+      reject(new Error('Chrome did not report a DevTools port'));
+    }, 20000);
+    const portFile = join(profile, 'DevToolsActivePort');
+    const poll = setInterval(() => {
+      if (!existsSync(portFile)) return;
+      const [port, path] = readFileSync(portFile, 'utf8').split(/\r?\n/);
+      if (port && path) done(`ws://127.0.0.1:${port}${path}`);
+    }, 100);
     proc.stderr.on('data', (d) => {
       buf += d;
       const m = buf.match(/DevTools listening on (ws:\/\/\S+)/);
-      if (m) {
-        clearTimeout(t);
-        ok(m[1]);
-      }
+      if (m) done(m[1]);
     });
   });
   const port = new URL(wsUrl).port;
@@ -122,7 +141,25 @@ async function launch() {
   const page = list.find((t) => t.type === 'page');
   const ws = new WebSocket(page.webSocketDebuggerUrl);
   await new Promise((ok) => ws.addEventListener('open', ok));
-  return { proc, profile, cdp: new CDP(ws), ws, exe };
+  return { proc, profile, cdp: new CDP(ws), ws, exe, wsUrl };
+}
+
+// Close the whole browser over DevTools: killing the spawned process is not enough where
+// it handed off to another process (current Edge on Windows).
+async function closeBrowser(b) {
+  try {
+    const sock = new WebSocket(b.wsUrl);
+    await new Promise((ok, no) => {
+      sock.addEventListener('open', ok);
+      sock.addEventListener('error', no);
+    });
+    sock.send(JSON.stringify({ id: 1, method: 'Browser.close' }));
+    await new Promise((r) => setTimeout(r, 300));
+    sock.close();
+  } catch {
+    /* already gone */
+  }
+  b.proc.kill();
 }
 
 // Serve dist/ over http for the installable-app checks. `site.variant`, once set,
@@ -159,8 +196,8 @@ let browser = null;
 
 async function main() {
   mkdirSync(SHOTS, { recursive: true });
-  const { proc, profile, cdp, ws, exe } = await launch();
-  browser = proc;
+  const { proc, profile, cdp, ws, exe, wsUrl } = await launch();
+  browser = { proc, wsUrl };
   console.log(`Chrome: ${exe}\nPage: ${PAGE}\nScreenshots: ${SHOTS}\n`);
   const errors = [];
   const requests = [];
@@ -194,6 +231,7 @@ async function main() {
   };
   const text = (sel) => evaluate(`document.querySelector(${JSON.stringify(sel)})?.textContent ?? null`);
   const click = (sel) => evaluate(`(() => { const el = document.querySelector(${JSON.stringify(sel)}); if (!el) return false; el.click(); return true; })()`);
+  const settle = (ms = 80) => evaluate(`new Promise((r) => setTimeout(r, ${ms}))`);
 
   // ---- first run: fresh state, Sat Oct 24 ----
   await open('?date=2026-10-24&deck=sample');
@@ -203,23 +241,30 @@ async function main() {
 
   const topics = JSON.parse(readFileSync(join(ROOT, 'content/topics.json'), 'utf8'));
   const engine = readiness(topics);
-  const hand = { overall: 1515 / 16600, onTested: 1515 / 3000, tested: 10 };
-  const shown = { overall: await text('#r-overall'), onTested: await text('#r-tested'), count: await text('#r-count') };
+  const hand = { overall: 1515 / 16600, onTested: 1515 / 3000, tested: 10, technical: 1395 / 13500 };
+  const shown = { technical: await text('#r-focus'), overall: await text('#r-overall'), onTested: await text('#r-tested'), count: await text('#r-count') };
   console.log('\nReadiness for the shipped topics.json');
-  console.log(`  by hand : overall 1515/16600 = ${formatPercent(hand.overall, 2)} · on tested 1515/3000 = ${formatPercent(hand.onTested, 2)} · ${hand.tested} of 65 tested`);
-  console.log(`  engine  : overall ${engine.earned}/${engine.possible} = ${formatPercent(engine.overall, 2)} · on tested ${engine.testedEarned}/${engine.testedPossible} = ${formatPercent(engine.onTested, 2)} · ${engine.tested} of ${engine.total} tested`);
-  console.log(`  page    : overall ${shown.overall} · on tested ${shown.onTested} · ${shown.count} tested\n`);
-  check('readiness: engine = hand computation', engine.earned === 1515 && engine.possible === 16600 && engine.testedPossible === 3000 && engine.tested === 10);
-  check('readiness: page shows the same numbers', shown.overall === '9.1%' && shown.onTested === '50.5%' && shown.count === '10 of 65', JSON.stringify(shown));
+  console.log(`  by hand : technical 1395/13500 = ${formatPercent(hand.technical, 2)} · overall 1515/16600 = ${formatPercent(hand.overall, 2)} · on tested 1515/3000 = ${formatPercent(hand.onTested, 2)} · 9 of 54 technical tested`);
+  console.log(`  engine  : technical ${engine.technical.earned}/${engine.technical.possible} = ${formatPercent(engine.technical.value, 2)} · overall ${engine.earned}/${engine.possible} = ${formatPercent(engine.overall, 2)} · on tested ${engine.testedEarned}/${engine.testedPossible} = ${formatPercent(engine.onTested, 2)} · ${engine.technical.tested} of ${engine.technical.total} technical tested`);
+  console.log(`  page    : technical ${shown.technical} · overall ${shown.overall} · ${shown.onTested} · ${shown.count} technical tested\n`);
+  check('readiness: engine = hand computation', engine.earned === 1515 && engine.possible === 16600 && engine.testedPossible === 3000 && engine.tested === 10 && engine.technical.earned === 1395 && engine.technical.possible === 13500);
+  check('readiness: page leads with technical, then overall, then N of 54 tested', shown.technical === '10.3%' && shown.overall === '9.1%' && shown.onTested === 'on tested 50.5%' && shown.count === '9 of 54', JSON.stringify(shown));
+  const banner = await text('#round-banner');
+  check('home: no date set → a banner asks for the next round’s date', /Round 2 has no date yet/.test(banner || '') && /Round 2 · date not set/.test((await text('#round-when')) || ''), banner);
 
   const startLabel = await text('#start-shift');
   check('home: Start shift shows card count and minutes', /Start shift · \d+ cards · ~\d+ min/.test(startLabel || ''), startLabel);
+  const outLoudHint = await evaluate('document.querySelector(".primary-actions .hint")?.textContent');
+  check('home: the hint says how many cards are out loud', /^\d+ of \d+ out loud\./.test(outLoudHint || ''), outLoudHint);
 
   // ---- play the shift: right answers, with deliberate misses on two cards ----
+  // Technical focus (the default), sample deck: redos C1 C4 S2 S3 (the Needs Improvement
+  // topics with a sample card), coverage P2 P5 P8 G2 S1 (Not Tested, by area priority),
+  // the E2 walkthrough, then the I3 story.
   await click('#start-shift');
   const planned = await evaluate('energize.state.currentShift.slots.map((s) => s.topicId + ":" + s.type)');
   console.log(`  shift: ${planned.join(' ')}`);
-  check('shift: queue built from the due topics with sample cards', planned.join(' ') === 'C1:order C4:matrix S2:number S3:number P2:number P5:order P8:scenario S1:number I3:story', planned.join(' '));
+  check('shift: technical profile built from the due topics with sample cards', planned.join(' ') === 'C1:order C4:matrix S2:number S3:number P2:number P5:order P8:scenario G2:scenario S1:number E2:scenario I3:story', planned.join(' '));
 
   const playCard = `async (wrong) => {
     const s = energize.state.currentShift; const slot = s.slots.find((x) => !x.done);
@@ -242,7 +287,7 @@ async function main() {
     } else if (card.type === 'scenario') {
       btn('Reveal').click(); await sleep(20);
       document.querySelectorAll('.beats input, #bnum, #bcode').forEach((x) => { x.checked = !wrong; });
-      btn('Grade it').click(); await sleep(20);
+      document.getElementById('grade-main').click(); await sleep(20);
       document.getElementById('grade-miss')?.click(); // a blank answer asks first
     } else if (card.type === 'story') {
       document.querySelectorAll('.chip').forEach((c) => c.click());
@@ -251,6 +296,15 @@ async function main() {
     } else if (card.type === 'defect') {
       document.querySelectorAll('.lines button')[wrong ? 0 : a.defectIndex].click();
       btn('This line').click();
+    }
+    // Follow-up chains: each layer slides in; Reveal (unless it already cut in), tick, next.
+    const chain = slot.chain === false ? [] : a.followUps || [];
+    for (let k = 1; k <= chain.length; k++) {
+      await sleep(20);
+      document.getElementById('followup-' + k + '-reveal')?.click(); await sleep(20);
+      document.querySelectorAll('#followup-' + k + ' .beats input').forEach((x) => { x.checked = !wrong; });
+      document.getElementById('followup-' + k + '-next').click(); await sleep(20);
+      document.getElementById('grade-miss')?.click();
     }
     await sleep(20);
     return { id: card.id, result: document.querySelector('.result h2')?.firstChild?.textContent };
@@ -263,16 +317,19 @@ async function main() {
     const r = await evaluate(`(${playCard})(${i === 2 || i === 6})`);
     played.push(`${r.id}=${r.result}`);
     if (i === 2) await shot('03-result-missed');
-    if (i === 8) await shot('04-result-story');
+    if (i === 7) await shot('03b-result-chain');
+    if (i === 10) await shot('04-result-story');
     const next = await evaluate(`(() => { const b = [...document.querySelectorAll('.result button')].pop(); b.click(); return b.textContent; })()`);
     await evaluate('new Promise((r) => setTimeout(r, 30))');
     if (next === 'Finish') break;
   }
   console.log(`  played: ${played.join(' ')}`);
-  check('shift: every card rendered and graded', played.length === 9 && played.every((p) => /=(Clean|Slipped|Missed)$/.test(p)), `${played.length} cards`);
+  check('shift: every card rendered and graded', played.length === 11 && played.every((p) => /=(Clean|Slipped|Missed)$/.test(p)), `${played.length} cards`);
   check('grading: deliberate misses graded as missed', played[2].endsWith('Missed') && played[6].endsWith('Missed'));
-  check('grading: right answers graded clean', played.filter((_, i) => i !== 2 && i !== 6 && i !== 8).every((p) => p.endsWith('Clean')));
-  check('grading: a 0-second story is not clean (under 90 s)', played[8].endsWith('Slipped'), played[8]);
+  check('grading: right answers graded clean, follow-up chains included', played.filter((_, i) => i !== 2 && i !== 6 && i !== 10).every((p) => p.endsWith('Clean')), played.join(' '));
+  check('grading: a 0-second story is not clean (under 90 s)', played[10].endsWith('Slipped'), played[10]);
+  const chainEntry = await evaluate('energize.state.history.find((h) => h.cardId === "G2-scn-01-r2")');
+  check('history: a chain card keeps every layer', chainEntry && chainEntry.layers.map((l) => `${l.id}:${l.result}`).join(' ') === 'main:clean G2-scn-01-r2-f1:clean G2-scn-01-r2-f2:clean', JSON.stringify(chainEntry && chainEntry.layers));
 
   await shot('05-debrief');
   const headline = await text('.debrief .headline');
@@ -285,12 +342,12 @@ async function main() {
   check('ratings: missed S2 (a number + the code) → Needs Improvement, next review tomorrow', after.s2.rating === 'Needs Improvement' && after.s2.next_review === '2026-10-25' && after.s2.tests === 3, `${after.s2.rating} ${after.s2.next_review} tests ${after.s2.tests}`);
   check('ratings: missed scenario P8 (no beats) → Not Ready', after.p8.rating === 'Not Ready', after.p8.rating);
   check('ratings: clean C1 (only card in the sample bank) → Minor Refresh +2', after.c1.rating === 'Minor Refresh' && after.c1.streak === 1 && after.c1.next_review === '2026-10-26', `${after.c1.rating} streak ${after.c1.streak} ${after.c1.next_review}`);
-  check('state: 9 results in history, shift completed, XP awarded', after.history === 9 && after.last === '2026-10-24' && after.xp > 50, `xp ${after.xp}`);
+  check('state: 11 results in history, shift completed, XP awarded', after.history === 11 && after.last === '2026-10-24' && after.xp > 50, `xp ${after.xp}`);
 
   // ---- persistence ----
   await open('?date=2026-10-24&deck=sample');
   const persisted = await evaluate('({ history: energize.state.history.length, label: document.querySelector("#start-shift")?.textContent || document.querySelector(".done")?.textContent })');
-  check('persistence: reload keeps history and knows the shift is done', persisted.history === 9 && /Shift done/.test(persisted.label), persisted.label);
+  check('persistence: reload keeps history and knows the shift is done', persisted.history === 11 && /Shift done/.test(persisted.label), persisted.label);
   const overallAfter = await text('#r-overall');
   check('persistence: readiness updated on the home screen', overallAfter !== '9.1%', overallAfter);
 
@@ -322,24 +379,36 @@ async function main() {
   check('browse: search finds "29.2.2"', hits > 0, `${hits} hits`);
   await shot('07-browse');
 
-  // ---- special days ----
-  for (const [d, expect, name] of [
-    ['2026-10-26', /Cutover week/, 'Oct 26 cutover'],
-    ['2026-11-01', /the sweep/, 'Nov 1 sweep'],
-    ['2026-11-02', /Interview day/, 'Nov 2 interview day'],
+  // ---- the next round's date (GAME_SPEC_ROUND2 §2), via the ?round= / ?focus= QA overrides ----
+  for (const [q, sel, expect, name] of [
+    ['?date=2026-11-05&deck=sample', '#round-when', /^Round 2 · date not set$/, 'date unset: no countdown, the banner asks for a date'],
+    ['?date=2026-11-05&deck=sample&round=2026-11-12', '#round-when', /^7 days to Round 2 · Thu Nov 12$/, 'date set 7 days out: the countdown'],
+    ['?date=2026-11-11&deck=sample&round=2026-11-12', '.mode', /^Sweep day — Round 2 is tomorrow\. Every technical topic not Locked In/, 'the sweep day (date − 1)'],
+    ['?date=2026-11-12&deck=sample&round=2026-11-12', '.mode', /^Round 2 today — six quick cards from your strongest topics and one walkthrough warm-up/, 'day-of, technical focus'],
+    ['?date=2026-11-12&deck=sample&round=2026-11-12&focus=behavioral', '.mode', /^Round 2 today — six quick cards, your 60-second intro and two hook lines/, 'day-of, behavioral focus'],
+    ['?date=2026-11-13&deck=sample&round=2026-11-12', '.round-done h1', /^Round 2 is done — set the next one\.$/, 'the day after: set the next round'],
   ]) {
-    await open(`?date=${d}&deck=sample`);
-    const t = await evaluate('document.body.innerText');
-    check(`special day: ${name}`, expect.test(t), (t.match(expect) || [''])[0]);
-    await shot(`08-${d}`);
+    await open(q);
+    const t = (await text(sel)) || '';
+    check(`next round: ${name}`, expect.test(t), t.slice(0, 90));
+    await shot(`08-${name.split(':')[0].replace(/[^a-z0-9]+/gi, '-')}`);
   }
-  await open('?date=2026-11-02&deck=sample');
-  const interviewSlots = await evaluate('(() => { document.getElementById("start-shift")?.click(); return energize.state.currentShift?.slots.map((s) => s.slot) || []; })()');
-  // The sample deck has no I1 card, so no intro slot here.
-  check('Nov 2: six confidence cards from Locked In / Minor Refresh topics', interviewSlots.length === 6 && interviewSlots.every((s) => s === 'confidence'), JSON.stringify(interviewSlots));
-  await open('?date=2026-11-03');
-  const finalText = await evaluate('document.body.innerText');
-  check('after Nov 2: final campus screen', /The campus is commissioned/.test(finalText));
+  await open('?date=2026-11-05&deck=sample&round=2026-11-12');
+  check('next round: no banner once the date is set', !(await evaluate('!!document.getElementById("round-banner")')));
+  await open('?date=2026-11-11&deck=sample&round=2026-11-12');
+  const sweepSlots = await evaluate('(() => { document.getElementById("start-shift")?.click(); return energize.state.currentShift?.slots.map((s) => s.slot + ":" + s.topicId) || []; })()');
+  check('sweep day: every technical topic not Locked In that has a card, sweep slots only', sweepSlots.length > 0 && sweepSlots.length <= 20 && sweepSlots.every((s) => /^sweep:[A-HJ-Z]/.test(s)), sweepSlots.join(' '));
+  await open('?date=2026-11-12&deck=sample&round=2026-11-12');
+  const dayofSlots = await evaluate('(() => { document.getElementById("start-shift")?.click(); return energize.state.currentShift?.slots.map((s) => [s.slot, s.par || null]) || []; })()');
+  check('day-of (technical): quick confidence cards, then one walkthrough at 90 s', dayofSlots.length >= 2 && dayofSlots.slice(0, -1).every(([s]) => s === 'confidence') && dayofSlots[dayofSlots.length - 1].join() === 'warmup,90', JSON.stringify(dayofSlots));
+  // After the round: the form starts the next one, ratings untouched.
+  await open('?date=2026-11-13&deck=sample&round=2026-11-12');
+  const ratingsBefore = await evaluate('JSON.stringify(energize.state.topics)');
+  await evaluate(`(() => { const d = document.getElementById('next-round-date'); d.value = '2026-11-20'; const f = document.getElementById('next-round-focus'); f.value = 'behavioral'; document.getElementById('next-round-save').click(); })()`);
+  await settle(100);
+  const afterSave = await evaluate('({ when: document.getElementById("round-when")?.textContent, nr: energize.state.settings.nextRound, same: JSON.stringify(energize.state.topics) })');
+  check('after the round: saving the next one (Round 3, behavioral, Nov 20) returns home, ratings carried over', afterSave.when === '7 days to Round 3 · Fri Nov 20' && afterSave.nr.focus === 'behavioral' && afterSave.same === ratingsBefore, JSON.stringify({ when: afterSave.when, nr: afterSave.nr }));
+  check('behavioral focus: the header leads with interview readiness', /^\d+\.\d%$/.test((await text('#r-focus')) || '') && /interview/.test((await evaluate('document.querySelector("#r-focus + span")?.textContent')) || ''));
 
   // ---- the real bank: play the Oct 24 shift with right answers ----
   await open('?date=2026-10-24');
@@ -369,13 +438,37 @@ async function main() {
   await shot('10-bank-debrief');
   const bankHeadline = await text('.debrief .headline');
   check('bank: debrief headline', /^\d+ of \d+ framework right · \d+ close · \d+ clean$/.test(bankHeadline || ''), bankHeadline);
-  await open('?date=2026-11-02');
-  const bankNov2 = await evaluate('(() => { document.getElementById("start-shift")?.click(); return energize.state.currentShift?.slots.map((s) => s.slot) || []; })()');
-  check('bank: Nov 2 = six confidence cards, then the 60-second intro', bankNov2.length === 7 && bankNov2.slice(0, 6).every((s) => s === 'confidence') && bankNov2[6] === 'intro', JSON.stringify(bankNov2));
+  // Day-of, both focuses, played to the stop screen: nothing rated, nothing else offered.
+  const playDayOf = async (q, name) => {
+    await open(q);
+    const ratings = await evaluate('JSON.stringify(energize.state.topics)');
+    await click('#start-shift');
+    const slots = await evaluate('energize.state.currentShift.slots.map((s) => s.slot)');
+    for (let i = 0; i < 20; i++) {
+      const slot = await evaluate('energize.state.currentShift?.slots.find((x) => !x.done)?.slot ?? null');
+      if (!slot) break;
+      if (slot === 'hook') {
+        await click('#hook-reveal');
+        await evaluate(`[...document.querySelectorAll('button')].find((b) => b.textContent === 'Next').click()`);
+      } else {
+        await evaluate(`(${playCard})(false)`);
+        await evaluate(`[...document.querySelectorAll('.result button')].pop().click()`);
+      }
+      await settle(40);
+    }
+    const end = await evaluate(`({ stop: document.querySelector('.final .go')?.textContent, checklist: document.querySelectorAll('.checklist li').length, gear: !!document.getElementById('nav-settings'), same: JSON.stringify(energize.state.topics) === ${JSON.stringify(ratings)} })`);
+    await shot(`11-dayof-${name}`);
+    return { slots, end };
+  };
+  const tech = await playDayOf('?date=2026-11-12&round=2026-11-12', 'technical');
+  check('bank: day-of (technical) = six confidence cards, then a walkthrough warm-up', tech.slots.length === 7 && tech.slots.slice(0, 6).every((s) => s === 'confidence') && tech.slots[6] === 'warmup', JSON.stringify(tech.slots));
+  check('bank: day-of ends on "Stop. You\'re ready." with the day-of checklist; ratings unchanged', /Stop\. You're ready/.test(tech.end.stop || '') && tech.end.checklist === 5 && !tech.end.gear && tech.end.same, JSON.stringify(tech.end));
+  const beh = await playDayOf('?date=2026-11-14&round=2026-11-14&focus=behavioral', 'behavioral');
+  check('bank: day-of (behavioral) = six confidence cards, the 60-second intro, the hooks of Story 1 and Story 3', beh.slots.join(' ') === 'confidence confidence confidence confidence confidence confidence intro hook hook', JSON.stringify(beh.slots));
+  check('bank: behavioral day-of ends on the stop screen; ratings unchanged', /Stop\. You're ready/.test(beh.end.stop || '') && beh.end.same, JSON.stringify(beh.end));
 
   // ---- Phase 3: every screen reachable at 390×844 (real bank, offline) ----
   const fits = () => evaluate('document.documentElement.scrollWidth <= window.innerWidth + 1');
-  const settle = (ms = 80) => evaluate(`new Promise((r) => setTimeout(r, ${ms}))`);
   const screenCheck = async (name, ok, detail = '') => {
     const noScroll = await fits();
     check(`screen: ${name}`, ok && noScroll, `${detail}${noScroll ? '' : ' · scrolls sideways'}`);
@@ -439,6 +532,49 @@ async function main() {
   await settle(300);
   check('scenario: Grade it with nothing ticked asks first; Grade as a miss grades it Missed', scnAsked && /^Missed/.test((await text('.result h2')) || ''), `${scnAsked} · ${await text('.result h2')}`);
 
+  // Follow-up chain with interrupt mode (GAME_SPEC_ROUND2 §5): follow-up 1 cuts in at 1 s
+  // (?interruptAt=1), the main clock pauses and resumes; after the main ticks, follow-up 1
+  // goes straight to its ticks and follow-up 2 slides in with its timer; one beat short
+  // on the last layer → the card slips, and the result shows one dot per layer.
+  await open('?date=2026-11-05&deck=sample&card=G2-scn-01-r2&interruptAt=1');
+  await settle(1400);
+  const cut = await evaluate('({ panel: !!document.getElementById("interrupt"), paused: document.querySelector(".card .timer").classList.contains("paused"), reveal: [...document.querySelectorAll("button")].find((b) => b.textContent === "Reveal").disabled, label: document.querySelector(".card .timer .timer-label").textContent })');
+  await screenCheck('interrupt: follow-up 1 cuts in mid-answer', cut.panel && cut.paused && cut.reveal === true, JSON.stringify(cut));
+  await settle(700);
+  const held = await evaluate('document.querySelector(".card .timer .timer-label").textContent');
+  check('interrupt: the main clock holds while the follow-up runs', held === cut.label, `${cut.label} → ${held}`);
+  await click('#interrupt-back');
+  await settle(600);
+  const resumed = await evaluate('({ note: !!document.getElementById("interrupt-done"), paused: document.querySelector(".card .timer").classList.contains("paused"), label: document.querySelector(".card .timer .timer-label").textContent })');
+  check('interrupt: back to the answer — the clock resumes with its remaining time', resumed.note && !resumed.paused && resumed.label !== held, JSON.stringify(resumed));
+  await evaluate(`[...document.querySelectorAll('button')].find((b) => b.textContent === 'Reveal').click()`);
+  await settle(50);
+  await evaluate('document.querySelectorAll(".beats input").forEach((x) => (x.checked = true))');
+  await click('#grade-main');
+  await settle(100);
+  const f1 = await evaluate('({ panel: !!document.getElementById("followup-1"), reveal: !!document.getElementById("followup-1-reveal"), boxes: document.querySelectorAll("#followup-1 .beats input").length })');
+  check('chain: the follow-up that cut in goes straight to its ticks', f1.panel && !f1.reveal && f1.boxes === 2, JSON.stringify(f1));
+  await evaluate('document.querySelectorAll("#followup-1 .beats input").forEach((x) => (x.checked = true))');
+  await click('#followup-1-next');
+  await settle(100);
+  const f2 = await evaluate('({ panel: !!document.getElementById("followup-2"), timer: !!document.querySelector("#followup-2 .timer"), prompt: document.querySelector("#followup-2 .fu-prompt")?.textContent })');
+  await screenCheck('chain: follow-up 2 slides in with its prompt and a 45 s timer', f2.panel && f2.timer && /door fan/.test(f2.prompt || ''), JSON.stringify(f2));
+  await click('#followup-2-reveal');
+  await settle(50);
+  await evaluate('[...document.querySelectorAll("#followup-2 .beats input")].slice(0, 2).forEach((x) => (x.checked = true))');
+  await click('#followup-2-next');
+  await settle(200);
+  const chainRes = await evaluate('({ head: document.querySelector(".result h2")?.firstChild?.textContent, dots: [...document.querySelectorAll(".result .ldot")].map((d) => d.className.replace("ldot ", "")), layers: energize.state.history.at(-1).layers.map((l) => l.result) })');
+  await screenCheck('chain: clean, clean, slipped → Slipped, one dot per layer', chainRes.head === 'Slipped' && chainRes.dots.join() === 'l-clean,l-clean,l-slipped' && chainRes.layers.join() === 'clean,clean,slipped', JSON.stringify(chainRes));
+  await open('?date=2026-11-05&deck=sample&card=E2-scn-01-r2');
+  const wt = await evaluate('({ type: document.querySelector(".card-type")?.textContent, meta: document.querySelector(".card-meta")?.textContent, cls: document.querySelector(".card").className })');
+  await screenCheck('walkthrough card: labelled, par 120, two follow-ups', wt.type === 'Walkthrough' && /par 120 s · 2 follow-ups/.test(wt.meta || '') && /walkthrough/.test(wt.cls), JSON.stringify(wt));
+  await open('?date=2026-11-05&deck=sample');
+  await click('#nav-settings');
+  await settle();
+  const setInfo = await evaluate('({ round: !!document.getElementById("round-form-date"), focus: document.getElementById("round-form-focus")?.value, interrupt: document.getElementById("set-interrupt")?.checked })');
+  await screenCheck('settings: next round (name, focus, date) and interrupt mode, on by default in technical focus', setInfo.round && setInfo.focus === 'technical' && setInfo.interrupt === true, JSON.stringify(setInfo));
+
   // A miss shows the hook and a re-read link that deep-links into Browse.
   await open('?date=2026-10-24&card=S3-num-01');
   await evaluate(`(() => { ['90','100','4','2'].forEach((v, i) => { const e = document.getElementById('f' + i); e.value = v; e.dispatchEvent(new Event('input', { bubbles: true })); }); const c = document.getElementById('fcode'); c.value = 'NFPA 72'; c.dispatchEvent(new Event('input', { bubbles: true })); [...document.querySelectorAll('button')].find((b) => b.textContent === 'Submit').click(); })()`);
@@ -470,28 +606,54 @@ async function main() {
   await settle();
   await screenCheck('settings', (await evaluate('!!document.getElementById("cards-per-shift") && !!document.getElementById("set-sound") && !!document.getElementById("set-haptics")')), 'cards per shift · sound · haptics');
 
-  // Mock interview: a whole deck to the debrief.
-  await open('?date=2026-10-25');
+  // Mock interview (GAME_SPEC_ROUND2 §7): decks grouped by round; the v1 Mock 1–3 are
+  // hidden; a round with no decks says they come later. A two-question r2 deck is then
+  // injected to run the round flow end to end: an intro with no follow-up, then a
+  // technical question whose first follow-up cuts in at 1 s, graded per layer.
+  await open('?date=2026-11-05&interruptAt=1');
   await click('#nav-mock');
   await settle();
-  await screenCheck('mock deck list', (await evaluate('document.querySelectorAll(".deck-row").length')) === 3 && (await evaluate('!!document.querySelector(".deck-row.today")')), 'Mock 1 flagged on Oct 25');
-  await click('#deck-mock-1');
+  const groups = await evaluate('({ groups: [...document.querySelectorAll(".round-group h2")].map((x) => x.textContent).join("|"), decks: document.querySelectorAll(".deck-row").length, coming: document.querySelectorAll(".round-group .coming").length, shipped: energize.data.mock.decks.filter((d) => d.round).length, emptyRounds: ["r2", "r3"].filter((r) => !energize.data.mock.decks.some((d) => d.round === r)).length, old: !!document.getElementById("deck-mock-1") })');
+  await screenCheck('mock: decks grouped by round, Mock 1–3 hidden, empty rounds say "coming"', groups.groups === 'Round 2 · Peer technical|Round 3 · Behavioral drill-down' && groups.decks === groups.shipped && groups.coming === groups.emptyRounds && !groups.old, JSON.stringify(groups));
+  await evaluate(`(() => {
+    energize.data.mock.decks.push({ id: 'smoke-r2', round: 'r2', title: 'Smoke deck', questions: [
+      { id: 'smoke-q1', kind: 'intro', prompt: 'Tell me about yourself.', par: 60, beats: ['Who you are', 'What you do'], source: 'Your 60-second intro' },
+      { id: 'smoke-q2', kind: 'technical', prompt: 'A clean agent room fails its door fan test a week before turnover.', par: 90, beats: ['Find leaks under depressurization', 'Seal and retest'], source: 'Commissioning technical (the 35%) › 10', followUps: [
+        { prompt: 'Why not just add agent?', kind: 'why-not', beats: ['Concentration against NOAEL', 'Overpressure vent sizing'] },
+        { prompt: 'What does the door fan have to show?', kind: 'number', beats: ['10 min hold', '85% retained'] } ] } ] });
+    energize.go('mock');
+  })()`);
   await settle();
-  await screenCheck('mock question', !!(await text('.mock-q')) && !!(await text('#mock-done')), 'prompt + timer');
-  for (let k = 0; k < 5; k++) {
-    await click('#mock-done');
-    await click('#mock-reveal');
-    await evaluate('(() => { document.querySelectorAll(".beats input").forEach((b) => (b.checked = true)); const n = document.getElementById("mbnum"); if (n) n.checked = true; })()');
-    await click('#mock-grade');
-  }
+  await click('#deck-smoke-r2');
+  await settle();
+  await screenCheck('mock question', !!(await text('.mock-q')) && (await text('#mock-done')) === 'Done — grade it', 'intro: no follow-up');
+  await click('#mock-done');
+  await settle(50);
+  await evaluate('document.querySelectorAll(".beats input").forEach((b) => (b.checked = true))');
+  await click('#mock-grade');
+  await settle(1400);
+  const mockCut = await evaluate('({ panel: !!document.getElementById("interrupt"), paused: document.querySelector(".mock-card .timer").classList.contains("paused") })');
+  await screenCheck('mock: follow-up 1 cuts in on a technical question', mockCut.panel && mockCut.paused, JSON.stringify(mockCut));
+  await click('#interrupt-back');
+  await click('#mock-done');
+  await settle(50);
+  const f2Prompt = await text('.mock-q');
+  check('mock: the follow-up that cut in is not asked twice', /door fan have to show/.test(f2Prompt || '') && !!(await text('#mock-reveal')), f2Prompt);
+  await click('#mock-reveal');
+  await settle(50);
+  const gradeBoxes = await evaluate('({ main: document.querySelectorAll(".mock-card > .beats input").length, f1: document.querySelectorAll("[id^=mf1b]").length, f2: document.querySelectorAll("[id^=mf2b]").length })');
+  check('mock: the grade screen ticks the main answer and each follow-up', gradeBoxes.main === 2 && gradeBoxes.f1 === 2 && gradeBoxes.f2 === 2, JSON.stringify(gradeBoxes));
+  await evaluate('[...document.querySelectorAll(".beats input")].slice(0, 5).forEach((b) => (b.checked = true))');
+  await click('#mock-grade');
   await settle();
   const mh = await text('#mock-headline');
-  await screenCheck('mock debrief', /^5 of 5 framework right · 0 close · 5 clean$/.test(mh || ''), mh);
+  const mockDots = await evaluate('[...document.querySelectorAll(".mock-results .ldot")].map((d) => d.className.replace("ldot ", "")).join()');
+  await screenCheck('mock debrief: headline, one dot per layer', mh === '2 of 2 framework right · 1 close · 1 clean' && mockDots === 'l-clean,l-clean,l-slipped', `${mh} · ${mockDots}`);
 
-  // Interview-day home offers nothing but the shift.
-  await open('?date=2026-11-02');
-  const nov2 = await evaluate('({ gear: !!document.getElementById("nav-settings"), nav: document.querySelectorAll("nav.secondary .btn").length, list: document.querySelectorAll(".bld-row").length, interactive: !!document.querySelector(".map.interactive") })');
-  await screenCheck('Nov 2 home', !nov2.gear && nov2.nav === 0 && nov2.list === 0 && !nov2.interactive, JSON.stringify(nov2));
+  // Day-of home offers nothing but the shift.
+  await open('?date=2026-11-12&round=2026-11-12');
+  const dayof = await evaluate('({ gear: !!document.getElementById("nav-settings"), nav: document.querySelectorAll("nav.secondary .btn").length, list: document.querySelectorAll(".bld-row").length, interactive: !!document.querySelector(".map.interactive") })');
+  await screenCheck('day-of home', !dayof.gear && dayof.nav === 0 && dayof.list === 0 && !dayof.interactive, JSON.stringify(dayof));
 
   // ---- Phase 5: other phone sizes and landscape ----
   for (const [w, hgt, label] of [[430, 932, '430×932'], [844, 390, 'landscape 844×390']]) {
@@ -590,9 +752,9 @@ async function main() {
   const appPanel = await text('#app-panel');
   await screenCheck('pwa: Settings explains Add to Home Screen when served', /Add to Home Screen/.test(appPanel || ''), (appPanel || '').slice(0, 70));
   await online(false);
-  await open(`${site.url}index.html?date=2026-10-26`);
-  const offlineInfo = await evaluate('({ cards: energize.bank.length, cutover: document.body.innerText.includes("Cutover week"), controller: !!navigator.serviceWorker.controller })');
-  check('pwa: opens offline from the cache, whatever the ?query', offlineInfo.cards >= 300 && offlineInfo.cutover && offlineInfo.controller, JSON.stringify(offlineInfo));
+  await open(`${site.url}index.html?date=2026-11-11&round=2026-11-12`);
+  const offlineInfo = await evaluate('({ cards: energize.bank.length, sweep: document.body.innerText.includes("Sweep day"), controller: !!navigator.serviceWorker.controller })');
+  check('pwa: opens offline from the cache, whatever the ?query', offlineInfo.cards >= 300 && offlineInfo.sweep && offlineInfo.controller, JSON.stringify(offlineInfo));
   const offlineAssets = await evaluate(`Promise.all(['./manifest.webmanifest', './icon-192.png', './apple-touch-icon.png'].map((u) => fetch(u).then((r) => r.ok).catch(() => false)))`);
   check('pwa: manifest and icons come from the cache offline', offlineAssets.every(Boolean), JSON.stringify(offlineAssets));
   await online(true);
@@ -617,7 +779,7 @@ async function main() {
   check('no network requests beyond the local test server', remote.length === 0, remote.slice(0, 3).join(' '));
 
   ws.close();
-  proc.kill();
+  await closeBrowser(browser);
   await new Promise((r) => setTimeout(r, 300));
   try {
     rmSync(profile, { recursive: true, force: true });
@@ -631,6 +793,6 @@ async function main() {
 
 main().catch((e) => {
   console.error(e);
-  if (browser) browser.kill();
   process.exitCode = 1;
+  if (browser) closeBrowser(browser);
 });

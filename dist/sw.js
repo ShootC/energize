@@ -1,10 +1,10 @@
-/* ENERGIZE service worker — build dbcee6e060.
+/* ENERGIZE service worker — build 00e54afb34.
    Cache-first for the app shell, so the page opens offline and instantly. A new
    build has a new VERSION: it installs behind the running one, takes over, and
    the page (listening for controllerchange) offers a reload from the home screen.
    Nothing here talks to anything but this origin. */
 
-const VERSION = 'dbcee6e060';
+const VERSION = '00e54afb34';
 const CACHE = `energize-${VERSION}`;
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon.svg', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 

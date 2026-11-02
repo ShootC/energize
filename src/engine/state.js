@@ -90,7 +90,7 @@ function countByTopic(cards) {
 // entry (`layers`); the card's result is already the worst of them. The next
 // review is capped at the day before the next round (settings.nextRound).
 // Returns { state, topicBefore, topicAfter, xp, newlyEnergized }.
-export function recordResult(state, { card, grade, seconds = null, date, mode = 'shift', rated = true, cards = [] }) {
+export function recordResult(state, { card, grade, seconds = null, date, mode = 'shift', rated = true, cards = [], nextRound = null }) {
   const next = clone(state);
   const entry = {
     topicId: card.topicId,
@@ -121,7 +121,7 @@ export function recordResult(state, { card, grade, seconds = null, date, mode = 
     const before = next.snapshots[card.topicId].record;
     const results = next.history.filter((h) => h.topicId === card.topicId && h.date === date && h.rated !== false);
     const available = countByTopic(cards)[card.topicId] || Infinity;
-    const cap = reviewCap(date, next.settings && next.settings.nextRound);
+    const cap = reviewCap(date, nextRound || (next.settings && next.settings.nextRound));
     topicAfter = applySession(before, results, date, { cardsAvailable: available, cap });
     next.topics[idx] = topicAfter;
   }

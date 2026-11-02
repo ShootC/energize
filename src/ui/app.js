@@ -2,20 +2,19 @@
 // All game rules live in src/engine; this file only wires them to the DOM.
 
 import { h, mount, vibrate, chime, pill } from './dom.js';
-import { renderCard, renderResult, stopCardActivity } from './cards.js';
+import { renderCard, renderResult, renderHook, stopCardActivity } from './cards.js';
 import { mockScreen } from './boss.js';
 import { campusMap } from './map.js';
 import { setupPwa, promptInstall } from './pwa.js';
 import {
-  header, homeScreen, buildingScreen, debriefScreen, finalScreen, settingsScreen, browseScreen, blitzScreen, storyListScreen,
+  header, homeScreen, buildingScreen, debriefScreen, finalScreen, roundDoneScreen, settingsScreen, browseScreen, blitzScreen, storyListScreen,
 } from './screens.js';
-import { isIsoDate, localToday } from '../engine/dates.js';
+import { isIsoDate, localToday, formatDay } from '../engine/dates.js';
 import { readiness, shiftHeadline, POINTS } from '../engine/rating.js';
 import { gradeCard } from '../engine/grader.js';
 import { BUILDINGS, campusStatus } from '../engine/campus.js';
-import {
-  buildShift, afterResult, keepGoing, drillPlan, dayMode, daysToInterview, blitzDeck, dueQueue,
-} from '../engine/scheduler.js';
+import { buildShift, afterResult, keepGoing, drillPlan, blitzDeck } from '../engine/scheduler.js';
+import { dayMode, daysToRound, normalizeNextRound, interruptOn, FOCUSES } from '../engine/round.js';
 import {
   createState, recordResult, completeShift, currentDayStreak, save, load, clear, exportState, exportTopics, importJson, setBlitzScore,
 } from '../engine/state.js';
@@ -43,12 +42,35 @@ function readData() {
   return JSON.parse(el.textContent);
 }
 
-// ?date=2026-11-01 overrides today's date for testing special days.
+// ?date=2026-11-11 overrides today's date for testing special days.
 function resolveToday() {
   const q = new URLSearchParams(location.search).get('date');
   if (q && isIsoDate(q)) return { today: q, devDate: true };
   return { today: localToday(), devDate: false };
 }
+
+// QA overrides, never saved: ?round=YYYY-MM-DD|none sets the next round's date,
+// ?focus=technical|behavioral its focus; ?interruptAt=<s> makes follow-up 1 cut in at
+// that second instead of a random one in 40–70 s.
+function resolveDev() {
+  const p = new URLSearchParams(location.search);
+  const round = {};
+  const r = p.get('round');
+  if (r === 'none') round.date = null;
+  else if (r && isIsoDate(r)) round.date = r;
+  const f = p.get('focus');
+  if (FOCUSES.includes(f)) round.focus = f;
+  const at = Number(p.get('interruptAt'));
+  return { devRound: Object.keys(round).length ? round : null, interruptAt: p.has('interruptAt') && Number.isFinite(at) ? at : null };
+}
+
+// The settings the engine sees: saved settings with any ?round= / ?focus= override.
+function effectiveSettings() {
+  const s = app.state.settings;
+  return { ...s, nextRound: normalizeNextRound({ ...s.nextRound, ...(app.devRound || {}) }) };
+}
+const nextRound = () => effectiveSettings().nextRound;
+const modeToday = () => dayMode(app.today, nextRound());
 
 function persist() {
   try {
@@ -99,7 +121,7 @@ function boot() {
   const { storage, ok } = pickStorage();
   app.storage = storage;
   app.storageOk = ok;
-  Object.assign(app, resolveToday());
+  Object.assign(app, resolveToday(), resolveDev());
 
   // ?deck=sample forces the sample deck (tools/smoke.js uses it); otherwise the
   // sample deck is only a fallback while questions.json is empty.
@@ -164,14 +186,18 @@ function topBar({ settingsButton = false } = {}) {
     onSettings: settingsButton ? () => go('settings') : null,
     today: app.today,
     devDate: app.devDate,
-    daysLeft: daysToInterview(app.today),
+    devRound: !!app.devRound,
+    daysLeft: daysToRound(app.today, nextRound()),
+    nextRound: nextRound(),
     rd: readiness(app.state.topics),
-    mode: dayMode(app.today),
+    mode: modeToday(),
     xp: app.state.xp,
     dayStreak: currentDayStreak(app.state, app.today),
     deckNote: app.usingSample ? `Sample deck — ${app.bank.length} cards (${app.data.questions.length ? '?deck=sample' : 'src/data/questions.json is empty'})` : '',
   });
 }
+
+const shiftCtx = () => ({ topics: app.state.topics, cards: app.bank, history: app.state.history, today: app.today, settings: effectiveSettings() });
 
 function activeShift() {
   const s = app.state.currentShift;
@@ -179,8 +205,29 @@ function activeShift() {
   return s.slots.some((x) => !x.done) ? s : null;
 }
 
+function dayOfHint(plan, focus) {
+  const quick = plan.slots.filter((x) => x.slot === 'confidence').length;
+  const lead = `${quick} quick confidence card${quick === 1 ? '' : 's'} from your strongest topics`;
+  if (focus === 'technical') return `${lead}${plan.slots.some((x) => x.slot === 'warmup') ? ', then one walkthrough as a 90-second warm-up' : ''}. Nothing else today.`;
+  const hooks = plan.slots.filter((x) => x.slot === 'hook').length;
+  return `${lead}${plan.slots.some((x) => x.slot === 'intro') ? ', then the 60-second intro' : ''}${hooks ? ` and the hook line${hooks > 1 ? 's' : ''} of Story 1 and Story 3` : ''}. Nothing else today.`;
+}
+
+// With no date set, a standing banner asks for one (until then: a rolling 7-day horizon).
+function roundBanner(mode) {
+  const nr = nextRound();
+  if (nr.date || mode !== 'normal') return null;
+  return h(
+    'div',
+    { class: 'round-banner', id: 'round-banner', role: 'status' },
+    h('span', {}, h('b', {}, `${nr.label} has no date yet.`), ' Set it when the recruiter gives you one — the day before becomes the sweep. Until then, reviews run on a rolling 7-day horizon.'),
+    h('button', { class: 'btn small', type: 'button', id: 'set-round-date', onclick: () => go('settings') }, 'Set the date'),
+  );
+}
+
 function home() {
-  const mode = dayMode(app.today);
+  const mode = modeToday();
+  const nr = nextRound();
   if (mode === 'after') return go('final', { after: true });
   const resume = activeShift();
   const shiftDone = app.state.lastShiftDate === app.today;
@@ -189,44 +236,39 @@ function home() {
   if (resume) {
     const left = resume.slots.filter((x) => !x.done).length;
     primary = h('button', { class: 'btn primary huge', id: 'start-shift', type: 'button', onclick: () => go('shift') }, `Resume ${resume.kind === 'daily' ? 'shift' : resume.kind} · ${left} card${left > 1 ? 's' : ''} left`);
-  } else if (mode === 'interview' && shiftDone) {
+  } else if (mode === 'dayof' && shiftDone) {
     return go('final', { after: false });
   } else if (shiftDone) {
-    const more = keepGoing({ topics: app.state.topics, cards: app.bank, history: app.state.history, today: app.today });
+    const more = keepGoing(shiftCtx());
     primary = more.slots.length
       ? h('button', { class: 'btn primary huge', id: 'start-shift', type: 'button', onclick: () => startShift('keep') }, `Shift done · Keep going · ${more.slots.length} more`)
       : h('p', { class: 'done' }, "Shift done and today's queue is empty.");
     if (more.slots.length) hint = 'Keep going pulls the next five due topics. Ratings move the same way.';
   } else {
-    const plan = buildShift({ topics: app.state.topics, cards: app.bank, history: app.state.history, today: app.today, settings: app.state.settings });
-    const label = mode === 'interview' ? `Interview day · ${plan.slots.length} cards` : `Start shift · ${plan.slots.length} card${plan.slots.length === 1 ? '' : 's'} · ~${plan.estimatedMinutes} min`;
+    const plan = buildShift(shiftCtx());
+    const label = mode === 'dayof' ? `${nr.label} today · ${plan.slots.length} cards` : `Start shift · ${plan.slots.length} card${plan.slots.length === 1 ? '' : 's'} · ~${plan.estimatedMinutes} min`;
     primary = plan.slots.length
       ? h('button', { class: 'btn primary huge', id: 'start-shift', type: 'button', onclick: () => startShift('daily') }, label)
-      : h('p', { class: 'done' }, `Nothing due today in the ${app.usingSample ? 'sample deck' : 'question bank'}. ${dueQueue(app.state.topics, app.today).length} topics are due but have no cards yet.`);
-    if (plan.slots.length && mode !== 'interview') hint = 'A clean first answer adds a follow-up card on the same topic.';
-    if (mode === 'interview') {
-      const quick = plan.slots.filter((x) => x.slot === 'confidence').length;
-      const intro = plan.slots.some((x) => x.slot === 'intro');
-      hint = `${quick} quick confidence card${quick === 1 ? '' : 's'} from your strongest topics${intro ? ', then the 60-second intro' : ''}. Nothing else today.`;
-    }
+      : h('p', { class: 'done' }, `Nothing due today in the ${app.usingSample ? 'sample deck' : 'question bank'}.`);
+    if (plan.slots.length && mode !== 'dayof') hint = `${plan.outLoud} of ${plan.slots.length} out loud. A clean first answer adds a follow-up card on the same topic.`;
+    if (mode === 'dayof') hint = dayOfHint(plan, nr.focus);
   }
-  const planRow = app.data.plan.find((x) => x.date === app.today);
-  const mockToday = planRow && /Mock interview\s*(\d)/i.exec(planRow.interview || '');
   const secondary =
-    mode === 'interview'
+    mode === 'dayof'
       ? []
       : [
           h('button', { class: 'btn nav', type: 'button', id: 'nav-blitz', onclick: () => go('blitz') }, 'Number Blitz'),
           h('button', { class: 'btn nav', type: 'button', id: 'nav-stories', onclick: () => go('stories') }, 'Stories'),
-          h('button', { class: `btn nav${mockToday ? ' on' : ''}`, type: 'button', id: 'nav-mock', onclick: () => go('mock') }, mockToday ? `Mock ${mockToday[1]} · today` : 'Mock interview'),
+          h('button', { class: 'btn nav', type: 'button', id: 'nav-mock', onclick: () => go('mock') }, 'Mock interview'),
           h('button', { class: 'btn nav', type: 'button', id: 'nav-browse', onclick: () => go('browse') }, 'Browse'),
         ];
   const celebrate = app.pendingCelebrate || [];
   app.pendingCelebrate = [];
   mount(
     app.root,
-    topBar({ settingsButton: mode !== 'interview' }),
+    topBar({ settingsButton: mode !== 'dayof' }),
     homeScreen({
+      banner: roundBanner(mode),
       status: campusStatus(app.state.topics),
       buildings: BUILDINGS,
       mode,
@@ -244,9 +286,9 @@ function home() {
 // ---------- the shift loop ----------
 
 function startShift(kind, opts = {}) {
-  const ctx = { topics: app.state.topics, cards: app.bank, history: app.state.history, today: app.today };
+  const ctx = shiftCtx();
   let shift;
-  if (kind === 'daily') shift = buildShift({ ...ctx, settings: app.state.settings });
+  if (kind === 'daily') shift = buildShift(ctx);
   else if (kind === 'keep') shift = keepGoing(ctx);
   else if (kind === 'drill') shift = drillPlan({ ...ctx, topicId: opts.topicId });
   else if (kind === 'single') shift = { date: app.today, mode: 'drill', size: 1, slots: [{ topicId: opts.card.topicId, cardId: opts.card.id, type: opts.card.type, slot: 'drill', done: false }], estimatedMinutes: 2 };
@@ -256,7 +298,11 @@ function startShift(kind, opts = {}) {
   go('shift');
 }
 
-const SLOT_LABEL = { redo: 'Redo', coverage: 'Coverage', spot: 'Spot check', outloud: 'Out loud', followup: 'Follow-up', fill: 'Coverage', sweep: 'Sweep', confidence: 'Confidence', intro: 'Your 60-second intro', drill: 'Drill', keep: 'Keep going' };
+const SLOT_LABEL = {
+  redo: 'Redo', coverage: 'Coverage', spot: 'Spot check', outloud: 'Out loud', followup: 'Follow-up card', fill: 'Coverage', sweep: 'Sweep',
+  walkthrough: 'Walkthrough', story: 'Story', ladder: 'Drill-down', interview: 'Interview',
+  confidence: 'Confidence', intro: 'Your 60-second intro', warmup: 'Warm-up', hook: 'Hook line', drill: 'Drill', keep: 'Keep going',
+};
 
 function shiftProgress(shift, idx, { onPause = null } = {}) {
   const done = shift.slots.filter((s) => s.done).length;
@@ -303,7 +349,24 @@ function showSlot() {
     return showSlot();
   }
   const t = app.state.topics.find((x) => x.id === card.topicId);
-  const view = renderCard(card, { seed: app.today, onSubmit: (response, seconds) => onGraded(idx, card, response, seconds) });
+  // Day-of: a story's hook line is said, not graded.
+  const view =
+    slot.slot === 'hook'
+      ? renderHook(card, {
+          onDone: () => {
+            shift.slots[idx] = { ...slot, done: true };
+            persist();
+            go('shift');
+          },
+        })
+      : renderCard(card, {
+          seed: app.today,
+          par: slot.par || null,
+          chain: slot.chain !== false,
+          interrupt: interruptOn(effectiveSettings()),
+          interruptAt: app.interruptAt,
+          onSubmit: (response, seconds) => onGraded(idx, card, response, seconds),
+        });
   mount(
     app.root,
     shiftProgress(shift, idx, { onPause: () => go('home') }),
@@ -322,9 +385,10 @@ function showSlot() {
 
 function onGraded(idx, card, response, seconds) {
   const shift = app.state.currentShift;
-  const rated = shift.mode !== 'interview';
-  const grade = gradeCard(card, response);
-  const rec = recordResult(app.state, { card, grade, seconds, date: app.today, mode: shift.kind === 'daily' ? shift.mode : shift.kind, rated, cards: app.bank });
+  const slot = shift.slots[idx];
+  const rated = shift.mode !== 'dayof';
+  const grade = gradeCard(card, response, { followUps: slot.chain !== false });
+  const rec = recordResult(app.state, { card, grade, seconds, date: app.today, mode: shift.kind === 'daily' ? shift.mode : shift.kind, rated, cards: app.bank, nextRound: nextRound() });
   app.state = rec.state;
   const next = afterResult(shift, idx, { topics: app.state.topics, cards: app.bank, history: app.state.history, today: app.today });
   app.state.currentShift = { ...shift, ...next, energizedDuring: [...(shift.energizedDuring || []), ...rec.newlyEnergized] };
@@ -350,6 +414,7 @@ function onGraded(idx, card, response, seconds) {
       topicAfter: rec.topicAfter,
       xp: rec.xp,
       rated,
+      par: slot.par || null,
       onNext: () => go('shift'),
       onSource: (src) => go('browse', { source: src, back: 'shift' }),
       nextLabel: remaining ? 'Next card' : 'Finish',
@@ -363,7 +428,7 @@ function finishShift() {
   app.state.currentShift = null;
   persist();
   app.pendingCelebrate = [...new Set(shift.energizedDuring || [])].filter((id) => app.state.energized.includes(id));
-  if (shift.mode === 'interview') return go('final', { after: false });
+  if (shift.mode === 'dayof') return go('final', { after: false });
 
   const touched = [...new Set(shift.slots.filter((s) => s.done && !s.skipped).map((s) => s.topicId))];
   const topicsAfter = touched.map((id) => app.state.topics.find((t) => t.id === id)).filter(Boolean);
@@ -379,7 +444,7 @@ function finishShift() {
     .sort((a, b) => POINTS[a.rating] - POINTS[b.rating] || ['Core', 'Support', 'Light'].indexOf(a.weight) - ['Core', 'Support', 'Light'].indexOf(b.weight))
     .slice(0, 3)
     .map((t) => ({ topic: t, source: worstSource(t.id) }));
-  const more = keepGoing({ topics: app.state.topics, cards: app.bank, history: app.state.history, today: app.today });
+  const more = keepGoing(shiftCtx());
   mount(
     app.root,
     topBar(),
@@ -416,11 +481,29 @@ function browse(arg = {}) {
   mount(app.root, browseScreen({ docs, target, onBack: () => go(['shift', 'mock'].includes(arg.back) ? arg.back : 'home') }));
 }
 
+// Saving a next round: a fresh date or focus starts the new schedule; ratings carry over.
+function saveNextRound(nr) {
+  app.state.settings = { ...app.state.settings, nextRound: normalizeNextRound(nr) };
+  persist();
+  const s = app.state.settings.nextRound;
+  return s.date ? `Saved: ${s.label} on ${formatDay(s.date)}, ${s.focus} focus. The sweep is the day before.` : `Saved: ${s.label}, ${s.focus} focus, no date yet.`;
+}
+
 function settings() {
   mount(
     app.root,
     settingsScreen({
       settings: app.state.settings,
+      nextRound: app.state.settings.nextRound,
+      today: app.today,
+      interruptDefault: interruptOn({ nextRound: nextRound() }),
+      devRound: !!app.devRound,
+      onNextRound: (nr) => {
+        const msg = saveNextRound(nr);
+        app.state.currentShift = null;
+        persist();
+        return msg;
+      },
       storageOk: app.storageOk,
       pwa: {
         served: app.pwa.served,
@@ -491,13 +574,12 @@ function stories() {
 }
 
 function mock() {
-  const planRow = app.data.plan.find((x) => x.date === app.today);
-  const m = planRow && /Mock interview\s*(\d)/i.exec(planRow.interview || '');
   mount(
     app.root,
     mockScreen({
       mock: app.data.mock,
-      todaysDeck: m ? Number(m[1]) : null,
+      interrupt: interruptOn(effectiveSettings()),
+      interruptAt: app.interruptAt,
       onBack: () => go('home'),
       onSource: (src) => go('browse', { source: src, back: 'mock' }),
       onCard: (cardId) => {
@@ -508,12 +590,42 @@ function mock() {
   );
 }
 
+// "Round 2" → "Round 3"; anything else is kept for the player to rename.
+function nextLabel(label) {
+  const m = /^(.*?)(\d+)\s*$/.exec(label || '');
+  return m ? `${m[1]}${Number(m[2]) + 1}` : label;
+}
+
 function final(arg = {}) {
   const rd = readiness(app.state.topics);
   const stats = `${app.state.history.length} cards answered · ${app.state.xp} XP · best Blitz ${app.state.blitzBest || 0}`;
-  const map = arg.after ? campusMap({ status: campusStatus(app.state.topics), buildings: BUILDINGS, interactive: false }) : null;
-  // After Nov 2 the gear stays so state can still be exported; on Nov 2 nothing else is offered.
-  mount(app.root, topBar({ settingsButton: !!arg.after }), finalScreen({ checklist: app.data.checklist, rd, stats, after: !!arg.after, map }));
+  if (!arg.after) {
+    // Day-of, after the last card: stop. Nothing else is offered.
+    mount(app.root, topBar(), finalScreen({ checklist: app.data.checklist, rd, stats }));
+    return;
+  }
+  // After the round: set the next one. The gear stays so state can be exported.
+  const nr = nextRound();
+  const map = campusMap({ status: campusStatus(app.state.topics), buildings: BUILDINGS, interactive: false });
+  mount(
+    app.root,
+    topBar({ settingsButton: true }),
+    roundDoneScreen({
+      doneLabel: nr.label,
+      nextRound: { ...nr, label: nextLabel(nr.label) },
+      today: app.today,
+      rd,
+      stats,
+      map,
+      onSave: (next) => {
+        saveNextRound(next);
+        app.devRound = null;
+        go('home');
+        return '';
+      },
+      onSettings: () => go('settings'),
+    }),
+  );
 }
 
 export function start() {

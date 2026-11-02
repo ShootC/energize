@@ -4,15 +4,19 @@
 import { h, s, mount, pill, ratingClass, mmss } from './dom.js';
 import { campusMap, buildingArt } from './map.js';
 import { formatPercent, POINTS } from '../engine/rating.js';
-import { formatDay } from '../engine/dates.js';
+import { formatDay, isIsoDate } from '../engine/dates.js';
 
-const MODE_LABEL = {
-  normal: '',
-  cutover: 'Cutover week — 10-card shifts, 2 of them stories',
-  sweep: 'Nov 1 — the sweep: every topic not Locked In, up to 20 cards, misses redone before it ends',
-  interview: 'Interview day — six quick cards and your 60-second intro, then stop',
-  after: 'After the interview',
-};
+// The banner under the header on the next round's special days (GAME_SPEC_ROUND2 §2).
+function modeLabel(mode, nextRound) {
+  const { label, focus } = nextRound;
+  if (mode === 'sweep') return `Sweep day — ${label} is tomorrow. Every ${focus === 'technical' ? 'technical ' : ''}topic not Locked In, up to 20 cards, misses redone before it ends.`;
+  if (mode === 'dayof') {
+    return focus === 'technical'
+      ? `${label} today — six quick cards from your strongest topics and one walkthrough warm-up, then stop.`
+      : `${label} today — six quick cards, your 60-second intro and two hook lines, then stop.`;
+  }
+  return '';
+}
 
 const FLAME = 'M7 0c1 4 6 6 6 10.5a6 6 0 0 1-12 0C1 8 3 6.5 4 5c.5 2 1.5 3 2.5 3C6 5 7 2.5 7 0Z';
 
@@ -37,12 +41,26 @@ function statTile({ id, value, label, fill, target, full }) {
     h('b', { id }, value),
     h('span', {}, label),
     h('div', { class: `bar${full ? ' full' : ''}`, 'aria-hidden': 'true' }, h('i', { style: { width: `${Math.round(Math.max(0, Math.min(1, fill)) * 1000) / 10}%` } })),
-    target != null ? h('div', { class: 'target', style: { left: `${target * 100}%` }, title: 'Target 85% by Nov 1' }) : null,
+    target != null ? h('div', { class: 'target', style: { left: `${target * 100}%` }, title: 'Target 85% by the sweep day' }) : null,
   );
 }
 
-export function header({ today, devDate, daysLeft, rd, mode, xp, dayStreak, deckNote, onSettings }) {
-  const when = mode === 'interview' ? 'Interview day' : mode === 'after' ? 'After the interview' : `${daysLeft} day${daysLeft === 1 ? '' : 's'} to the interview · Nov 2`;
+function whenLine(mode, nextRound, daysLeft) {
+  const { label, date } = nextRound;
+  if (mode === 'dayof') return `${label} today`;
+  if (mode === 'after') return `${label} is done`;
+  if (mode === 'sweep') return `Sweep day · ${label} tomorrow`;
+  if (!date) return `${label} · date not set`;
+  return `${daysLeft} day${daysLeft === 1 ? '' : 's'} to ${label} · ${formatDay(date)}`;
+}
+
+// Technical focus leads with technical readiness, behavioral with interview readiness
+// (§3): "Technical 62% · Overall 58% · 31 of 54 tested".
+export function header({ today, devDate, daysLeft, rd, mode, nextRound, xp, dayStreak, deckNote, onSettings, devRound = false }) {
+  const technical = nextRound.focus === 'technical';
+  const slice = technical ? rd.technical : rd.interview;
+  const sliceName = technical ? 'technical' : 'interview';
+  const banner = modeLabel(mode, nextRound);
   return h(
     'header',
     { class: 'top' },
@@ -52,8 +70,8 @@ export function header({ today, devDate, daysLeft, rd, mode, xp, dayStreak, deck
       h(
         'div',
         { class: 'when' },
-        h('div', { class: 'date' }, formatDay(today), devDate ? h('span', { class: 'badge dev', title: 'Date overridden with ?date=' }, 'dev date') : null),
-        h('div', { class: 'days' }, when),
+        h('div', { class: 'date' }, formatDay(today), devDate ? h('span', { class: 'badge dev', title: 'Date overridden with ?date=' }, 'dev date') : null, devRound ? h('span', { class: 'badge dev', title: 'Next round overridden with ?round= / ?focus=' }, 'dev round') : null),
+        h('div', { class: 'days', id: 'round-when' }, whenLine(mode, nextRound, daysLeft)),
       ),
       h(
         'div',
@@ -65,18 +83,55 @@ export function header({ today, devDate, daysLeft, rd, mode, xp, dayStreak, deck
     h(
       'div',
       { class: 'readiness' },
-      statTile({ id: 'r-overall', value: formatPercent(rd.overall), label: 'overall', fill: rd.overall, target: 0.85, full: rd.targetMet }),
-      statTile({ id: 'r-tested', value: formatPercent(rd.onTested), label: 'on tested', fill: rd.onTested }),
-      statTile({ id: 'r-count', value: `${rd.tested} of ${rd.total}`, label: 'tested', fill: rd.total ? rd.tested / rd.total : 0 }),
+      statTile({ id: 'r-focus', value: formatPercent(slice.value), label: sliceName, fill: slice.value, target: 0.85, full: slice.targetMet }),
+      statTile({ id: 'r-overall', value: formatPercent(rd.overall), label: 'overall', fill: rd.overall }),
+      statTile({ id: 'r-count', value: `${slice.tested} of ${slice.total}`, label: `${sliceName} tested`, fill: slice.total ? slice.tested / slice.total : 0 }),
     ),
     h(
       'div',
       { class: 'top-meta' },
-      h('span', {}, 'Target 85% by Nov 1'),
-      h('span', {}, rd.coreBelowMinor.length ? `${rd.coreBelowMinor.length} Core below Minor Refresh` : 'No Core below Minor Refresh'),
+      h('span', {}, `Target 85% ${sliceName} by the sweep day`),
+      h('span', {}, slice.coreBelowMinor.length ? `${slice.coreBelowMinor.length} Core ${sliceName} below Minor Refresh` : `No Core ${sliceName} below Minor Refresh`),
+      h('span', { id: 'r-tested' }, `on tested ${formatPercent(rd.onTested)}`),
     ),
-    MODE_LABEL[mode] ? h('div', { class: 'mode' }, MODE_LABEL[mode]) : null,
+    banner ? h('div', { class: 'mode' }, banner) : null,
     deckNote ? h('div', { class: 'deck-note' }, deckNote) : null,
+  );
+}
+
+// ---------- the next round: label, focus, date ----------
+
+// Used in Settings and on the "Round done" screen. Returns the form element.
+export function nextRoundForm({ nextRound, today, onSave, saveLabel = 'Save', id = 'round-form' }) {
+  const label = h('input', { class: 'field', type: 'text', id: `${id}-label`, value: nextRound.label, maxlength: '40', autocomplete: 'off' });
+  const focus = h(
+    'select',
+    { id: `${id}-focus` },
+    [['technical', 'Technical — peer engineer, scenarios and follow-ups'], ['behavioral', 'Behavioral — drill-down on your stories']].map(([v, l]) => h('option', { value: v, selected: nextRound.focus === v }, l)),
+  );
+  const date = h('input', { class: 'field', type: 'date', id: `${id}-date`, value: nextRound.date || '', min: today });
+  const msg = h('p', { class: 'msg', 'aria-live': 'polite', id: `${id}-msg` });
+  const save = h('button', { class: 'btn primary', type: 'button', id: `${id}-save` }, saveLabel);
+  const clearDate = h('button', { class: 'btn quiet small', type: 'button', id: `${id}-clear` }, 'No date yet');
+  clearDate.addEventListener('click', () => {
+    date.value = '';
+  });
+  save.addEventListener('click', () => {
+    const d = date.value.trim();
+    if (d && !isIsoDate(d)) return void ((msg.textContent = 'That date doesn’t read as a date.'), msg.classList.add('bad'));
+    if (d && d <= today) return void ((msg.textContent = 'Pick a day after today — the day before it is the sweep.'), msg.classList.add('bad'));
+    msg.classList.remove('bad');
+    msg.textContent = onSave({ label: label.value.trim() || 'Round 2', focus: focus.value, date: d || null }) || 'Saved.';
+  });
+  return h(
+    'div',
+    { class: 'round-form', id },
+    h('label', { class: 'row', for: `${id}-label` }, h('span', {}, 'Name'), label),
+    h('label', { class: 'row', for: `${id}-focus` }, h('span', {}, 'Focus'), focus),
+    h('label', { class: 'row', for: `${id}-date` }, h('span', {}, 'Date'), date),
+    h('p', { class: 'hint' }, 'The day before is the sweep; the day itself is day-of mode. No date yet: reviews run on a rolling 7-day horizon.'),
+    h('div', { class: 'actions' }, save, clearDate),
+    msg,
   );
 }
 
@@ -106,8 +161,8 @@ function buildingRow(b, st, onBuilding) {
   );
 }
 
-export function homeScreen({ status, buildings, mode, primary, hint, secondary, celebrate = [], updateReady = false, onReload, onBuilding }) {
-  const interactive = mode !== 'interview' && mode !== 'after';
+export function homeScreen({ status, buildings, mode, primary, hint, secondary, celebrate = [], updateReady = false, onReload, onBuilding, banner = null }) {
+  const interactive = mode !== 'dayof' && mode !== 'after';
   const byId = new Map(status.map((x) => [x.id, x]));
   const just = celebrate.map((id) => buildings.find((b) => b.id === id)).filter(Boolean);
   return h(
@@ -121,6 +176,7 @@ export function homeScreen({ status, buildings, mode, primary, hint, secondary, 
           h('button', { class: 'btn small', type: 'button', id: 'reload-app', onclick: onReload }, 'Reload'),
         )
       : null,
+    banner,
     h(
       'figure',
       { class: 'campus' },
@@ -254,20 +310,42 @@ export function debriefScreen({ headline, before, after, weakest, planRow, energ
   );
 }
 
-// ---------- final screens (Nov 2 and after) ----------
+// ---------- the round's day, and after it ----------
 
-export function finalScreen({ checklist, rd, stats, after, map }) {
+const readinessLine = (rd) => `Readiness ${formatPercent(rd.technical.value)} technical · ${formatPercent(rd.interview.value)} interview · ${formatPercent(rd.overall)} overall · ${rd.tested} of ${rd.total} tested`;
+
+// Day-of, after the last card: stop, and the day-of checklist from the guide.
+export function finalScreen({ checklist, rd, stats }) {
   const boxes = checklist.map((c, i) =>
     h('li', {}, h('label', { class: 'row-check', for: `dc${i}` }, h('input', { type: 'checkbox', id: `dc${i}` }), h('span', {}, c))),
   );
   return h(
     'main',
-    { class: `final${after ? ' after' : ' go-day'}` },
-    after ? h('h1', {}, 'The campus is commissioned.') : h('h1', { class: 'go' }, "Stop. You're ready. Go win it."),
-    map ? h('figure', { class: 'campus' }, map) : null,
-    h('p', { class: 'final-stats' }, `Readiness ${formatPercent(rd.overall)} overall · ${formatPercent(rd.onTested)} on tested · ${rd.tested} of ${rd.total} tested`),
+    { class: 'final go-day' },
+    h('h1', { class: 'go' }, "Stop. You're ready. Go win it."),
+    h('p', { class: 'final-stats' }, readinessLine(rd)),
     stats ? h('p', { class: 'hint' }, stats) : null,
-    checklist.length && !after ? h('section', { class: 'panel' }, h('h2', { class: 'section-title' }, 'Day-of checklist'), h('ul', { class: 'checklist' }, boxes)) : null,
+    checklist.length ? h('section', { class: 'panel' }, h('h2', { class: 'section-title' }, 'Day-of checklist'), h('ul', { class: 'checklist' }, boxes)) : null,
+  );
+}
+
+// After the round's date: set the next one. Ratings carry over; nothing retires.
+export function roundDoneScreen({ doneLabel, nextRound, today, rd, stats, map, onSave, onSettings }) {
+  return h(
+    'main',
+    { class: 'final after round-done' },
+    h('h1', {}, `${doneLabel} is done — set the next one.`),
+    map ? h('figure', { class: 'campus' }, map) : null,
+    h('p', { class: 'final-stats' }, readinessLine(rd)),
+    stats ? h('p', { class: 'hint' }, stats) : null,
+    h(
+      'section',
+      { class: 'panel' },
+      h('h2', { class: 'section-title' }, 'Next round'),
+      h('p', { class: 'hint' }, 'Every rating carries over. Name the round, pick its focus, and set its date if the recruiter gave you one.'),
+      nextRoundForm({ nextRound: { ...nextRound, date: null }, today, onSave, saveLabel: 'Start training for it', id: 'next-round' }),
+    ),
+    h('p', { class: 'hint center' }, h('a', { href: '#', onclick: (e) => { e.preventDefault(); onSettings(); } }, 'Settings — export your progress')),
   );
 }
 
@@ -407,7 +485,7 @@ function appPanel(pwa) {
   );
 }
 
-export function settingsScreen({ settings, onSetting, onImport, onExport, onReset, onBack, buildInfo, storageOk, pwa = null }) {
+export function settingsScreen({ settings, nextRound, today, interruptDefault, onSetting, onNextRound, onImport, onExport, onReset, onBack, buildInfo, storageOk, pwa = null, devRound = false }) {
   const paste = h('textarea', { class: 'paste', rows: 4, placeholder: 'Paste topics.json or state.json here' });
   const file = h('input', { type: 'file', accept: 'application/json,.json', class: 'file' });
   const msg = h('p', { class: 'msg', id: 'settings-msg', 'aria-live': 'polite' });
@@ -428,14 +506,15 @@ export function settingsScreen({ settings, onSetting, onImport, onExport, onRese
   const sel = h(
     'select',
     { id: 'cards-per-shift' },
-    [['', 'Day default (15, 10, or 20)'], ['5', '5'], ['10', '10'], ['15', '15'], ['20', '20'], ['25', '25']].map(([v, l]) => h('option', { value: v, selected: String(settings.cardsPerShift ?? '') === v }, l)),
+    [['', 'Day default (15; up to 20 on the sweep day)'], ['5', '5'], ['10', '10'], ['15', '15'], ['20', '20'], ['25', '25']].map(([v, l]) => h('option', { value: v, selected: String(settings.cardsPerShift ?? '') === v }, l)),
   );
   sel.addEventListener('change', () => onSetting('cardsPerShift', sel.value ? Number(sel.value) : null));
-  const toggle = (key, label, sub) => {
-    const box = h('input', { type: 'checkbox', checked: !!settings[key], id: `set-${key}` });
+  const toggle = (key, label, sub, checked = !!settings[key]) => {
+    const box = h('input', { type: 'checkbox', checked, id: `set-${key}` });
     box.addEventListener('change', () => onSetting(key, box.checked));
     return h('label', { class: 'row-check toggle', for: `set-${key}` }, box, h('span', {}, label, sub ? h('small', { class: 'block' }, sub) : null));
   };
+  const interruptOnNow = typeof settings.interrupt === 'boolean' ? settings.interrupt : interruptDefault;
   return h(
     'main',
     { class: 'settings' },
@@ -444,9 +523,17 @@ export function settingsScreen({ settings, onSetting, onImport, onExport, onRese
     storageOk ? null : h('p', { class: 'msg bad' }, 'This browser is blocking local storage — progress will not survive a reload. Export before you close.'),
     h(
       'section',
+      { class: 'panel', id: 'next-round-panel' },
+      h('h2', { class: 'section-title' }, 'Next round'),
+      devRound ? h('p', { class: 'msg bad' }, 'This page has ?round= or ?focus= in its address: those win over what you save here until you open it without them.') : null,
+      nextRoundForm({ nextRound, today, onSave: onNextRound }),
+    ),
+    h(
+      'section',
       { class: 'panel' },
       h('h2', { class: 'section-title' }, 'Shift'),
       h('label', { class: 'row', for: 'cards-per-shift' }, h('span', {}, 'Cards per shift'), sel),
+      toggle('interrupt', 'Interrupt mode', `The first follow-up cuts in 40–70 s into a scenario answer; your clock pauses, then you pick the answer back up. Default: on in technical focus${typeof settings.interrupt === 'boolean' ? ' (you have set it)' : ''}.`, interruptOnNow),
       toggle('sound', 'Sound', 'A soft chime on a clean answer'),
       toggle('haptics', 'Haptics', 'A tick on a clean answer, where the phone supports it'),
     ),

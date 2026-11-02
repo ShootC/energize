@@ -119,15 +119,98 @@ Six commits, one per deliverable. Everything in `src/ui/` was rebuilt on the Pha
 | Update note | served over http, a newer build has installed | amber bar on the campus screen: "A newer build is ready" + Reload | smoke (test server serves a second build) |
 | Settings › App | gear → App panel | install instructions (iPhone / Android), *Install on this phone* when offered, file-mode note, build version | smoke (served) |
 
+### Round 2 · Session A · Retarget and follow-up engine (Opus, Nov 2)
+
+Spec: `GAME_SPEC_ROUND2.md` (a delta that wins over `GAME_SPEC.md`), `ROUND2_UPDATE_PROMPT.md` (the session prompts), `content/rounds.md` (framing only). Work is on the local branch **`round2`**; `main` (what Pages serves) is untouched until session E. The round-1 build is tagged **`v1.0-round1`** (= `51c775f`, the last commit on `main`; `v1.0` stays on `8410e50`).
+
+- **Content swap.** `content/archive/study-guide-2026-10-23.md` and `story-scripts-2026-10-23.md` hold the Oct 23 copies; the kit's Nov 2 exports are now `content/study-guide.md` / `story-scripts.md`. **They are byte-identical to the Oct 23 copies**, so `content/guide-diff.md` (from the new `scripts/guide-diff.js`) lists 0 changed sections and session D has no source-change re-audits. `content/incoming/topics-tracker-2026-10-29.json` stays where it is, reference only — not imported. The kit's `content/rounds.md` and `content/round1-debrief.md` (still the blank template) were added; `content/procedure-notes.md` gained a "Round 2 dates" section.
+- **`src/engine/round.js`** (new): `settings.nextRound = { label, focus: technical | behavioral, date: YYYY-MM-DD | null }`, default `{ "Round 2", technical, null }`; `reviewCap`, `sweepDate`, `dayMode` (normal · sweep · dayof · after), `daysToRound`, `interruptOn`. Every hard-coded date is gone (list below).
+- **Readiness** (`rating.js`): `readiness()` adds `technical` (54 topics, all but Interview) and `interview` (I1–I11) slices, each `{ value, earned, possible, tested, total, coreBelowMinor, targetMet }`; overall and on tested are unchanged. `nextReview(rating, today, cap)` takes the cap.
+- **Shift builder** (`scheduler.js`, §4): the two profiles, plan-date gating off, area priority, technical card choice with the number-miss exception, no card two shifts running when the topic has others, walkthrough rotation, the sweep by focus, day-of plans for both focuses; every plan reports `outLoud` (scenario + story cards, walkthroughs included).
+- **Follow-up chains** (`grader.js`, §5): `gradeCard(card, response)` grades `answer.followUps` layers when present (`response.followUps = [{ hits }]`), the card takes the worst layer, the grade carries `layers`, and `recordResult` stores them on the history entry. A card without followUps grades exactly as before. Mock questions with `followUps[].beats` grade the same way (`mock.js`).
+- **Validator** (`schema.js` / `validate.js`): checks followUps, walkthrough, ladder, dontSay, `-r2` ids, the "Round 1 debrief" source, round mock decks. All 388 cards and the v1 mock decks still validate with 0 warnings.
+- **State**: old saves load with the new defaults (`migrateSettings`); history, XP, streaks and ratings untouched; the export shape is unchanged (topic records = topics.json). `tests/fixtures/state-v1.0.json` was exported by the v1.0 engine before any change and is loaded both as an import and as a raw localStorage save.
+- **UI**: header leads with technical (or interview) readiness — `Technical 10.3% · overall 9.1% · 9 of 54 technical tested`, on tested on the meta line; a banner asks for the round's date while it's unset, "N days to Round 2 · Thu Nov 12" once set; the follow-up panel ("They follow up…", 45 s timer, Reveal, tick, next) on scenario and story cards; interrupt mode (follow-up 1 cuts in 40–70 s into a scenario answer, the main clock pauses and resumes); the result shows one dot per layer and each follow-up's beats; `answer.dontSay` shows after grading; walkthrough cards are labelled; Settings has a Next round panel (name, focus, date, "No date yet") and the Interrupt mode toggle; day-of screens for both focuses (with a not-graded "hook line" card for Story 1 / Story 3); after the date, "Round 2 is done — set the next one" with the form; the mock menu lists decks by `round` (r2, r3), hides Mock 1–3, says "coming in a later session" for a round with no decks, asks each follow-up in turn, ticks every layer and shows layer dots in the debrief. Campus map, the other card UIs and Browse are untouched.
+- **Sample deck**: `G2-scn-01-r2` (door fan; the bank's audited G2-scn-01 answer plus a why-not and a number follow-up) and `E2-scn-01-r2` (the pull-the-plug IST as a walkthrough, plus a what-if and a number follow-up). Every beat was checked verbatim against `content/study-guide.md`.
+- **Verified**: `npm test` 124/124 · `node validate.js src/data/questions.json --strict` and `… mock.json --strict` clean · `node scripts/audit.js` 0 findings · `node build.js` → 817 KB · `node tools/smoke.js` 100/100 at 390×844 (plus 430×932 and landscape) with the network off: date unset (banner), set 7 days out (countdown), the sweep day, day-of technical and behavioral played to the stop screen (nothing rated), the day after and saving the next round, a chain card with interrupt mode (cut-in at 1 s, clock held, resumed, clean · clean · slipped → Slipped with three dots), the walkthrough label, Settings, the mock screen grouped by round with an injected r2 deck run end to end, the installable app offline; no console errors. Screenshots of the new screens were checked by eye (one fix: the finished follow-up panel inherited the home screen's centred `.done` style; renamed `answered`).
+
+#### Round 2 retarget — every hard-coded date and special-day rule (grep of `v1.0-round1`)
+
+`git grep -n -i -E "2026-11-01|2026-11-02|2026-10-2|interview|sweep|cutover|retire" v1.0-round1 -- src tests` (the `interviewerPhrasing` field left out):
+
+| File | Lines at v1.0-round1 | What it was → what it is now |
+| --- | --- | --- |
+| `src/engine/rating.js` | 35, 36, 37 | `REVIEW_CAP = '2026-11-01'`, `INTERVIEW_DATE = '2026-11-02'` → removed; the cap is `reviewCap(today, nextRound)` passed into `nextReview` / `applySession` |
+| `src/engine/scheduler.js` | 7, 11–13, 16, 17, 19, 25, 27–30, 34, 35, 161, 162, 169, 171, 199, 213, 215, 217, 219, 304, 312, 328, 371, 380, 388 | `CUTOVER_START/END` (Oct 26–30), `CUTOVER_SHIFT`, `SWEEP_DATE`, `dayMode` (cutover / sweep / interview / after), `daysToInterview`, the cutover out-loud rule, the Nov 1 sweep, the Nov 2 `interviewDayPlan` → cutover deleted; `dayMode` and the dates live in `round.js`; sweep = date − 1 by focus; `dayOfPlan` for both focuses |
+| `src/engine/state.js` | 17, 79 | cards-per-shift comment ("10 in cutover week, 20 on Nov 1"), "interview-day confidence cards" → reworded; `DEFAULT_SETTINGS` gains `nextRound` and `interrupt` |
+| `src/engine/campus.js` | 73 | `area: 'Interview'` — the area name, kept |
+| `src/engine/mock.js` | 1 | "Mock interview" comment — kept, extended |
+| `src/ui/app.js` | 17, 46, 167, 192, 202, 206, 207, 214, 216, 221, 228, 259, 325, 366, 495 | `daysToInterview`, `?date=2026-11-01` comment, `mode === 'interview'` (× 8), the plan's "Mock N · today" lookup, the `interview` slot labels → `daysToRound`, `mode === 'dayof'`, plan lookup removed, new slot labels |
+| `src/ui/screens.js` | 11–14, 45, 110, 243 | `MODE_LABEL` (cutover, Nov 1 sweep, interview day, after), "N days to the interview · Nov 2", the interactive-map guard, the plan row's interview line → `modeLabel(mode, nextRound)`, `whenLine`, `dayof`; the plan row line is kept (no plan rows after Nov 2) |
+| `src/ui/boss.js` | 1, 28 | "Mock interview" title — kept |
+| `src/ui/cards.js` | 8 | "Interviewer scenario" type name — kept |
+| `src/ui/styles.css` | 726 | "mock interview" section comment — kept |
+| `src/ui/map.js` | 4 | "conference room (Interview)" comment — kept |
+| `src/ui/index.html`, `src/pwa/manifest.webmanifest` | 8, 4 | "…drills for the Fluidstack interview" description — kept |
+| `tests/rating.test.js` | 10, 16, 24, 29, 33, 39, 42, 50, 54, 70, 88, 91, 95, 106, 117–130 | Oct 24 fixtures kept; the `REVIEW_CAP` assertion and the "nothing past 2026-11-01" test → moved to `tests/round.test.js` as date − 1 / rolling cap |
+| `tests/scheduler.test.js` | 61 lines (4–280) | rewritten for the round-2 rules (Nov 5 fixtures, both profiles, sweep, day-of, after) |
+| `tests/state.test.js` | 18 lines (28–123) | Oct 24 dates kept (rolling cap = old intervals); interview-day `mode` label kept |
+| `tests/build.test.js` | 88, 89 | the 14-day plan's dates — kept (the plan table still parses) |
+| `tests/helpers.js` | 19, 24, 39, 47, 54 | Interview area and Oct fixtures — kept |
+| `tests/markdown.test.js` | 14 | "one cutover" in a story title — kept |
+
+### For the content sessions (B1, B2, C, D) — read this before writing cards
+
+**Card fields added in round 2** (validator-enforced; `node validate.js src/data/questions.json --strict`):
+
+| Field | Where | Rule |
+| --- | --- | --- |
+| `answer.followUps` | scenario and story cards only | array of `{ id, kind, prompt, beats, source, par }`; `id` = `<card id>-f1`, `-f2`…; `kind` ∈ `why-not` · `what-if` · `number` · `own-it` · `find-out` · `drill`; `beats` non-empty, strings or `{ "label": "…", "fillIn": true }` (shown, never graded); `source` non-empty (a guide heading path where you can — "Pre-action › Data center points to make" — else `story-scripts.md`, `study-guide.md` or `round1-debrief.md`); `par` seconds (45 technical, 20 for drill). `find-out` only on `confirmInEdition: true` cards. The prompt must not read as multiple choice. No other keys. |
+| `walkthrough` | top-level, scenario only | `true` → labelled "Walkthrough"; `par` must be 120 (warning otherwise); beats = the guide's steps in order. Served only in the shift's walkthrough slot (and as the day-of warm-up), never as an ordinary card. |
+| `ladder` | top-level, story only | `true` = a drill-ladder card (session C: the 5-layer "hardest challenge" for Story 1 and Story 3); its follow-ups must all be `kind: "drill"`. Keep the plain Story 1 / Story 3 cards (prompts starting "Story 1 —" / "Story 3 —", no `ladder`): day-of mode finds the hook lines there. |
+| `answer.dontSay` | any card (session C: story cards) | a string or an array of strings, shown after grading under "Don't say" (each script's "Keep out" line). |
+| ids | new cards | `-r2` suffix: `P5-scn-04-r2`. Existing ids, types and beats don't change unless a fact is wrong. |
+| `source: "Round 1 debrief"` | debrief cards | accepted as the first segment (no Browse deep link). |
+
+One follow-up chain as implemented (`src/data/sample.json`, E2-scn-01-r2 trimmed to one beat per layer):
+
+```json
+{
+  "id": "E2-scn-01-r2", "topicId": "E2", "type": "scenario", "walkthrough": true, "par": 120,
+  "prompt": "Walk me through the pull-the-plug IST, start to restore.",
+  "answer": {
+    "beats": ["Halls at load-bank heat; fire alarm normal. Then repeat with a fire scenario already in alarm", "…"],
+    "requiresNumber": false, "codeRef": null, "explanation": "…",
+    "followUps": [
+      { "id": "E2-scn-01-r2-f1", "kind": "what-if", "prompt": "Say the campus is islanded — there's no utility to drop. What changes?",
+        "beats": ["Trip a generation block instead of opening the utility main", "…"], "source": "Emergency power interface", "par": 45 },
+      { "id": "E2-scn-01-r2-f2", "kind": "number", "prompt": "What does fire alarm have to carry on secondary power, and where's that from?",
+        "beats": ["24 h standby + 5 min alarm on batteries", "…"], "source": "Emergency power interface › Fire alarm secondary power", "par": 45 }
+    ]
+  },
+  "hook": "…", "source": "Emergency power interface › The L5 pull-the-plug test", "confirmInEdition": false
+}
+```
+
+**How the chain grades** — each layer like a scenario on its own beats: all ticked = clean; one missing (with at least one ticked) = slipped; otherwise missed, framework if at least half. A layer with nothing ticked is a miss; a layer whose beats are all fill-ins is shown and not graded. The main layer keeps its own rules ("I said a number" unless `requiresNumber: false`; "I named the code reference" when `codeRef` is set). The card takes the worst layer. So **every beat in a follow-up must be something he can say and tick** — 2–4 per layer; put the number and its section in the beats of a `number` follow-up.
+
+**What the shift does with your cards** — in a technical topic the shift serves a scenario with follow-ups first, then a plain scenario, defect, order, matrix, number (a number first if the topic's last miss was a number or a code section). Adding follow-ups to a topic's scenario makes it that topic's default card. The walkthrough slot rotates through `walkthrough: true` cards on topics below Locked In (until B1 adds them, it falls back to a scenario). The technical shift's two behavioral slots take a story with follow-ups, then a `ladder` story or an I8 backup.
+
+**Mock decks** (`src/data/mock.json`, B2 and C — append; the v1 decks stay in the file, hidden): `{ "id", "round": "r2" | "r3", "title", "questions": [...] }`. A question is `{ id, kind, prompt, par, beats, source, topicId?, cardId?, followUps? }` with `kind` ∈ `intro` · `technical` · `experience` · `values` · `close`; `followUps: [{ prompt, beats?, kind?, par? }]` — with beats it is a graded layer, without beats it is asked but not graded; intro and close need no follow-ups; `par` 60–150; `source` must start with a real heading; `cardId` adds a "Practice the card" button to the debrief. Interrupt mode cuts in on technical and experience questions. `node validate.js src/data/mock.json --strict`; `tests/mock.test.js` grades every shipped question clean on a perfect answer, follow-ups included.
+
+**Checks to run after each area**: `node validate.js src/data/questions.json --strict` · `npm test` (the bank test grades every card clean on its own model answer, every follow-up layer included) · `node scripts/audit.js` (it does not read `followUps` yet — session D extends it) · `node build.js`, then open `dist/index.html?card=<id>` to see a card (`&interruptAt=1` to watch the first follow-up cut in).
+
+**Before B1**: `content/round1-debrief.md` is still the blank template — fill it in (rough is fine) or B1 skips the debrief cards and its "Facts about my own work" stay empty. `src/data/questions.round1.json` (the backup) does not exist yet; B1 makes it.
+
 ## In progress
 
-- Nothing. **v1.0** is tagged and live at `https://shootc.github.io/energize/` (repo `ShootC/energize`, Pages via Actions). Left for you: open the link on your phone and Add to Home Screen; every push to `main` re-deploys.
+- **Round 2 update.** Session A done (branch `round2`, not pushed). Next: B1 (Fable) — technical follow-ups for the data hall core and the round 1 debrief cards. Then B2, C, D, E (`ROUND2_UPDATE_PROMPT.md`). `main` and the live site are still v1.0 until session E.
 
 ## For later sessions (re-audits, re-deploys)
 
 - **Content or cards changed:** edit `content/*.md` or `src/data/*.json`, run `node scripts/audit.js --review`, fix the cards it lists by following the guide (never from memory), re-run until the report says `0 findings`; `npm test` fails while it has any. A card that deliberately carries a non-guide number (a hypothetical reading in an interviewer prompt) goes in `scripts/audit-allow.json` with a reason. To eyeball a card: `node build.js`, then open `dist/index.html?card=<id>`.
 - **Re-deploy:** `npm test && node build.js`, commit, push — the Pages workflow publishes `dist/`; the installed app offers Reload on its next online open. The build version (Settings, bottom line) tells you which build a phone is on.
-- **Smoke hooks to keep** (tools/smoke.js): `#r-overall`, `#start-shift`, `#nav-settings` (the gear), `#nav-browse`, `#nav-blitz`, `#nav-stories`, `#nav-mock`, `#pause-shift`, `#export-state`, `#export-topics`, `#export-text`, `#import-paste`, `input.file`, `#settings-msg`, `#browse-search`, `#deck-mock-N`, `#mock-done`, `#mock-reveal`, `#mock-grade`, `#mock-headline`, `#update-note`, `#reload-app`, `#app-panel`, `.btn.rec`; button texts `Submit`, `Submit order`, `Submit matrix`, `Reveal`, `Grade it`, `Done speaking`, `This line`, `Reset progress`; `.result h2` starts with Clean / Slipped / Missed and Next / Finish is the last `.result button`; `energize.bootMs`, `energize.updateReady`, `energize.data.build.version` on `window.energize`.
+- **Smoke hooks to keep** (tools/smoke.js): `#r-overall`, `#start-shift`, `#nav-settings` (the gear), `#nav-browse`, `#nav-blitz`, `#nav-stories`, `#nav-mock`, `#pause-shift`, `#export-state`, `#export-topics`, `#export-text`, `#import-paste`, `input.file`, `#settings-msg`, `#browse-search`, `#deck-<deck id>`, `#mock-done`, `#mock-reveal`, `#mock-grade`, `#mock-headline`, `#update-note`, `#reload-app`, `#app-panel`, `.btn.rec`; round 2: `#r-focus`, `#round-when`, `#round-banner`, `#grade-main`, `#followup-N`, `#followup-N-reveal`, `#followup-N-next`, `#interrupt`, `#interrupt-back`, `#interrupt-done`, `#hook-reveal`, `#round-form-{label,focus,date,save}`, `#next-round-{date,focus,save}`, `#set-interrupt`, `.round-group`, `.ldot`, `.round-done`; button texts `Submit`, `Submit order`, `Submit matrix`, `Reveal`, `Grade it`, `Done speaking`, `This line`, `Reset progress`; `.result h2` starts with Clean / Slipped / Missed and Next / Finish is the last `.result button`; `energize.bootMs`, `energize.updateReady`, `energize.data.build.version` on `window.energize`.
 - **Rebuilding while the smoke runs** rewrites `dist/` under it — run them one after the other.
 
 ### Adding or fixing cards later
@@ -296,7 +379,33 @@ Phase 5 (ship):
 54. **The smoke test owns its own http server** (`serveDist`) for the installable-app checks, and can serve a "second build" by rewriting the service worker's version and marking `index.html`, which is how the update path is exercised without a second build on disk.
 55. **Spoken cards never listen; they ask before grading a blank** (Oct 24, after the first real use: every story graded as a miss because the beats were spoken but not tapped). Story cards say "The taps are the grade" up front; the first *Done speaking* stops the clock and the recording, and if no beat is tapped the card asks — tap the beats you hit and *Grade it* (no time penalty), or *Grade as a miss*. Scenario cards say "Nobody is listening" before Reveal, and *Grade it* with nothing ticked asks the same way. Speech recognition stays out: the honor system is the spec (§4.4, §4.5) and it is how the interview works.
 
+Round 2 · session A (retarget and follow-up engine):
+
+56. **Day modes come from `settings.nextRound`**: normal · sweep (date − 1) · dayof (date) · after. The review cap is date − 1 while today is before the date; with no date, or once it has passed, it rolls at today + 7 (no interval is longer than 4 days, so nothing is capped and nothing is ever capped into the past).
+57. **A review date beyond the cap comes due on the cap** (`isDue` compares `min(next_review, cap)`), so setting a date three days out pulls everything in for the sweep without rewriting topic records.
+58. **Plan-date gating is off**: a Not Tested topic is always due. The 14-day plan rows stay in the data (the debrief's "Tonight" line simply never matches after Nov 2).
+59. **Profiles scale with Settings → cards per shift.** Technical: 1 walkthrough, max(1, round(N × 2/15)) behavioral, the rest technical with a redo cap of round(N × 6/15) — 15 → 6 + 6 + 1 + 2. Behavioral: round(N × 8/15) Interview, 1 walkthrough, the rest technical with a redo cap of half of them — 15 → 8 + 3 redos max + 3 coverage + 1.
+60. **Order in a shift**: technical — redos, coverage (spot check last), walkthrough, story, drill-down; behavioral — Interview × 8, technical, walkthrough. The walkthrough is chosen first so its topic is not spent on an ordinary slot.
+61. **Sorting**: Not Tested coverage by area priority, then weight (§4 says "by area priority"); redos, due Minor Refresh, Keep going and the technical sweep by rating → weight → area priority. One coverage slot stays reserved for a stale Locked In spot check (decision 6).
+62. **Technical card choice** (scenario with follow-ups → scenario → defect → order → matrix → number; walkthroughs last) is used for redo, coverage, spot, fill, Keep going and sweep slots on technical topics. "Drill this" and the follow-up *card* after a clean first answer keep the v1 picking rules (decision 8).
+63. **Number-miss exception**: when the topic's most recent non-clean rated result was a number card, or its note says "code section" or "no number", number cards come first — but the "not the same card two shifts running" filter applies first, so a topic with one number card that was just missed gets its next-best card.
+64. **Behavioral slots in a technical shift** come from the Interview queue: due topics in the normal order, then the others by least recently tested, so both slots always fill. Slot A: a story with follow-ups (not a ladder) → any story → any spoken card. Slot B ("drill-down"): a `ladder` story or an I8 backup → any story → any spoken card. In behavioral focus each Interview topic serves a story with follow-ups first (ladders included), then a story, a scenario, anything else.
+65. **Sweep**: technical focus takes technical topics not Locked In (rating → weight → area priority); behavioral focus takes every topic not Locked In in the normal order. Misses still get one redo at the end.
+66. **Day-of** results are logged with `rated: false` (as on Nov 2). Technical: six quick cards from Locked In, then Minor Refresh, technical topics; then the strongest topic's least recently seen walkthrough at par 90 with the chain off (else a technical scenario on a Locked In / Minor Refresh topic). Behavioral: six quick cards from any area, the I1 intro, then a "hook line" card for the story cards whose prompts start "Story 1" and "Story 3" — say it, Reveal the hook, Next; nothing recorded.
+67. **After the date** the home screen is "Round 2 is done — set the next one": the campus, readiness, the form prefilled with the next label (Round 2 → Round 3), the same focus and no date. Saving returns home on the new schedule; ratings never change.
+68. **Follow-up grading**: a layer is a scenario on its own beats, except that nothing ticked is always a miss (a one-beat drill can't "slip" on silence); fill-in-only layers are shown, not graded; the card's result, framework and note come from the worst graded layer (the note names it: "slipped: follow-up 2 (what-if) — 1 beat missed"). XP is per card, as before.
+69. **Interrupt mode** (`settings.interrupt`, null = on in technical focus) applies to scenario cards with follow-ups and to technical / experience mock questions — not to story cards, where a drill-down question would land before the story reached the decision it asks about. Reveal is disabled during the cut-in; once the main answer is graded, follow-up 1 goes straight to its ticks.
+70. **Mock round decks** ask every follow-up before the reveal (as v1 did) and the reveal ticks the main answer and each follow-up's beats; the question takes its worst layer; the debrief shows layer dots; the weakest-answer ranking counts beats across layers.
+71. **Header**: the lead tile is technical (behavioral focus: interview) readiness with the 85% tick, then overall, then "N of 54 technical tested"; on tested moved to the meta line (`#r-tested`). The debrief keeps overall and on tested.
+72. **QA overrides** `?round=YYYY-MM-DD|none`, `?focus=technical|behavioral`, `?interruptAt=<seconds>` are never saved (a "dev round" badge shows); `recordResult` takes the effective `nextRound` so the cap matches what the page shows.
+73. **`tools/smoke.js` reads the DevTools port from the profile's `DevToolsActivePort`** (current Edge on Windows hands off to another process and prints nothing on stderr) and closes the browser over DevTools at the end, so no headless Edge is left running.
+
 ## Open questions
+
+- **Round 2 (session A):** `content/round1-debrief.md` is still the blank template. B1 turns it into cards and C/B use its "Facts about my own work" for own-it and drill beats — fill it in before B1, or B1 skips that step.
+- **Round 2 (session A):** the kit's "Nov 2" study guide and story scripts are byte-identical to the Oct 23 copies. If the Claude Doc was edited after Oct 23, re-export it over `content/study-guide.md` / `story-scripts.md` and run `node scripts/guide-diff.js` before session B.
+- **Round 2 (session A):** behavioral focus caps technical redos at 3 of its 6 technical slots (my reading of "due topics by the technical rules"); say if all 6 should go to redos first.
+- **Round 2 (session A):** interrupt mode skips story cards (decision 69); say if the behavioral drill-downs should be cut in on too.
 
 - Defect card, wrong line → Not Ready. If that feels too harsh for a recognition task, change one line in `gradeDefect` (`src/engine/grader.js`) to give `framework: true` (Needs Improvement).
 - Nov 1 sweep includes Not Tested topics whose study day is Nov 1 (A4, A5); they sort late, so they rarely make the 20. Say if they should be skipped.
@@ -329,13 +438,14 @@ Phase 5 (ship):
 Needs Node ≥ 20 (built on 24). No npm install — there are no dependencies.
 
 ```
-npm test                                   # 95 engine / data / bank / mock / build / audit tests
+npm test                                   # 124 engine / data / bank / mock / build / audit / round tests
 node validate.js src/data/questions.json   # schema check for the bank (also sample.json, mock.json); add --strict
 node validate.js --headings                # headings a card's source may start with
 node scripts/audit.js [--review] [--card <id>]   # every fact against the guide → audit-report.md (exit 1 on findings)
 node build.js                              # → dist/index.html + manifest, sw.js, icons
-node tools/smoke.js [--shots <dir>]        # headless Edge/Chrome: 390×844, 430×932, landscape, offline, install/update
+node tools/smoke.js [--shots <dir>]        # headless Edge/Chrome: 390×844, 430×932, landscape, offline, install/update (100 checks)
+node scripts/guide-diff.js                 # archived vs current guide and scripts → content/guide-diff.md
 npm run check                              # tests + validate + audit + build
 ```
 
-Play: open `dist/index.html` in any browser (double-click works; `file://` is fine), or serve `dist/` over http(s) for the installable, offline version (README › Get it on your phone). Add `?date=2026-11-01` (or `2026-10-26`, `2026-11-02`, `2026-11-03`) to test special days; `?deck=sample` forces the 10-card sample deck; `?card=P2-num-01` opens one card. State lives in `localStorage` under `energize.state.v1`; Settings → Reset clears it.
+Play: open `dist/index.html` in any browser (double-click works; `file://` is fine), or serve `dist/` over http(s) for the installable, offline version (README › Get it on your phone). Special days follow the next round's date (Settings → Next round). To test them without saving anything: `?date=2026-11-11&round=2026-11-12` (the sweep), `?date=2026-11-12&round=2026-11-12` (day-of; add `&focus=behavioral`), `?date=2026-11-13&round=2026-11-12` (the day after), `?round=none` (no date). `?interruptAt=1` makes the first follow-up cut in after 1 s; `?deck=sample` forces the 12-card sample deck; `?card=P2-num-01` opens one card. State lives in `localStorage` under `energize.state.v1`; Settings → Reset clears it.

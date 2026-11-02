@@ -350,9 +350,9 @@ function behavioralPair(claim, queue) {
     claim.takeWhere(queue, (c) => isStory(c) && !c.ladder, 'story') ||
     claim.takeWhere(queue, (c) => OUT_LOUD.includes(c.type), 'story');
   const drill =
-    claim.takeWhere(queue, (c) => isStory(c) && (c.ladder || isBackupTopic(c)), 'drill') ||
-    claim.takeWhere(queue, isStory, 'drill') ||
-    claim.takeWhere(queue, (c) => OUT_LOUD.includes(c.type), 'drill');
+    claim.takeWhere(queue, (c) => isStory(c) && (c.ladder || isBackupTopic(c)), 'ladder') ||
+    claim.takeWhere(queue, isStory, 'ladder') ||
+    claim.takeWhere(queue, (c) => OUT_LOUD.includes(c.type), 'ladder');
   return [story, drill].filter(Boolean);
 }
 
