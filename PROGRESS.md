@@ -309,6 +309,16 @@ Scope (`ROUND2_UPDATE_PROMPT.md` › Session D): every card with `answer.followU
 - **Coverage targets** (common block), from the r2 report's table: every Core technical scenario card (walkthroughs aside) has 2 follow-ups with a why-not or what-if; every Core technical topic has ≥ 2 scenario cards with follow-ups; the two Core `confirmInEdition` scenarios (`E1-scn-02-r2`, `K1-scn-02-r2`) have find-outs (and the two Support ones, `G4-scn-02`, `G6-scn-01`); own-its per area — Cx framework 5 · Sprinkler & underground 1 · Pre-action 1 · Fire pump 1 · Emergency power 1 · Smoke control & FA FPT 1 · Gaseous & ASD 1 · BESS, gas & mist 1 · Applied & refresher 2; every Support topic has one scenario card with 1–2 follow-ups (G4 has two such cards); Light topics (F7, F9, S5, S8, A1, A5) are untouched; the 13 walkthroughs are scenario cards at par 120 with 2 follow-ups each; Interview: I3–I7 story cards carry 4 / 4 / 4 / 4 / 3 drills, the ladders `I3-sty-02-r2` and `I5-sty-02-r2` have 5 drill layers, I8–I11 unchanged.
 - **Verified**: `npm test` 124/124 · `node validate.js src/data/questions.json --strict` 0 errors, 0 warnings · `node validate.js src/data/mock.json --strict` clean · `node scripts/audit.js` 0 findings, 0 round-2 findings (13 allowlisted, 313 review notes) · `node build.js` → `dist/index.html` 990 KB, 407 cards, 8 decks (dist/ recommitted — only the build stamp changed) · `node tools/smoke.js` **101/101** in the foreground, first run, no screenshot skipped.
 
+- **Checked after D (Opus).** Planting four bad items in a scratch copy of the bank: invented experience in an own-it beat, a find-out on an unhedged card and a bracketed answer stated as fact were all findings; a wrong criterion in a `number` follow-up ("loss ≤ 2.5 psi") was only a review note, because 2.5 psi appears elsewhere in the guide. Fixed in `5cc4483` (decision 98); the bank still audits clean.
+
+### Round 2 · Session E · Ship (Opus, Nov 2)
+
+- **Cache version.** Automatic: the service worker's cache name is a hash of the build, so this build is `energize-<new hash>` against the installed v1.0's `energize-dbcee6e060` (the committed v1.0-round1 `dist/`); the Pages workflow builds its own `dist/` from the same sources. `package.json` → 1.1.0.
+- **Upgrade proof** (`tools/smoke.js`): the actual `v1.0-round1` build is served over http and installed (service worker controlling, offline-capable), given `tests/fixtures/state-v1.0.json` as its save, then the server switches to this build. Opening the app updates the service worker behind the page and drops the v1.0 cache; the next open runs the new build with every rating, history entry, XP total, streak, Blitz best, energized building, snapshot and setting kept, the round-2 defaults (`nextRound` Round 2 · technical · no date, `interrupt` default) added, the migrated save written back, and the home screen saying "Round 2 · date not set" with the banner; the carried-over 10-card setting plays a 10-card shift. **Found on the way:** v1.0 after Nov 2 sits on its final screen, which never drew the "newer build" note — so on the phone the update arrives by closing the app fully and reopening it (the README says so). The new build shows the note on the day-of stop and round-done screens too, so later updates aren't hidden that way.
+- **QA** (`tools/smoke.js`): every next-round state — unset, 7 and 5 days out, the sweep, day-of in both focuses, the day after — at 390×844 and 430×932 with no sideways scroll; a full technical shift (28 cards with the follow-up cards, 13 chained scenarios) and Round 2 deck A played end to end with interrupt mode on (every chained scenario and every technical / experience question cut into, each cut-in answered, every answer clean); Settings → Interrupt mode off, then the next day's shift and deck B with no cut-in. **Found on the way:** long runs sometimes stalled a DevTools evaluate or screenshot for 30 s — Chromium throttling a backgrounded headless page's timers; the launch now passes the standard no-throttling flags, and two back-to-back runs passed 119/119 with nothing skipped.
+- **README**: a "Round 2 update" section (setting the next round's date and focus, what changed in shifts, follow-ups, interrupt mode, mock decks, adding the next round's debrief), the stale Nov 1 / Nov 2 day rules and counts replaced, the v1.0 → new-build update path, the new dev parameters.
+- **Deploy**: waiting for Brandon's go-ahead to merge `round2` into `main` and push (the Pages workflow publishes on every push to `main`), then tag `v1.1-round2`.
+
 ### For the content sessions (B1, B2, C, D) — read this before writing cards
 
 **Card fields added in round 2** (validator-enforced; `node validate.js src/data/questions.json --strict`):
@@ -358,7 +368,7 @@ One follow-up chain as implemented (`src/data/sample.json`, E2-scn-01-r2 trimmed
 
 ## In progress
 
-- **Round 2 update.** Sessions A, B1, B2, C and D done (branch `round2`, not pushed). **Next: E (Opus, ship)** per `ROUND2_UPDATE_PROMPT.md` — cache bump is automatic (the build stamp changed), QA with date overrides, redeploy, tag `v1.1-round2`. D changed no card content; `audit-report-r2.md` is committed beside `audit-report.md`. The round 1 debrief step was skipped (template unfilled) and can be run later. `main` and the live site are still v1.0 until session E.
+- **Round 2 update.** Sessions A, B1, B2, C and D done; E done up to the deploy (branch `round2`, not pushed). Left: merge `round2` into `main`, push (Pages redeploys), tag `v1.1-round2` — waiting for Brandon's go-ahead. The round 1 debrief step was skipped (template unfilled) and can be run later. `main` and the live site are still v1.0 until then.
 
 ## For later sessions (re-audits, re-deploys)
 
@@ -589,6 +599,12 @@ Round 2 · session D (audit):
 95. **Walkthrough order is checked on step names, in the source block.** A walkthrough beat is "step — that level's items" (decision 80), so only the text before the first " — " / ":" is located, in the list, line or label block the card's source names (no fallback to the section, whose line order is not the list's), and a one-row matrix walkthrough (`C4-scn-03-r2`) is noted rather than checked.
 96. **The round-2 report is written on every run** beside the lean report (same `--out` directory, or `--out-r2`), with its review notes always included: it is the reading-pass artifact for later debrief cards, so it must not depend on `--review`. The new finding kinds also print in `audit-report.md`, so one zero gates both.
 97. **No content change, no new allowlist entry.** Every first-run finding was the audit's own design (single-line traces, whole-beat order anchors) and was fixed in the audit, not by editing a card against it.
+
+Round 2 · after D and session E:
+
+98. **Numbers and references in a `number` follow-up are graded facts**: found only outside the follow-up's source and the card's section is a finding there, as for a number card's fields (other follow-ups keep decision 41's review note). Added after a planted "loss ≤ 2.5 psi" passed as a note.
+99. **The upgrade path is "open, close, reopen"** for phones on v1.0 after Nov 2 (its final screen has no update note); from this build on, the note also shows on the day-of stop and round-done screens. The app still never reloads itself (decision 50).
+100. **The smoke test launches its browser with the no-throttling flags** (`--disable-background-timer-throttling`, `--disable-renderer-backgrounding`, `--disable-backgrounding-occluded-windows`, `--disable-features=IntensiveWakeUpThrottling`); a stalled screenshot still retries once and is then skipped with a note.
 
 ## Open questions
 
