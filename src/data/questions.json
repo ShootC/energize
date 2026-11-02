@@ -9055,7 +9055,33 @@
         "5-32",
         "FM DS 5-32"
       ],
-      "explanation": "No as primary: sprinklers plus very early detection, with clean agent reserved for spaces where the owner's risk case justifies it — and the supply and regulatory picture argues against standardizing on it. FM Data Sheet 5-32 treats gaseous systems as a supplement."
+      "explanation": "No as primary: sprinklers plus very early detection, with clean agent reserved for spaces where the owner's risk case justifies it — and the supply and regulatory picture argues against standardizing on it. FM Data Sheet 5-32 treats gaseous systems as a supplement.",
+      "followUps": [
+        {
+          "id": "G1-scn-01-f1",
+          "kind": "what-if",
+          "prompt": "Say the owner's risk case does justify clean agent in an electrical room. What are you actually commissioning then?",
+          "beats": [
+            "Clean agent acceptance proves the system can reach and hold concentration without discharging it: tight, clear piping; the right quantity; a room that holds the agent at least 10 minutes; and a release sequence proven with simulated actuators",
+            "Piping proof: 40 psi closed-circuit pneumatic test, 10 min, ≤20% loss; nitrogen flow test proves nozzles clear. Room proof: door fan per NFPA 2001 Annex C",
+            "The turnover package carries the clean agent acceptance with door fan report (NFPA 2001) and the agent recharge plan"
+          ],
+          "source": "Clean agent and CO2",
+          "par": 45
+        },
+        {
+          "id": "G1-scn-01-f2",
+          "kind": "number",
+          "prompt": "The NOAEL numbers and the discharge times — what are they?",
+          "beats": [
+            "NOAEL: HFC-227ea 9%, FK-5-1-12 10%",
+            "Halocarbon discharge: 95% of minimum design concentration in ≤10 s",
+            "Inert gas: ≤60 s for Class B; ≤120 s for Class A surface and Class C"
+          ],
+          "source": "Clean agent and CO2 › table",
+          "par": 45
+        }
+      ]
     },
     "hook": "Sprinklers first, agent where the risk case says so — Novec gone end of 2025, recycled 227 by 2030.",
     "source": "Clean agent and CO2 › Likely question",
@@ -9079,11 +9105,94 @@
       ],
       "requiresNumber": false,
       "codeRef": null,
-      "explanation": "Detection → first alarm → second input → pre-discharge alarm and time delay → release output; abort in its selected mode with manual release overriding it; HVAC off, dampers closed, door holders released; open and short release-circuit faults; low cylinder pressure and maintenance-lockout supervisory; secondary power."
+      "explanation": "Detection → first alarm → second input → pre-discharge alarm and time delay → release output; abort in its selected mode with manual release overriding it; HVAC off, dampers closed, door holders released; open and short release-circuit faults; low cylinder pressure and maintenance-lockout supervisory; secondary power.",
+      "followUps": [
+        {
+          "id": "G1-scn-02-f1",
+          "kind": "what-if",
+          "prompt": "Say the abort holds the release, but the manual pull doesn't override the abort.",
+          "beats": [
+            "Manual release overrides abort — if it doesn't, that step fails",
+            "Abort and manual release behavior are failure modes the script has to cover, with pass/fail and initials on the line",
+            "Every finding gets an ID, system, level found, severity (life safety first), owner, due date and closure evidence; life-safety issues close before turnover"
+          ],
+          "source": "Clean agent and CO2 › Acceptance sequence",
+          "par": 45
+        },
+        {
+          "id": "G1-scn-02-f2",
+          "kind": "why-not",
+          "prompt": "Why pull the actuators at all? The cylinders are isolated — the lockout's on.",
+          "beats": [
+            "L4 is the sequence with actuators removed; reconnect actuators under a written procedure — panel normal, no active outputs, second-person verification",
+            "Safety isolation: actuators and solenoids replaced by test lamps or simulators, agent cylinders disconnected, shutdown circuits verified before you trip anything",
+            "Return to normal — every isolation reversed and verified; the most dangerous outcome of a test is a system left disabled"
+          ],
+          "source": "Clean agent and CO2 › Acceptance sequence",
+          "par": 45
+        }
+      ]
     },
     "hook": "Two inputs, delay, release — then abort, override, shutdowns, faults, supervisories, batteries.",
     "source": "Clean agent and CO2 › Acceptance sequence",
     "par": 90,
+    "confirmInEdition": false
+  },
+  {
+    "id": "G1-scn-03-r2",
+    "topicId": "G1",
+    "type": "scenario",
+    "walkthrough": true,
+    "prompt": "Walk me through clean agent acceptance, L2 to L5 — including how you prove the abort and the manual release.",
+    "interviewerPhrasing": "How do you accept a clean agent system without discharging it?",
+    "answer": {
+      "beats": [
+        "L2 — as-built vs calc: cylinder agent weight, pressure and serials; nozzle models, orifice codes and locations; pipe sizes and lengths within the vendor's calc limits (re-run the calc if routing changed); nozzles anchored for discharge reaction; pressure relief vent installed and sized; room volume including raised-floor and ceiling voids; signage, manual release and abort locations",
+        "L3 — piping: pneumatic test of closed sections; nitrogen flow test through every nozzle. Program the releasing panel",
+        "L4 — room: door fan per NFPA 2001 Annex C. A fail sends you leak-hunting under depressurization — cable and conduit penetrations, raised floor, ceiling plenum, dampers — not adding agent",
+        "L4 — sequence, actuators removed: detection (cross-zoned or ASD Fire 2) → first alarm → second input → pre-discharge alarm and time delay → release output. Abort in its selected mode; manual release overrides abort; HVAC off, dampers closed, door holders released; open and short faults on the release circuit; low cylinder pressure and maintenance-lockout supervisory; secondary power",
+        "Reconnect actuators under a written procedure — panel normal, no active outputs, second-person verification",
+        "L5: release output drives the BMS / EPMS responses (CRAH shutdown in the room, dampers, any power-down the BOD calls for) on normal and generator power"
+      ],
+      "requiresNumber": false,
+      "codeRef": "NFPA 2001 Annex C",
+      "codeRefAliases": [
+        "NFPA 2001",
+        "2001",
+        "Annex C",
+        "2001 Annex C"
+      ],
+      "explanation": "L2 as-built vs calc → L3 pneumatic test and nitrogen flow test, program the panel → L4 room: door fan per NFPA 2001 Annex C → L4 sequence with actuators removed: detection → first alarm → second input → pre-discharge alarm and time delay → release; abort in its selected mode, manual release overrides abort; shutdowns, faults, supervisories, secondary power → reconnect under a written procedure → L5 release output drives BMS / EPMS on normal and generator power.",
+      "followUps": [
+        {
+          "id": "G1-scn-03-r2-f1",
+          "kind": "number",
+          "prompt": "The piping proof at L3 — numbers?",
+          "beats": [
+            "40 psi closed-circuit pneumatic test, 10 min, ≤20% loss",
+            "Nitrogen flow test proves nozzles clear",
+            "Then the room proof: door fan, ≥10 min hold at the highest combustible level, 85% of adjusted minimum design concentration retained"
+          ],
+          "source": "Clean agent and CO2 › table",
+          "par": 45
+        },
+        {
+          "id": "G1-scn-03-r2-f2",
+          "kind": "what-if",
+          "prompt": "Say more than 480 volts stays live in that room after discharge.",
+          "beats": [
+            "If more than 480 V stays energized after discharge, NFPA 2001's prescriptive concentrations no longer apply",
+            "The power-down output is a design decision, not a detail",
+            "At L5 the release output drives any power-down the BOD calls for — on normal and generator power"
+          ],
+          "source": "Emergency power interface › Data center points to make",
+          "par": 45
+        }
+      ]
+    },
+    "hook": "Weigh it, blow it clear, fan the room, run the sequence with lamps in place of actuators, reconnect with a witness, then the BMS on both power sources.",
+    "source": "Clean agent and CO2 › Acceptance sequence",
+    "par": 120,
     "confirmInEdition": false
   },
   {
@@ -9226,7 +9335,33 @@
       ],
       "requiresNumber": true,
       "codeRef": null,
-      "explanation": "Find leaks under depressurization (smoke pencil, thermal camera): cable and conduit penetrations, raised floor, ceiling plenum, dampers. Seal and retest. Never just add agent — it changes concentration against NOAEL and the overpressure vent sizing. If turnover proceeds, document the risk acceptance."
+      "explanation": "Find leaks under depressurization (smoke pencil, thermal camera): cable and conduit penetrations, raised floor, ceiling plenum, dampers. Seal and retest. Never just add agent — it changes concentration against NOAEL and the overpressure vent sizing. If turnover proceeds, document the risk acceptance.",
+      "followUps": [
+        {
+          "id": "G2-scn-01-f1",
+          "kind": "what-if",
+          "prompt": "Say you seal, retest, and it's still short.",
+          "beats": [
+            "Back under depressurization: cable and conduit penetrations, raised floor, ceiling plenum, dampers — seal and retest",
+            "Still never just add agent — that changes concentration against NOAEL and the overpressure vent sizing",
+            "If turnover proceeds, document the risk acceptance"
+          ],
+          "source": "Likely questions and day-of checklist › Commissioning technical (the 35%) › 10",
+          "par": 45
+        },
+        {
+          "id": "G2-scn-01-f2",
+          "kind": "why-not",
+          "prompt": "Why not just add more agent and call it done?",
+          "beats": [
+            "It changes concentration against NOAEL",
+            "It changes the overpressure vent sizing",
+            "A fail means leaks: find them under depressurization with a smoke pencil and a thermal camera, seal and retest"
+          ],
+          "source": "Likely questions and day-of checklist › Commissioning technical (the 35%) › 10",
+          "par": 45
+        }
+      ]
     },
     "hook": "Penetrations, floor, plenum, dampers — seal, retest, 10 minutes at 85%.",
     "source": "Commissioning technical (the 35%) › 10",
@@ -9255,7 +9390,33 @@
         "Annex C",
         "2001 Annex C"
       ],
-      "explanation": "Door fan per NFPA 2001 Annex C proves the room holds the agent ≥10 min with 85% of the adjusted minimum design concentration retained at the highest combustible level. A fail sends you leak-hunting under depressurization — not adding agent."
+      "explanation": "Door fan per NFPA 2001 Annex C proves the room holds the agent ≥10 min with 85% of the adjusted minimum design concentration retained at the highest combustible level. A fail sends you leak-hunting under depressurization — not adding agent.",
+      "followUps": [
+        {
+          "id": "G2-scn-02-f1",
+          "kind": "what-if",
+          "prompt": "Say the room passes the door fan at L4, then somebody cuts a new cable penetration before turnover.",
+          "beats": [
+            "Cable and conduit penetrations are the first place leaks live — with the raised floor, ceiling plenum and dampers",
+            "Retest: the door fan is the room proof — ≥10 min hold at the highest combustible level, 85% of adjusted minimum design concentration retained",
+            "The turnover package carries the clean agent acceptance with door fan report (NFPA 2001) — it has to be the room as turned over"
+          ],
+          "source": "Clean agent and CO2 › Acceptance sequence",
+          "par": 45
+        },
+        {
+          "id": "G2-scn-02-f2",
+          "kind": "why-not",
+          "prompt": "Why not run the door fan after the sequence test, once everything's wired and done?",
+          "beats": [
+            "L4 — room comes before L4 — sequence in the acceptance sequence",
+            "A fail sends you leak-hunting under depressurization — cable and conduit penetrations, raised floor, ceiling plenum, dampers — not adding agent",
+            "If turnover proceeds, document the risk acceptance"
+          ],
+          "source": "Clean agent and CO2 › Acceptance sequence",
+          "par": 45
+        }
+      ]
     },
     "hook": "Annex C, 10 minutes, 85% — the fan finds the holes the agent would.",
     "source": "Clean agent and CO2 › Acceptance sequence",
@@ -9277,11 +9438,86 @@
       ],
       "requiresNumber": true,
       "codeRef": null,
-      "explanation": "Never just add agent — that changes concentration against NOAEL (HFC-227ea 9%, FK-5-1-12 10%) and the overpressure vent sizing. Find the leaks under depressurization, seal, retest; document the risk acceptance if turnover proceeds."
+      "explanation": "Never just add agent — that changes concentration against NOAEL (HFC-227ea 9%, FK-5-1-12 10%) and the overpressure vent sizing. Find the leaks under depressurization, seal, retest; document the risk acceptance if turnover proceeds.",
+      "followUps": [
+        {
+          "id": "G2-scn-03-f1",
+          "kind": "what-if",
+          "prompt": "Say the contractor tells you they've always added a cylinder and no AHJ ever minded.",
+          "beats": [
+            "Never just add agent — it changes concentration against NOAEL (HFC-227ea 9%, FK-5-1-12 10%) and the overpressure vent sizing",
+            "Facts in the script, criteria from the BOD, escalate on the issues log, never in the hallway",
+            "Don't argue code in the room — cite the section and resolve it after"
+          ],
+          "source": "Clean agent and CO2 › table",
+          "par": 45
+        },
+        {
+          "id": "G2-scn-03-f2",
+          "kind": "number",
+          "prompt": "Those NOAEL figures — and the inert-gas exposure limits?",
+          "beats": [
+            "NOAEL: HFC-227ea 9%, FK-5-1-12 10%",
+            "Inert gas: ≤43% → 5 min; 43–52% → 3 min; 52–62% → 30 s, unoccupied only"
+          ],
+          "source": "Clean agent and CO2 › table",
+          "par": 45
+        }
+      ]
     },
     "hook": "Another cylinder moves you toward 9 and 10 percent and past the vent — seal the room instead.",
     "source": "Commissioning technical (the 35%) › 10",
     "par": 75,
+    "confirmInEdition": false
+  },
+  {
+    "id": "G2-scn-04-r2",
+    "topicId": "G2",
+    "type": "scenario",
+    "walkthrough": true,
+    "prompt": "A clean agent room fails its door fan test a week before turnover. Walk me through it, start to turnover.",
+    "interviewerPhrasing": "A clean agent room fails its door fan test a week before turnover.",
+    "answer": {
+      "beats": [
+        "Find leaks under depressurization — smoke pencil, thermal camera",
+        "Usual paths: cable and conduit penetrations, raised floor, ceiling plenum, dampers",
+        "Seal and retest",
+        "Never just add agent — that changes concentration against NOAEL and the overpressure vent sizing",
+        "If turnover proceeds, document the risk acceptance"
+      ],
+      "requiresNumber": false,
+      "codeRef": null,
+      "explanation": "Find leaks under depressurization (smoke pencil, thermal camera): cable and conduit penetrations, raised floor, ceiling plenum, dampers. Seal and retest. Never just add agent — it changes concentration against NOAEL and the overpressure vent sizing. If turnover proceeds, document the risk acceptance.",
+      "followUps": [
+        {
+          "id": "G2-scn-04-r2-f1",
+          "kind": "what-if",
+          "prompt": "Say the owner says turnover goes ahead regardless.",
+          "beats": [
+            "If turnover proceeds, document the risk acceptance",
+            "Anything carried into operations needs a documented risk acceptance; life-safety issues close before turnover",
+            "Anything deferred gets a documented risk acceptance, an impairment entry and a fire watch"
+          ],
+          "source": "Data center commissioning language › Issues log, punch and turnover.",
+          "par": 45
+        },
+        {
+          "id": "G2-scn-04-r2-f2",
+          "kind": "number",
+          "prompt": "What does the room have to hold, and for how long?",
+          "beats": [
+            "≥10 min hold at the highest combustible level",
+            "85% of adjusted minimum design concentration retained",
+            "Door fan per NFPA 2001 Annex C"
+          ],
+          "source": "Clean agent and CO2 › table",
+          "par": 45
+        }
+      ]
+    },
+    "hook": "Depressurize and hunt — penetrations, floor, plenum, dampers — seal, retest, never more agent, and paper the risk if the date wins.",
+    "source": "Likely questions and day-of checklist › Commissioning technical (the 35%) › 10",
+    "par": 120,
     "confirmInEdition": false
   },
   {
@@ -9408,7 +9644,33 @@
         "NFPA12",
         "nfpa 12"
       ],
-      "explanation": "NFPA 12 requires a full discharge test. A supervised lockout valve on all systems unless people can't physically enter, and wherever CO2 could migrate; a pneumatic time delay and pre-discharge alarm sized to evacuation; wintergreen odorizer. 34% minimum, lethal at design concentration."
+      "explanation": "NFPA 12 requires a full discharge test. A supervised lockout valve on all systems unless people can't physically enter, and wherever CO2 could migrate; a pneumatic time delay and pre-discharge alarm sized to evacuation; wintergreen odorizer. 34% minimum, lethal at design concentration.",
+      "followUps": [
+        {
+          "id": "G3-scn-01-f1",
+          "kind": "what-if",
+          "prompt": "Say the enclosure's CO2 lockout is a plain manual valve with a tag — nothing supervised.",
+          "beats": [
+            "A supervised lockout valve is required on all systems unless people can't physically enter, and wherever CO2 could migrate",
+            "Lethal at design concentration — 34% minimum",
+            "The pneumatic time delay and pre-discharge alarm are mandatory, with the delay sized to evacuation"
+          ],
+          "source": "Clean agent and CO2 › CO2 specifics (NFPA 12)",
+          "par": 45
+        },
+        {
+          "id": "G3-scn-01-f2",
+          "kind": "why-not",
+          "prompt": "Why does CO2 get a full discharge test when clean agent doesn't?",
+          "beats": [
+            "CO2 is the exception — NFPA 12 requires a full discharge test",
+            "Clean agent acceptance proves the system can reach and hold concentration without discharging it: the door fan plus a release sequence proven with simulated actuators",
+            "CO2 on surface fires: design concentration within 1 min"
+          ],
+          "source": "Clean agent and CO2",
+          "par": 45
+        }
+      ]
     },
     "hook": "Discharge it for real, lock it out for real — 34% and nobody inside.",
     "source": "Clean agent and CO2 › CO2 specifics (NFPA 12)",
@@ -9548,7 +9810,33 @@
       ],
       "requiresNumber": false,
       "codeRef": null,
-      "explanation": "Prove the inputs to the design (volume, openings, quantity, clearances), prove the sequence with simulators, and treat reconnection as a controlled procedure. Aerosol generators are single-use pyrotechnic devices, so you can't discharge at acceptance."
+      "explanation": "Prove the inputs to the design (volume, openings, quantity, clearances), prove the sequence with simulators, and treat reconnection as a controlled procedure. Aerosol generators are single-use pyrotechnic devices, so you can't discharge at acceptance.",
+      "followUps": [
+        {
+          "id": "G4-scn-01-f1",
+          "kind": "what-if",
+          "prompt": "Say the installer wants to ring out the release circuit with a multimeter before you simulate anything.",
+          "beats": [
+            "Never megger or continuity-test with a meter that can push enough current to fire a generator",
+            "Measure circuit values with the manufacturer's approved low-current tester only",
+            "L4 — sequence with generators disconnected: replace every generator with a listed test device or simulator"
+          ],
+          "source": "Condensed aerosol",
+          "par": 45
+        },
+        {
+          "id": "G4-scn-01-f2",
+          "kind": "why-not",
+          "prompt": "Why is reconnection the riskiest step? The test's over by then.",
+          "beats": [
+            "Panel in normal with no active outputs, verified by a second person, before generators reconnect",
+            "Final check with the approved tester",
+            "Generators are single-use pyrotechnic devices, and the discharge is hot — there's no undoing a release"
+          ],
+          "source": "Condensed aerosol",
+          "par": 45
+        }
+      ]
     },
     "hook": "Prove the design, prove the sequence, control the reconnect — the generator only fires once.",
     "source": "Condensed aerosol › Likely question",
@@ -9576,7 +9864,22 @@
         "NFPA2010",
         "nfpa 2010"
       ],
-      "explanation": "Unoccupied enclosures only — generator and turbine enclosures, electrical cabinets, some battery cabinets per listing; NFPA 2010 restricts use in normally occupied spaces. Traps: no megger or continuity meter that can fire a generator; residue cleanup and ventilation in the EOP; a hot discharge near cabling is a design defect."
+      "explanation": "Unoccupied enclosures only — generator and turbine enclosures, electrical cabinets, some battery cabinets per listing; NFPA 2010 restricts use in normally occupied spaces. Traps: no megger or continuity meter that can fire a generator; residue cleanup and ventilation in the EOP; a hot discharge near cabling is a design defect.",
+      "followUps": [
+        {
+          "id": "G4-scn-02-f1",
+          "kind": "find-out",
+          "prompt": "You hedged on the occupied-space wording. What would you check, and what do you do on site meanwhile?",
+          "beats": [
+            "Say it straight: \"I'd confirm NFPA 2010's wording on normally occupied spaces in the edition the site uses\" — their guide scores \"here's how I'd find out\" above a guess",
+            "NFPA 2010 restricts use in normally occupied spaces — confirm the edition's wording before an interviewer asks",
+            "Meanwhile it stays in unoccupied enclosures: generator and turbine enclosures, electrical cabinets, some battery cabinets per listing",
+            "Name the section you'd check before writing the script; the script cites the code / BOD sections each acceptance criterion comes from"
+          ],
+          "source": "Read this first",
+          "par": 45
+        }
+      ]
     },
     "hook": "Hot, cloudy, dirty and single-shot — keep it out of occupied rooms and keep the megger away.",
     "source": "Condensed aerosol › Traps",
@@ -9789,7 +10092,34 @@
       ],
       "requiresNumber": true,
       "codeRef": null,
-      "explanation": "Four beats: verify install against the calc; set thresholds to the alarm philosophy; transport-time test every pipe with a pass criterion (never more than 120 s); re-verify flow with cooling in failure modes at IST."
+      "explanation": "Four beats: verify install against the calc; set thresholds to the alarm philosophy; transport-time test every pipe with a pass criterion (never more than 120 s); re-verify flow with cooling in failure modes at IST.",
+      "followUps": [
+        {
+          "id": "G5-scn-01-f1",
+          "kind": "own-it",
+          "prompt": "You've done this one for real, haven't you?",
+          "beats": [
+            "Twenty VESDA units, VLP to VESDA-E, and there were no drawings — I pulled the configuration from all twenty detectors, and every one was still at factory defaults",
+            "Counted every sampling hole and paced every pipe run — only four variations, so I modeled four networks in ASPIRE instead of twenty, about eighty percent less design work",
+            "We set new thresholds, normalized airflow and measured transport time on every pipe; the high-flow faults turned out to be damaged pipe above the ceiling, which we repaired",
+            "Fire 1 to 0.0625 %/ft and Fire 2 to 1 %/ft for very early detection — Alert and Action call Ops, Fire 1 is the building alarm, Fire 2 releases"
+          ],
+          "source": "Story 2 — A data center with no drawings",
+          "par": 45
+        },
+        {
+          "id": "G5-scn-01-f2",
+          "kind": "what-if",
+          "prompt": "Say one pipe's transport time comes in over the calc but under 120 seconds.",
+          "beats": [
+            "The criterion is within the calculated transport time — never more than 120 seconds (NFPA 72) is the ceiling, not the pass",
+            "The as-built pipe network has to match the design calc: pipe lengths, bends, hole sizes and locations, capillary drops and end caps",
+            "Every finding gets an ID, system, level found, severity, owner, due date and closure evidence"
+          ],
+          "source": "Aspirating smoke detection (ASD)",
+          "par": 45
+        }
+      ]
     },
     "hook": "Calc · philosophy · 120 s on every pipe · cooling in failure modes.",
     "source": "Aspirating smoke detection (ASD) › Likely question",
@@ -9812,11 +10142,86 @@
       ],
       "requiresNumber": false,
       "codeRef": null,
-      "explanation": "Pressure-zone mismatch between sampling and exhaust is the most common source of flow faults — return the exhaust to the sampled zone. High-flow faults point at damaged pipe (Story 2: above the ceiling). Re-check flow with CRAHs in every mode and normalize only after pipes are clean and HVAC is in its normal mode."
+      "explanation": "Pressure-zone mismatch between sampling and exhaust is the most common source of flow faults — return the exhaust to the sampled zone. High-flow faults point at damaged pipe (Story 2: above the ceiling). Re-check flow with CRAHs in every mode and normalize only after pipes are clean and HVAC is in its normal mode.",
+      "followUps": [
+        {
+          "id": "G5-scn-02-f1",
+          "kind": "why-not",
+          "prompt": "Why not just re-normalize the airflow every time it faults?",
+          "beats": [
+            "Normalize airflow only after pipes are clean and HVAC runs in its normal mode",
+            "Pressure-zone mismatch between sampling and exhaust is the most common source of flow faults — fix the cause: return the exhaust to the sampled zone",
+            "The faults themselves have to work: verify each pipe's flow reading, then force low-flow (block the inlet) and high-flow (break the pipe) faults"
+          ],
+          "source": "Aspirating smoke detection (ASD)",
+          "par": 45
+        },
+        {
+          "id": "G5-scn-02-f2",
+          "kind": "what-if",
+          "prompt": "Say the faults only show up when one CRAH is down.",
+          "beats": [
+            "L5 — re-check flow with CRAHs in every mode, including one unit failed",
+            "Detector exhaust returned to the sampled zone if it sits in a different pressure zone (under-floor, duct, plenum)",
+            "Normalize airflow only after pipes are clean and HVAC runs in its normal mode"
+          ],
+          "source": "Aspirating smoke detection (ASD) › Acceptance sequence",
+          "par": 45
+        }
+      ]
     },
     "hook": "Exhaust in the wrong pressure zone, a broken pipe above the ceiling, or a CRAH mode nobody tested.",
     "source": "Aspirating smoke detection (ASD) › Data center points to make",
     "par": 75,
+    "confirmInEdition": false
+  },
+  {
+    "id": "G5-scn-03-r2",
+    "topicId": "G5",
+    "type": "scenario",
+    "walkthrough": true,
+    "prompt": "Walk me through commissioning VESDA in a contained data hall — the four beats, with what you actually do at each level.",
+    "interviewerPhrasing": "How would you commission VESDA in a contained data hall?",
+    "answer": {
+      "beats": [
+        "Verify install against the calc — L2: pipe lengths, bends, hole sizes and locations, capillary drops and end caps all match the design calc; sampling holes labeled; detector exhaust returned to the sampled zone if it sits in a different pressure zone",
+        "Set thresholds to the alarm philosophy — L3: load Alert, Action, Fire 1, Fire 2 per the BOD; Alert and Action call Ops to investigate, Fire 1 is the building alarm, Fire 2 is the pre-action or clean agent release input; normalize airflow only after pipes are clean and HVAC runs in its normal mode; run the learn period under real operating conditions, not construction dust",
+        "Transport-time test every pipe with a pass criterion — L4: smoke at the end-cap or most remote hole of every pipe; time to response vs the calc and vs 120 s; verify each pipe's flow reading, then force low-flow and high-flow faults; each alarm level and trouble reaches the FACP as its own point",
+        "Re-verify flow with cooling in failure modes at IST — L5: re-check flow with CRAHs in every mode, including one unit failed; smoke-test inside hot-aisle containment with load banks running"
+      ],
+      "requiresNumber": true,
+      "codeRef": null,
+      "explanation": "Verify install against the calc (L2) → set thresholds to the alarm philosophy and normalize on clean pipes with HVAC in its normal mode (L3) → transport-time test every pipe against the calc and 120 s, then force the flow faults (L4) → re-verify flow with CRAHs in every mode, including one failed, and smoke inside containment with load banks running (L5).",
+      "followUps": [
+        {
+          "id": "G5-scn-03-r2-f1",
+          "kind": "why-not",
+          "prompt": "Why not run the learn during construction and get it out of the way?",
+          "beats": [
+            "A learn done during construction sets a dirty baseline and desensitizes the system",
+            "Re-learn after final clean and after load banks leave",
+            "Run the learn period under real operating conditions, not construction dust"
+          ],
+          "source": "Aspirating smoke detection (ASD) › Data center points to make",
+          "par": 45
+        },
+        {
+          "id": "G5-scn-03-r2-f2",
+          "kind": "number",
+          "prompt": "What's the transport-time ceiling, and what's Fire 2 for?",
+          "beats": [
+            "Never more than 120 seconds (NFPA 72) — and within the calculated transport time",
+            "Fire 2 (or a second detector) is the pre-action or clean agent release input",
+            "Fire 1 is the building alarm; Alert and Action call Ops to investigate"
+          ],
+          "source": "Aspirating smoke detection (ASD)",
+          "par": 45
+        }
+      ]
+    },
+    "hook": "Calc, philosophy, 120 seconds on every pipe, then cooling in failure modes — four beats, four levels.",
+    "source": "Aspirating smoke detection (ASD) › Likely question",
+    "par": 120,
     "confirmInEdition": false
   },
   {
@@ -9972,7 +10377,33 @@
         "NFPA 72 table",
         "nfpa 72"
       ],
-      "explanation": "At 30 ACH the table gives 250 ft² per detector or hole (900 at 7.5 or fewer); each sampling hole counts as a spot detector for spacing. Sample where smoke goes — CRAH returns, containment, return plenum — plus area coverage (NFPA 72 — confirm the table number in your edition)."
+      "explanation": "At 30 ACH the table gives 250 ft² per detector or hole (900 at 7.5 or fewer); each sampling hole counts as a spot detector for spacing. Sample where smoke goes — CRAH returns, containment, return plenum — plus area coverage (NFPA 72 — confirm the table number in your edition).",
+      "followUps": [
+        {
+          "id": "G6-scn-01-f1",
+          "kind": "find-out",
+          "prompt": "You hedged on the table number. What would you check, and what do you do on site meanwhile?",
+          "beats": [
+            "Say it straight: \"I'd confirm the table number in the NFPA 72 edition the site uses\" — their guide scores \"here's how I'd find out\" above a guess",
+            "High airflow cuts spacing (NFPA 72 — confirm table number in your edition): the numbers stand, the table number is what's unconfirmed",
+            "Name the section you'd check before writing the script; the script cites the code / BOD sections each acceptance criterion comes from"
+          ],
+          "source": "Read this first",
+          "par": 45
+        },
+        {
+          "id": "G6-scn-01-f2",
+          "kind": "number",
+          "prompt": "At 60 air changes an hour, how much floor per hole? And at 7.5?",
+          "beats": [
+            "60 air changes / hour → 125 ft² per detector or hole",
+            "7.5 or fewer → 900 ft²",
+            "Each sampling hole is treated as a spot-type smoke detector for spacing (NFPA 72 air-sampling provisions)"
+          ],
+          "source": "Aspirating smoke detection (ASD) › table",
+          "par": 45
+        }
+      ]
     },
     "hook": "30 changes an hour buys you 250 square feet a hole — and put the holes where the air goes.",
     "source": "Aspirating smoke detection (ASD) › High airflow cuts spacing",
