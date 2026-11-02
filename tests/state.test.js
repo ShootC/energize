@@ -6,7 +6,7 @@ import {
 } from '../src/engine/state.js';
 import { gradeCard } from '../src/engine/grader.js';
 import { readiness } from '../src/engine/rating.js';
-import { shippedTopics, sampleCards, MemoryStorage } from './helpers.js';
+import { shippedTopics, sampleCards, MemoryStorage, readText } from './helpers.js';
 
 const cards = sampleCards();
 const byId = Object.fromEntries(cards.map((c) => [c.id, c]));
@@ -18,7 +18,66 @@ test('createState imports topics.json as the starting state', () => {
   assert.deepEqual(s.history, []);
   assert.equal(s.xp, 0);
   assert.deepEqual(s.energized, []);
-  assert.deepEqual(s.settings, { cardsPerShift: null, sound: true, haptics: true });
+  assert.deepEqual(s.settings, { cardsPerShift: null, sound: true, haptics: true, nextRound: { label: 'Round 2', focus: 'technical', date: null }, interrupt: null });
+});
+
+// tests/fixtures/state-v1.0.json was exported by the v1.0 engine (before the round-2
+// changes): P2 Locked In over two days, a C1 miss, two completed shifts, Blitz best 7,
+// 10-card shifts, sound off. It has no nextRound setting.
+const V1 = readText('tests/fixtures/state-v1.0.json');
+
+function assertV1Intact(state) {
+  const v1 = JSON.parse(V1);
+  assert.deepEqual(state.topics, v1.topics, 'ratings untouched');
+  assert.deepEqual(state.history, v1.history, 'history untouched');
+  assert.equal(state.xp, 161);
+  assert.equal(state.dayStreak, 2);
+  assert.equal(state.lastShiftDate, '2026-10-25');
+  assert.equal(state.blitzBest, 7);
+  assert.deepEqual(state.energized, v1.energized);
+  assert.deepEqual(state.snapshots, v1.snapshots);
+  assert.equal(state.topics.find((t) => t.id === 'P2').rating, 'Locked In');
+  assert.equal(state.settings.cardsPerShift, 10);
+  assert.equal(state.settings.sound, false);
+  assert.deepEqual(state.settings.nextRound, { label: 'Round 2', focus: 'technical', date: null });
+  assert.equal(state.settings.interrupt, null);
+}
+
+test('a v1.0 state.json imports with the round-2 defaults: no rating reset, history, XP and streaks intact', () => {
+  const { state, kind } = importJson(createState(shippedTopics()), V1);
+  assert.equal(kind, 'state');
+  assertV1Intact(state);
+  // The export shape is unchanged: topic records are exactly the topics.json shape.
+  assert.deepEqual(JSON.parse(exportTopics(state)), JSON.parse(V1).topics);
+  assert.deepEqual(Object.keys(JSON.parse(exportState(state))), Object.keys(JSON.parse(V1)));
+});
+
+test('a v1.0 save in localStorage loads with the round-2 defaults (a stale shift is kept, not replayed)', () => {
+  const storage = new MemoryStorage();
+  const saved = { ...JSON.parse(V1), currentShift: { date: '2026-10-25', mode: 'normal', kind: 'daily', size: 10, slots: [{ topicId: 'C1', cardId: 'C1-num-01', type: 'number', slot: 'redo', done: false }] }, createdOn: '2026-10-24' };
+  storage.setItem(STORAGE_KEY, JSON.stringify(saved));
+  const state = load(storage);
+  assertV1Intact(state);
+  assert.equal(state.currentShift.date, '2026-10-25');
+  // A partial nextRound (e.g. from a hand-edited backup) is completed with the defaults.
+  storage.setItem(STORAGE_KEY, JSON.stringify({ ...saved, settings: { ...saved.settings, nextRound: { date: '2026-11-12' } } }));
+  assert.deepEqual(load(storage).settings.nextRound, { label: 'Round 2', focus: 'technical', date: '2026-11-12' });
+});
+
+test('recordResult caps the review date at the next round’s date − 1, and keeps every follow-up layer', () => {
+  let s = createState(shippedTopics());
+  s.settings.nextRound = { label: 'Round 2', focus: 'technical', date: '2026-11-12' };
+  const card = byId['P2-num-01'];
+  s = recordResult(s, { card, grade: gradeCard(card, { fields: ['40', '24', '1.5'], codeRef: '29.2.2' }), date: '2026-11-10', cards }).state;
+  assert.equal(s.topics.find((t) => t.id === 'P2').next_review, '2026-11-11');
+  const chain = cards.find((c) => (c.answer.followUps || []).length && !c.walkthrough);
+  const a = chain.answer;
+  const grade = gradeCard(chain, { hits: a.beats.map(() => true), saidNumber: true, saidCode: true, followUps: a.followUps.map((f) => ({ hits: f.beats.map(() => true) })) });
+  s = recordResult(s, { card: chain, grade, seconds: 80, date: '2026-11-10', cards }).state;
+  const last = s.history[s.history.length - 1];
+  assert.equal(last.result, 'clean');
+  assert.deepEqual(last.layers.map((l) => l.id), ['main', ...a.followUps.map((f) => f.id)]);
+  assert.ok(last.layers.every((l) => l.result === 'clean'));
 });
 
 test('recordResult logs the card and updates the topic, readiness and XP', () => {

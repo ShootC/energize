@@ -40,3 +40,19 @@ Be strict, but frame it so progress is visible. Headline shows both sides, e.g. 
 ## Topic record shape (topics.json)
 
 `id, area, topic, day, plan_date, weight, studied, rating, points, tests, streak, last_tested, next_review, last_result`
+
+## Round 2 dates
+
+From Nov 3, 2026 the special days follow the next round's date instead of Nov 1 / Nov 2. The game keeps it in Settings as `nextRound = { label, focus, date }` (focus is technical or behavioral; date is YYYY-MM-DD or not set yet).
+
+| Before (Round 1) | Now |
+| --- | --- |
+| No review date past 2026-11-01 | No review date past the day before the round's date. With no date set, nothing is capped beyond a rolling today + 7 (no interval is longer than 4 days, so in practice no cap). |
+| Nov 1 = sweep (every topic not Locked In, up to 20 questions) | The day before the round = sweep. Technical focus sweeps technical topics only (everything except Interview); behavioral focus sweeps all topics. |
+| Nov 2 = interview-day mode | The round's date = day-of mode. Technical focus: six quick confidence questions on Locked In technical topics, one walkthrough as a 90-second warm-up, then stop and the day-of checklist. Behavioral focus: six quick Locked In questions, the 60-second intro, the hook lines of Story 1 and Story 3, then stop. Day-of answers are not graded into ratings. |
+| Oct 26–30 cutover (10-question quizzes) | Removed. |
+| After Nov 2: nothing | After the round: set the next round (label, focus, date). Ratings carry over; nothing retires. |
+
+Unchanged: the rating scale, points, intervals, streak rules and the readiness formula. Plan-date gating is off: every topic has been studied, so Not Tested topics are eligible from the first day.
+
+Readiness gains two numbers with the same formula: **technical** (every area except Interview — 54 topics) and **interview** (I1–I11). Target: technical readiness ≥ 85% by the sweep day, with no Core technical topic below Minor Refresh.

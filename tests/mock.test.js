@@ -46,8 +46,32 @@ test('every shipped mock question grades clean on a perfect answer', () => {
   const mock = readJson('src/data/mock.json');
   for (const deck of mock.decks) {
     for (const question of deck.questions) {
-      const g = gradeMockAnswer(question, { hits: question.beats.map(() => true), saidNumber: true, seconds: question.par });
+      const followUps = (question.followUps || []).map((f) => ({ hits: (f.beats || []).map(() => true) }));
+      const g = gradeMockAnswer(question, { hits: question.beats.map(() => true), saidNumber: true, seconds: question.par, followUps });
       assert.equal(g.result, 'clean', question.id);
     }
   }
+});
+
+test('round decks: follow-ups with beats are graded layers; the question takes the worst; prompt-only follow-ups are not graded', () => {
+  const question = q(['Find leaks under depressurization', 'Seal and retest'], {
+    kind: 'technical',
+    followUp: undefined,
+    followUps: [
+      { prompt: 'Why not just add agent?', beats: ['NOAEL', 'vent sizing'], kind: 'why-not' },
+      { prompt: 'Have you dealt with that yourself?' },
+    ],
+  });
+  const clean = gradeMockAnswer(question, { hits: [true, true], seconds: 80, followUps: [{ hits: [true, true] }] });
+  assert.equal(clean.result, 'clean');
+  assert.deepEqual(clean.layers.map((l) => l.result), ['clean', 'clean']);
+  const slipped = gradeMockAnswer(question, { hits: [true, true], seconds: 80, followUps: [{ hits: [true, false] }] });
+  assert.equal(slipped.result, 'slipped');
+  assert.match(slipped.note, /follow-up 1/);
+  // Beats are counted across the layers for the weakest-answer ranking.
+  assert.equal(slipped.hit, 3);
+  assert.equal(slipped.beats, 4);
+  const missed = gradeMockAnswer(question, { hits: [true, true], seconds: 80, followUps: [{ hits: [false, false] }] });
+  assert.equal(missed.result, 'missed');
+  assert.equal(missed.framework, false);
 });

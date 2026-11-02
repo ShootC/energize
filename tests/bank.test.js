@@ -60,9 +60,10 @@ test('every topic has cards within the spec range, ≥3 types on Core, and an in
   }
 });
 
-test('every card grades clean on its own model answer', () => {
+test('every card grades clean on its own model answer (every follow-up layer too)', () => {
   for (const card of bank) {
-    const g = gradeCard(card, perfect(card));
+    const response = { ...perfect(card), followUps: (card.answer.followUps || []).map((f) => ({ hits: f.beats.map(() => true) })) };
+    const g = gradeCard(card, response);
     assert.equal(g.result, 'clean', `${card.id}: ${g.note}`);
   }
 });

@@ -5,12 +5,16 @@
 //   node validate.js src/data/mock.json             mock decks ({ decks: [] })
 //   node validate.js <file> --strict                warnings fail too
 //
+// Round 2 fields are checked too: answer.followUps (id <card>-f<n>, kind, prompt, beats,
+// source, par; find-out only on confirmInEdition cards), walkthrough, ladder,
+// answer.dontSay, -r2 ids, and mock decks with a round (r2 | r3).
+//
 // Exit code 0 = clean (warnings allowed unless --strict), 1 = errors.
 
 import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { validateBank, validateMock } from './src/engine/schema.js';
+import { validateBank, validateMock, EXTRA_SOURCES } from './src/engine/schema.js';
 import { extractHeadings } from './tools/markdown.js';
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
@@ -46,6 +50,7 @@ function main(argv) {
       console.log(`\n${f}`);
       for (const hd of extractHeadings(readFileSync(join(ROOT, f), 'utf8'))) console.log(`${'  '.repeat(hd.level - 1)}${hd.text}`);
     }
+    console.log(`\nalso accepted as a source's first segment\n${EXTRA_SOURCES.join('\n')}`);
     return 0;
   }
   if (!args.length) {

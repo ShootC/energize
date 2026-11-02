@@ -219,6 +219,90 @@ test('every sample card grades its own answer clean', () => {
       story: () => ({ hits: a.beats.map(() => true), seconds: 100 }),
       defect: () => ({ index: a.defectIndex }),
     }[card.type]();
+    response.followUps = (a.followUps || []).map((f) => ({ hits: f.beats.map(() => true) }));
     assert.equal(gradeCard(card, response).result, 'clean', card.id);
   }
+});
+
+// ---------- follow-up chains (GAME_SPEC_ROUND2 §5) ----------
+
+const chainCard = () => ({
+  id: 'X1-scn-01',
+  topicId: 'X1',
+  type: 'scenario',
+  answer: {
+    beats: ['a', 'b', 'c'],
+    requiresNumber: false,
+    codeRef: null,
+    followUps: [
+      { id: 'X1-scn-01-f1', kind: 'why-not', prompt: 'Why not just…?', beats: ['x', 'y'], source: 's', par: 45 },
+      { id: 'X1-scn-01-f2', kind: 'what-if', prompt: 'Say it fails again…', beats: ['p', 'q', 'r'], source: 's', par: 45 },
+    ],
+  },
+});
+const all = (n) => Array(n).fill(true);
+
+test('chain: clean, clean, slipped → the card slips (the worst layer), every layer recorded', () => {
+  const g = gradeCard(chainCard(), { hits: all(3), followUps: [{ hits: all(2) }, { hits: [true, true, false] }] });
+  assert.equal(g.result, 'slipped');
+  assert.equal(g.framework, true);
+  assert.deepEqual(g.layers.map((l) => [l.id, l.result]), [['main', 'clean'], ['X1-scn-01-f1', 'clean'], ['X1-scn-01-f2', 'slipped']]);
+  assert.match(g.note, /follow-up 2 \(what-if\)/);
+  assert.deepEqual(g.layers[2], { id: 'X1-scn-01-f2', kind: 'what-if', result: 'slipped', framework: true, hit: 2, beats: 3, graded: true });
+});
+
+test('chain: all clean → clean; a framework-only follow-up → missed with framework; a wrong main → Not Ready level', () => {
+  assert.equal(gradeCard(chainCard(), { hits: all(3), followUps: [{ hits: all(2) }, { hits: all(3) }] }).result, 'clean');
+  const fw = gradeCard(chainCard(), { hits: all(3), followUps: [{ hits: all(2) }, { hits: [true, false, false] }] });
+  assert.equal(fw.result, 'missed');
+  assert.equal(fw.framework, false, '1 of 3 is not framework right');
+  const nothing = gradeCard(chainCard(), { hits: all(3), followUps: [{ hits: [false, false] }, { hits: all(3) }] });
+  assert.equal(nothing.result, 'missed', 'a layer with nothing hit is a miss, never a slip');
+  assert.equal(nothing.framework, false);
+  const fw2 = gradeCard(chainCard(), { hits: all(3), followUps: [{ hits: [true, false] }, { hits: [true, true, false] }] });
+  // f1: 1 of 2 missing → slipped; f2: 1 missing → slipped; worst = slipped.
+  assert.equal(fw2.result, 'slipped');
+  const wrongMain = gradeCard(chainCard(), { hits: [false, false, false], followUps: [{ hits: all(2) }, { hits: all(3) }] });
+  assert.equal(wrongMain.result, 'missed');
+  assert.equal(wrongMain.framework, false);
+  assert.equal(wrongMain.layers[0].result, 'missed');
+});
+
+test('chain: unanswered layers are misses; fill-in-only layers are shown, not graded', () => {
+  const g = gradeCard(chainCard(), { hits: all(3) });
+  assert.equal(g.result, 'missed');
+  const c = chainCard();
+  c.answer.followUps[1].beats = [{ label: 'the closest thing I have done', fillIn: true }];
+  const h = gradeCard(c, { hits: all(3), followUps: [{ hits: all(2) }, { hits: [] }] });
+  assert.equal(h.result, 'clean');
+  assert.equal(h.layers[2].graded, false);
+});
+
+test('a card without followUps grades exactly as before (no layers key)', () => {
+  const c = chainCard();
+  delete c.answer.followUps;
+  const g = gradeCard(c, { hits: all(3) });
+  assert.equal(g.result, 'clean');
+  assert.equal('layers' in g, false);
+  // The day-of warm-up grades the main answer only.
+  const main = gradeCard(chainCard(), { hits: all(3) }, { followUps: false });
+  assert.equal(main.result, 'clean');
+  assert.equal('layers' in main, false);
+});
+
+test('chain on a story card: the main layer keeps the story rules (time window, lesson)', () => {
+  const story = {
+    id: 'X1-sty-01',
+    topicId: 'X1',
+    type: 'story',
+    answer: {
+      beats: [{ label: 'Hook', kind: 'hook' }, { label: 'Lesson', kind: 'lesson' }],
+      followUps: [{ id: 'X1-sty-01-f1', kind: 'drill', prompt: 'Why that call?', beats: ['because'], source: 's', par: 20 }],
+    },
+  };
+  assert.equal(gradeCard(story, { hits: [true, true], seconds: 100, followUps: [{ hits: [true] }] }).result, 'clean');
+  const long = gradeCard(story, { hits: [true, true], seconds: 130, followUps: [{ hits: [true] }] });
+  assert.equal(long.result, 'slipped');
+  assert.equal(long.layers[0].result, 'slipped');
+  assert.equal(gradeCard(story, { hits: [true, true], seconds: 100, followUps: [{ hits: [false] }] }).result, 'missed');
 });

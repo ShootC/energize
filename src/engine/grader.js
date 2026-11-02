@@ -9,6 +9,10 @@ export const CARD_TYPES = ['number', 'order', 'matrix', 'scenario', 'story', 'de
 export const SELF_GRADED = ['scenario', 'story'];
 export const OUT_LOUD = ['scenario', 'story'];
 
+// Follow-up chains (GAME_SPEC_ROUND2 §5) live on scenario and story cards.
+export const CHAIN_TYPES = ['scenario', 'story'];
+export const FOLLOW_UP_KINDS = ['why-not', 'what-if', 'number', 'own-it', 'find-out', 'drill'];
+
 export const DEFAULT_MATRIX_OPTIONS = ['●', '—', 'per BOD'];
 export const DEFAULT_STORY_TIMING = { min: 90, max: 120, limit: 150 };
 
@@ -284,8 +288,56 @@ const GRADERS = {
   defect: gradeDefect,
 };
 
-export function gradeCard(card, response) {
+// ---------- follow-up chains ----------
+
+export function followUpsOf(card) {
+  const f = card && CHAIN_TYPES.includes(card.type) && card.answer && card.answer.followUps;
+  return Array.isArray(f) ? f : [];
+}
+
+// One follow-up layer, graded like a scenario on its own beats: all = clean, one missing =
+// slipped, more = missed (framework if at least half were hit). Nothing hit is a miss even
+// on a one-beat layer. A layer with only fill-in beats is shown but not graded.
+export function gradeLayer(followUp, response = {}) {
+  const beats = gradedBeats(followUp.beats || []);
+  const hits = response.hits || [];
+  const hit = beats.filter(({ i }) => hits[i]).length;
+  const missing = beats.length - hit;
+  const detail = { hit, beats: beats.length };
+  if (!beats.length) return grade('clean', true, 'nothing to grade', detail, { graded: false });
+  if (missing === 0) return grade('clean', true, 'clean', detail, { graded: true });
+  const note = `${missing} beat${missing > 1 ? 's' : ''} missed`;
+  if (missing === 1 && hit > 0) return grade('slipped', true, `slipped: ${note}`, detail, { graded: true });
+  return grade('missed', hit > 0 && hit >= Math.ceil(beats.length / 2), `missed: ${note}`, detail, { graded: true });
+}
+
+const LAYER_LEVEL = (g) => (g.result === 'clean' ? 3 : g.result === 'slipped' ? 2 : g.framework ? 1 : 0);
+
+// The card's result is its worst layer; every layer is kept for history and the result screen.
+function gradeChain(card, main, response) {
+  const given = response.followUps || [];
+  const layers = [
+    { id: 'main', kind: 'main', result: main.result, framework: main.framework, hit: main.detail?.hit ?? null, beats: main.detail?.beats ?? null, graded: true },
+    ...followUpsOf(card).map((f, k) => {
+      const g = gradeLayer(f, given[k]);
+      return { id: f.id, kind: f.kind, result: g.result, framework: g.framework, hit: g.detail.hit, beats: g.detail.beats, graded: g.graded, note: g.note };
+    }),
+  ];
+  let worst = 0;
+  layers.forEach((l, i) => {
+    if (l.graded && LAYER_LEVEL(l) < LAYER_LEVEL(layers[worst])) worst = i;
+  });
+  const w = layers[worst];
+  const note = worst === 0 ? main.note : `${w.result}: follow-up ${worst} (${w.kind}) — ${w.note.replace(/^\w+: /, '')}`;
+  for (const l of layers) delete l.note;
+  return { ...main, result: w.result, framework: w.result === 'missed' ? w.framework : true, note, layers };
+}
+
+// `followUps: false` grades the main answer only (the day-of warm-up skips the chain).
+export function gradeCard(card, response = {}, { followUps = true } = {}) {
   const g = GRADERS[card.type];
   if (!g) throw new Error(`No grader for card type ${JSON.stringify(card.type)}`);
-  return g(card, response);
+  const main = g(card, response);
+  if (!followUps || !followUpsOf(card).length) return main;
+  return gradeChain(card, main, response);
 }

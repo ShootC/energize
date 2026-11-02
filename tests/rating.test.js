@@ -1,10 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  POINTS, INTERVAL_DAYS, WEIGHTS, REVIEW_CAP, applySession, nextReview, readiness, weightedReadiness,
+  POINTS, INTERVAL_DAYS, WEIGHTS, applySession, readiness, weightedReadiness,
   shiftHeadline, xpForResult, cleanCardsRequired, sessionOutcome, formatPercent,
 } from '../src/engine/rating.js';
-import { addDays } from '../src/engine/dates.js';
 import { shippedTopics, topic, result } from './helpers.js';
 
 const TODAY = '2026-10-24';
@@ -13,7 +12,6 @@ test('rating ladder: points and review intervals match procedure-notes', () => {
   assert.deepEqual(POINTS, { 'Locked In': 100, 'Minor Refresh': 75, 'Needs Improvement': 40, 'Not Ready': 10, 'Not Tested': 0 });
   assert.deepEqual(INTERVAL_DAYS, { 'Locked In': 4, 'Minor Refresh': 2, 'Needs Improvement': 1, 'Not Ready': 1 });
   assert.deepEqual(WEIGHTS, { Core: 3, Support: 2, Light: 1 });
-  assert.equal(REVIEW_CAP, '2026-11-01');
 });
 
 test('a clean session with streak 1 → Minor Refresh, +2 days', () => {
@@ -114,21 +112,7 @@ test('imported topic already quizzed today by the tracker: same session, no doub
   assert.equal(worse.tests, 3);
 });
 
-test('nothing ever schedules past 2026-11-01', () => {
-  for (let d = '2026-10-20'; d <= '2026-11-05'; d = addDays(d, 1)) {
-    for (const r of ['Locked In', 'Minor Refresh', 'Needs Improvement', 'Not Ready']) {
-      assert.ok(nextReview(r, d) <= '2026-11-01', `${r} on ${d} → ${nextReview(r, d)}`);
-    }
-  }
-  assert.equal(nextReview('Locked In', '2026-10-30'), '2026-11-01');
-  assert.equal(nextReview('Minor Refresh', '2026-10-31'), '2026-11-01');
-  assert.equal(nextReview('Needs Improvement', '2026-11-01'), '2026-11-01');
-  assert.equal(nextReview('Locked In', '2026-10-28'), '2026-11-01');
-  assert.equal(nextReview('Locked In', '2026-10-27'), '2026-10-31');
-  const t = applySession(topic({ streak: 1, rating: 'Minor Refresh', last_tested: '2026-10-29' }), [result('a', 'clean', { date: '2026-10-31' }), result('b', 'clean', { date: '2026-10-31' })], '2026-10-31');
-  assert.equal(t.rating, 'Locked In');
-  assert.equal(t.next_review, '2026-11-01');
-});
+// The review cap (date − 1, or a rolling + 7 with no date) is tested in round.test.js.
 
 test('last_result is 12 words max', () => {
   const t = applySession(topic(), [result('a', 'missed', { framework: true, note: 'one two three four five six seven eight nine ten eleven twelve thirteen fourteen' })], TODAY);
@@ -162,6 +146,47 @@ test('readiness for the shipped topics.json matches the hand computation', () =>
   // Every Core topic except C3, C5, S4 is below Minor Refresh.
   assert.equal(r.coreBelowMinor.length, 39);
   assert.equal(r.targetMet, false);
+});
+
+// Round 2 (GAME_SPEC_ROUND2 §3), the same formula over two slices of the shipped topics.json:
+//   technical = every area except Interview: 54 topics, 33 Core, 15 Support, 6 Light
+//     → Σ w·100 = (99 + 30 + 6) × 100 = 13500. Tested: C1 C2 C4 C7 S2 S3 at Needs
+//     Improvement and C3 C5 S4 at Minor Refresh, all Core → 3 × (6 × 40 + 3 × 75) = 1395.
+//     1395 / 13500 = 10.33 %, 9 of 54 tested; 30 Core technical topics below Minor Refresh.
+//   interview = I1–I11: 9 Core, 2 Support → Σ w·100 = (27 + 4) × 100 = 3100. Tested: I3 at
+//     Needs Improvement → 3 × 40 = 120. 120 / 3100 = 3.87 %, 1 of 11 tested.
+//   The slices add back up to overall: 1395 + 120 = 1515, 13500 + 3100 = 16600.
+test('technical readiness leaves out I1–I11; interview readiness is I1–I11 only (hand-computed)', () => {
+  const r = readiness(shippedTopics());
+  assert.equal(r.technical.earned, 1395);
+  assert.equal(r.technical.possible, 13500);
+  assert.equal(r.technical.value, 1395 / 13500);
+  assert.equal(r.technical.tested, 9);
+  assert.equal(r.technical.total, 54);
+  assert.equal(formatPercent(r.technical.value), '10.3%');
+  assert.equal(r.technical.coreBelowMinor.length, 30);
+  assert.ok(!r.technical.coreBelowMinor.some((id) => id.startsWith('I')));
+  assert.equal(r.technical.targetMet, false);
+  assert.equal(r.interview.earned, 120);
+  assert.equal(r.interview.possible, 3100);
+  assert.equal(r.interview.value, 120 / 3100);
+  assert.equal(r.interview.tested, 1);
+  assert.equal(r.interview.total, 11);
+  assert.equal(formatPercent(r.interview.value), '3.9%');
+  // Overall and on tested are exactly as before.
+  assert.equal(r.overall, 1515 / 16600);
+  assert.equal(r.onTested, 0.505);
+  assert.equal(r.technical.earned + r.interview.earned, r.earned);
+});
+
+test('technical target: ≥ 85% technical and no Core technical topic below Minor Refresh (Interview ignored)', () => {
+  const ts = shippedTopics().map((t) => (t.area === 'Interview' ? { ...t, rating: 'Not Ready' } : { ...t, rating: 'Locked In' }));
+  const r = readiness(ts);
+  assert.equal(r.technical.value, 1);
+  assert.equal(r.technical.targetMet, true);
+  assert.equal(r.targetMet, false);
+  const one = ts.map((t) => (t.id === 'K2' ? { ...t, rating: 'Needs Improvement' } : t));
+  assert.equal(readiness(one).technical.targetMet, false);
 });
 
 test('readiness formula on a small fixture', () => {

@@ -235,5 +235,102 @@
   "source": "Story 1 — Three occupied towers, one cutover",
   "par": 120,
   "confirmInEdition": false
+ },
+ {
+  "id": "G2-scn-01-r2",
+  "topicId": "G2",
+  "type": "scenario",
+  "prompt": "A clean agent room fails its door fan test a week before turnover. What do you do?",
+  "interviewerPhrasing": "A clean agent room fails its door fan test a week before turnover.",
+  "answer": {
+   "beats": [
+    "Find leaks under depressurization (smoke pencil, thermal camera)",
+    "Where: cable and conduit penetrations, raised floor, ceiling plenum, dampers",
+    "Seal and retest",
+    "Never just add agent — that changes concentration against NOAEL and the overpressure vent sizing",
+    "If turnover proceeds, document the risk acceptance"
+   ],
+   "requiresNumber": false,
+   "codeRef": null,
+   "explanation": "Find leaks under depressurization (smoke pencil, thermal camera): cable and conduit penetrations, raised floor, ceiling plenum, dampers. Seal and retest. Never just add agent — it changes concentration against NOAEL and the overpressure vent sizing. If turnover proceeds, document the risk acceptance.",
+   "followUps": [
+    {
+     "id": "G2-scn-01-r2-f1",
+     "kind": "why-not",
+     "prompt": "Okay, but why not just add more agent and call it done?",
+     "beats": [
+      "It changes the concentration against NOAEL",
+      "It changes the overpressure vent sizing"
+     ],
+     "source": "Commissioning technical (the 35%) › 10",
+     "par": 45
+    },
+    {
+     "id": "G2-scn-01-r2-f2",
+     "kind": "number",
+     "prompt": "What does the door fan have to show to pass, and where is that from?",
+     "beats": [
+      "≥10 min hold at the highest combustible level",
+      "85% of adjusted minimum design concentration retained",
+      "Door fan per NFPA 2001 Annex C"
+     ],
+     "source": "Clean agent and CO2",
+     "par": 45
+    }
+   ]
+  },
+  "hook": "Penetrations, floor, plenum, dampers — seal, retest, 10 minutes at 85%.",
+  "source": "Commissioning technical (the 35%) › 10",
+  "par": 90,
+  "confirmInEdition": false
+ },
+ {
+  "id": "E2-scn-01-r2",
+  "topicId": "E2",
+  "type": "scenario",
+  "walkthrough": true,
+  "prompt": "Walk me through the pull-the-plug IST, start to restore.",
+  "interviewerPhrasing": "How do you test fire alarm through a utility failure?",
+  "answer": {
+   "beats": [
+    "Halls at load-bank heat; fire alarm normal. Then repeat with a fire scenario already in alarm",
+    "Open the utility main — or trip a generation block on an islanded campus",
+    "Time the transfer and walk every load in the table",
+    "Repeat with one generator failed (N+1) and with the fire pump running",
+    "Restore normal power. Every system should return to normal without a manual reset; log any that don't"
+   ],
+   "requiresNumber": false,
+   "codeRef": null,
+   "explanation": "The L5 pull-the-plug test in order: halls at load-bank heat with fire alarm normal (then again with a fire scenario already in alarm), open the utility main or trip a generation block, time the transfer and walk every load, repeat N+1 and with the fire pump running, then restore — every system back to normal without a manual reset.",
+   "followUps": [
+    {
+     "id": "E2-scn-01-r2-f1",
+     "kind": "what-if",
+     "prompt": "Say the campus is islanded — there's no utility to drop. What changes?",
+     "beats": [
+      "Trip a generation block instead of opening the utility main",
+      "\"Normal\" and \"alternate\" sources have to be defined with the AHJ before you can write the transfer test"
+     ],
+     "source": "Emergency power interface",
+     "par": 45
+    },
+    {
+     "id": "E2-scn-01-r2-f2",
+     "kind": "number",
+     "prompt": "What does fire alarm have to carry on secondary power, and where's that from?",
+     "beats": [
+      "24 h standby + 5 min alarm on batteries",
+      "Or an automatic-starting generator plus dedicated batteries with 4 h of capacity",
+      "NFPA 72-2019 §10.6.7.3.1 (renumbered in 2025)"
+     ],
+     "source": "Emergency power interface › Fire alarm secondary power",
+     "par": 45
+    }
+   ]
+  },
+  "hook": "Five steps, two passes (normal, then in alarm), and the panels must ride through with no lost points.",
+  "source": "Emergency power interface › The L5 pull-the-plug test",
+  "par": 120,
+  "confirmInEdition": false
  }
 ]

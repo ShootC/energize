@@ -1,15 +1,25 @@
 // questions.json / mock.json schema. Used by validate.js, build.js and tests.
 // Errors break the build; warnings are content-quality nudges (Phase 2/4).
 
-import { CARD_TYPES, DEFAULT_MATRIX_OPTIONS, normalizeCell } from './grader.js';
+import { CARD_TYPES, CHAIN_TYPES, DEFAULT_MATRIX_OPTIONS, FOLLOW_UP_KINDS, normalizeCell } from './grader.js';
 
 export const TYPE_ABBR = { number: 'num', order: 'ord', matrix: 'mat', scenario: 'scn', story: 'sty', defect: 'def' };
-export const ID_RE = /^([A-Z]\d{1,2})-(num|ord|mat|scn|sty|def)-(\d{2})$/;
+// Round-2 cards carry an -r2 suffix (P5-scn-04-r2); later rounds -r3 and so on.
+export const ID_RE = /^([A-Z]\d{1,2})-(num|ord|mat|scn|sty|def)-(\d{2})(-r\d)?$/;
 export const SOURCE_SEP = ' › ';
 export const CARD_MINIMUMS = { Core: [6, 10], Support: [4, 6], Light: [2, 3] };
 export const MIN_TYPES_CORE = 3;
+export const WALKTHROUGH_PAR = 120;
+// Sources that are not a heading in the guide or the scripts but are allowed as the first
+// segment: the debrief cards (GAME_SPEC_ROUND2 §6), and whole files for a follow-up whose
+// beats draw on a document rather than one section.
+export const EXTRA_SOURCES = ['Round 1 debrief', 'study-guide.md', 'story-scripts.md', 'round1-debrief.md'];
+export const MOCK_ROUNDS = ['r2', 'r3'];
+export const MOCK_KINDS = ['technical', 'values', 'intro', 'experience', 'close'];
 
-const CARD_KEYS = ['id', 'topicId', 'type', 'prompt', 'interviewerPhrasing', 'answer', 'hook', 'source', 'par', 'confirmInEdition'];
+const CARD_KEYS = ['id', 'topicId', 'type', 'prompt', 'interviewerPhrasing', 'answer', 'hook', 'source', 'par', 'confirmInEdition', 'walkthrough', 'ladder'];
+const FOLLOW_UP_KEYS = ['id', 'kind', 'prompt', 'beats', 'source', 'par'];
+const MULTIPLE_CHOICE = /(^|[\s(])[A-D]\)\s|\(a\)\s|\bA\.\s.*\bB\.\s|which of the following/i;
 
 const isStr = (x) => typeof x === 'string' && x.trim().length > 0;
 const isNum = (x) => typeof x === 'number' && Number.isFinite(x);
@@ -18,6 +28,42 @@ const isNum = (x) => typeof x === 'number' && Number.isFinite(x);
 // story-scripts.md (later segments may be sub-headings, bold labels or "table").
 export function sourceHeading(source) {
   return String(source || '').split(SOURCE_SEP)[0].trim();
+}
+
+function sourceKnown(source, headings) {
+  const first = sourceHeading(source);
+  return !headings || headings.has(first) || EXTRA_SOURCES.includes(first);
+}
+
+// answer.followUps on a scenario or story card: [{ id: <cardId>-f<n>, kind, prompt, beats, source, par }].
+function checkFollowUps(card, where, errors) {
+  const list = card.answer.followUps;
+  if (list == null) return;
+  if (!Array.isArray(list)) return errors.push(`${where}: answer.followUps must be an array`);
+  if (!CHAIN_TYPES.includes(card.type)) errors.push(`${where}: answer.followUps only on scenario and story cards`);
+  const seen = new Set();
+  list.forEach((f, k) => {
+    const fw = `${where} follow-up ${k + 1}`;
+    if (!f || typeof f !== 'object') return errors.push(`${fw}: not an object`);
+    for (const key of Object.keys(f)) if (!FOLLOW_UP_KEYS.includes(key)) errors.push(`${fw}: unknown key "${key}"`);
+    if (!isStr(f.id) || !new RegExp(`^${String(card.id).replace(/[-]/g, '\\-')}-f\\d+$`).test(f.id)) errors.push(`${fw}: id must be ${card.id}-f<n>`);
+    else if (seen.has(f.id)) errors.push(`${fw}: duplicate follow-up id ${f.id}`);
+    seen.add(f.id);
+    if (!FOLLOW_UP_KINDS.includes(f.kind)) errors.push(`${fw}: kind must be one of ${FOLLOW_UP_KINDS.join(', ')}`);
+    if (!isStr(f.prompt)) errors.push(`${fw}: prompt is required`);
+    else if (MULTIPLE_CHOICE.test(f.prompt)) errors.push(`${fw}: prompt reads as multiple choice — follow-ups are open recall`);
+    if (!Array.isArray(f.beats) || !f.beats.length) errors.push(`${fw}: beats needs at least one beat`);
+    else
+      f.beats.forEach((b, i) => {
+        if (typeof b === 'string') {
+          if (!isStr(b)) errors.push(`${fw}: beats[${i}] is empty`);
+        } else if (!b || typeof b !== 'object' || !isStr(b.label)) errors.push(`${fw}: beats[${i}] needs a label`);
+      });
+    if (!isStr(f.source)) errors.push(`${fw}: source is required`);
+    if (!isNum(f.par) || f.par <= 0) errors.push(`${fw}: par (seconds) must be a positive number`);
+    if (f.kind === 'find-out' && !card.confirmInEdition) errors.push(`${fw}: find-out follow-ups only on confirmInEdition cards`);
+    if (card.ladder && f.kind !== 'drill') errors.push(`${fw}: ladder cards take drill follow-ups only`);
+  });
 }
 
 function checkBeats(beats, where, errors, { objects = false } = {}) {
@@ -54,9 +100,18 @@ export function validateCard(card, { topicIds = null, headings = null } = {}) {
   if (card.interviewerPhrasing != null && !isStr(card.interviewerPhrasing)) errors.push(`${where}: interviewerPhrasing must be a non-empty string when present`);
   if (!isStr(card.hook)) errors.push(`${where}: hook is required`);
   if (!isStr(card.source)) errors.push(`${where}: source is required`);
-  else if (headings && !headings.has(sourceHeading(card.source))) errors.push(`${where}: source heading "${sourceHeading(card.source)}" is not a heading in study-guide.md or story-scripts.md`);
+  else if (!sourceKnown(card.source, headings)) errors.push(`${where}: source heading "${sourceHeading(card.source)}" is not a heading in study-guide.md or story-scripts.md`);
   if (!isNum(card.par) || card.par <= 0) errors.push(`${where}: par (seconds) must be a positive number`);
   if (card.confirmInEdition != null && typeof card.confirmInEdition !== 'boolean') errors.push(`${where}: confirmInEdition must be true or false`);
+  if (card.walkthrough != null) {
+    if (typeof card.walkthrough !== 'boolean') errors.push(`${where}: walkthrough must be true or false`);
+    else if (card.walkthrough && card.type !== 'scenario') errors.push(`${where}: walkthrough only on scenario cards`);
+    else if (card.walkthrough && card.par !== WALKTHROUGH_PAR) warnings.push(`${where}: walkthrough cards run par ${WALKTHROUGH_PAR} (has ${card.par})`);
+  }
+  if (card.ladder != null) {
+    if (typeof card.ladder !== 'boolean') errors.push(`${where}: ladder must be true or false`);
+    else if (card.ladder && card.type !== 'story') errors.push(`${where}: ladder only on story cards`);
+  }
 
   const a = card.answer;
   if (!a || typeof a !== 'object') {
@@ -69,6 +124,8 @@ export function validateCard(card, { topicIds = null, headings = null } = {}) {
   if (card.confirmInEdition && isStr(a.codeRef) && /§|\d+\.\d+/.test(a.codeRef)) {
     errors.push(`${where}: confirmInEdition cards take the standard name only in codeRef (no section number): ${a.codeRef}`);
   }
+  checkFollowUps(card, where, errors);
+  if (a.dontSay != null && !isStr(a.dontSay) && !(Array.isArray(a.dontSay) && a.dontSay.length && a.dontSay.every(isStr))) errors.push(`${where}: answer.dontSay must be a string or an array of strings`);
 
   switch (card.type) {
     case 'number': {
@@ -174,8 +231,26 @@ export function validateBank(cards, { topics = null, headings = null } = {}) {
   return { errors, warnings, counts };
 }
 
-// mock.json: { decks: [ { id, title, questions: [ { id, kind, prompt,
-// followUp, par, beats, source, topicId?, cardId? } ×5 ] } ] }.
+// mock.json: { decks: [ { id, title, round?, questions: [ { id, kind, prompt,
+// followUp | followUps[], par, beats, source, topicId?, cardId? } ] } ] }.
+// The v1 decks (no round) are 5 questions, 2 technical / 3 values, one spoken followUp
+// each. Round decks (round: r2 | r3, GAME_SPEC_ROUND2 §7) mix intro / technical /
+// experience / values / close questions; followUps[] = { prompt, beats?, kind?, par? },
+// graded as layers when they carry beats.
+function checkMockFollowUps(q, qw, errors) {
+  if (q.followUps == null) return;
+  if (!Array.isArray(q.followUps)) return errors.push(`${qw}: followUps must be an array`);
+  q.followUps.forEach((f, k) => {
+    const fw = `${qw} follow-up ${k + 1}`;
+    if (!f || typeof f !== 'object') return errors.push(`${fw}: not an object`);
+    if (!isStr(f.prompt)) errors.push(`${fw}: prompt is required`);
+    else if (MULTIPLE_CHOICE.test(f.prompt)) errors.push(`${fw}: prompt reads as multiple choice`);
+    if (f.kind != null && !FOLLOW_UP_KINDS.includes(f.kind)) errors.push(`${fw}: kind must be one of ${FOLLOW_UP_KINDS.join(', ')}`);
+    if (f.beats != null && (!Array.isArray(f.beats) || !f.beats.length || !f.beats.every((b) => isStr(typeof b === 'string' ? b : b && b.label)))) errors.push(`${fw}: beats must be a non-empty list of beats`);
+    if (f.par != null && (!isNum(f.par) || f.par < 10 || f.par > 120)) errors.push(`${fw}: par must be 10–120 seconds`);
+  });
+}
+
 export function validateMock(mock, { topics = null, headings = null } = {}) {
   const errors = [];
   const warnings = [];
@@ -185,23 +260,31 @@ export function validateMock(mock, { topics = null, headings = null } = {}) {
   mock.decks.forEach((d, di) => {
     const dw = d && d.id ? d.id : `decks[${di}]`;
     if (!d || !isStr(d.id) || !isStr(d.title)) errors.push(`${dw}: deck needs id and title`);
+    if (d && d.round != null && !MOCK_ROUNDS.includes(d.round)) errors.push(`${dw}: round must be ${MOCK_ROUNDS.join(' or ')}`);
     if (!d || !Array.isArray(d.questions) || !d.questions.length) return errors.push(`${dw}: deck needs questions[]`);
-    if (d.questions.length !== 5) warnings.push(`${dw}: spec wants 5 questions (has ${d.questions.length})`);
-    const tech = d.questions.filter((q) => q && q.kind === 'technical').length;
-    if (tech !== 2) warnings.push(`${dw}: spec mix is 2 technical / 3 values (has ${tech} technical)`);
+    const roundDeck = d.round != null;
+    if (!roundDeck) {
+      if (d.questions.length !== 5) warnings.push(`${dw}: spec wants 5 questions (has ${d.questions.length})`);
+      const tech = d.questions.filter((q) => q && q.kind === 'technical').length;
+      if (tech !== 2) warnings.push(`${dw}: spec mix is 2 technical / 3 values (has ${tech} technical)`);
+    }
     d.questions.forEach((q, qi) => {
       const qw = `${dw} q${qi + 1}${q && q.id ? ` (${q.id})` : ''}`;
       if (!q || typeof q !== 'object') return errors.push(`${qw}: not an object`);
       if (!isStr(q.id)) errors.push(`${qw}: id is required`);
       else if (ids.has(q.id)) errors.push(`${qw}: duplicate id`);
       ids.add(q.id);
-      if (!['technical', 'values'].includes(q.kind)) errors.push(`${qw}: kind must be technical or values`);
+      const kinds = roundDeck ? MOCK_KINDS : ['technical', 'values'];
+      if (!kinds.includes(q.kind)) errors.push(`${qw}: kind must be ${kinds.join(' | ')}`);
       if (!isStr(q.prompt)) errors.push(`${qw}: prompt is required`);
-      if (!isStr(q.followUp)) errors.push(`${qw}: followUp is required`);
+      const needsFollowUp = !roundDeck || !['intro', 'close'].includes(q.kind);
+      if (q.followUp != null && !isStr(q.followUp)) errors.push(`${qw}: followUp must be a non-empty string`);
+      if (needsFollowUp && !isStr(q.followUp) && !(Array.isArray(q.followUps) && q.followUps.length)) errors.push(`${qw}: needs followUp or followUps`);
+      checkMockFollowUps(q, qw, errors);
       if (!isNum(q.par) || q.par < 60 || q.par > 150) errors.push(`${qw}: par must be seconds (90–120 typical)`);
       checkBeats(q.beats, qw, errors);
       if (!isStr(q.source)) errors.push(`${qw}: source is required`);
-      else if (headings && !headings.has(sourceHeading(q.source))) errors.push(`${qw}: source heading "${sourceHeading(q.source)}" not found`);
+      else if (!sourceKnown(q.source, headings)) errors.push(`${qw}: source heading "${sourceHeading(q.source)}" not found`);
       if (q.topicId != null && topicIds && !topicIds.has(q.topicId)) errors.push(`${qw}: unknown topicId ${q.topicId}`);
     });
   });

@@ -32,10 +32,10 @@ export const INTERVAL_DAYS = {
 export const WEIGHT_ORDER = ['Core', 'Support', 'Light'];
 export const WEIGHTS = { Core: 3, Support: 2, Light: 1 };
 
-// No review date goes past the final sweep.
-export const REVIEW_CAP = '2026-11-01';
-export const INTERVIEW_DATE = '2026-11-02';
 export const READINESS_TARGET = 0.85;
+
+// Technical readiness is every area except this one; interview readiness is this one.
+export const INTERVIEW_AREA = 'Interview';
 
 // Card outcome levels, best to worst. A card result is clean / slipped /
 // missed; a miss is split by whether the framework was right, because the
@@ -57,8 +57,11 @@ function ratingForLevel(level) {
   return NOT_READY;
 }
 
-export function nextReview(rating, today) {
-  return minDate(addDays(today, INTERVAL_DAYS[rating]), REVIEW_CAP);
+// `cap` is the last day a review may land on: the day before the next round (see
+// round.js reviewCap). Without one the interval stands.
+export function nextReview(rating, today, cap = null) {
+  const due = addDays(today, INTERVAL_DAYS[rating]);
+  return cap ? minDate(due, cap) : due;
 }
 
 // How many distinct clean cards a topic needs in one session for the session
@@ -87,7 +90,7 @@ function wordsMax(text, n) {
 // day's growing result list always gives the same answer as grading once at
 // the end, which is what lets a day's shift, Keep going and drills all count
 // as one session.
-export function applySession(before, results, today, { cardsAvailable = Infinity } = {}) {
+export function applySession(before, results, today, { cardsAvailable = Infinity, cap = null } = {}) {
   if (!results.length) return { ...before };
   const outcome = sessionOutcome(results, before.weight, cardsAvailable);
   const worstResult = results.reduce((w, r) => (levelOf(r) < levelOf(w) ? r : w), results[0]);
@@ -129,7 +132,7 @@ export function applySession(before, results, today, { cardsAvailable = Infinity
     tests,
     streak,
     last_tested: today,
-    next_review: nextReview(rating, today),
+    next_review: nextReview(rating, today, cap),
     last_result: wordsMax(lastResult, 12),
   };
 }
@@ -158,14 +161,32 @@ export function weightedReadiness(topics) {
   return { earned, possible, value: possible ? earned / possible : 0 };
 }
 
+const isTested = (t) => (t.tests || 0) >= 1;
+const coreBelow = (topics) => topics.filter((t) => t.weight === 'Core' && POINTS[t.rating] < POINTS[MINOR_REFRESH]).map((t) => t.id);
+
+// One slice of the campus (GAME_SPEC_ROUND2 §3), same formula as overall.
+function sliceReadiness(topics) {
+  const r = weightedReadiness(topics);
+  const coreBelowMinor = coreBelow(topics);
+  return {
+    value: r.value,
+    earned: r.earned,
+    possible: r.possible,
+    tested: topics.filter(isTested).length,
+    total: topics.length,
+    coreBelowMinor,
+    targetMet: r.value >= READINESS_TARGET && coreBelowMinor.length === 0,
+  };
+}
+
 export function readiness(topics) {
-  const tested = topics.filter((t) => (t.tests || 0) >= 1);
+  const tested = topics.filter(isTested);
   const overall = weightedReadiness(topics);
   const onTested = weightedReadiness(tested);
-  const coreBelowMinor = topics
-    .filter((t) => t.weight === 'Core' && POINTS[t.rating] < POINTS[MINOR_REFRESH])
-    .map((t) => t.id);
+  const coreBelowMinor = coreBelow(topics);
   return {
+    technical: sliceReadiness(topics.filter((t) => t.area !== INTERVIEW_AREA)),
+    interview: sliceReadiness(topics.filter((t) => t.area === INTERVIEW_AREA)),
     overall: overall.value,
     onTested: onTested.value,
     tested: tested.length,

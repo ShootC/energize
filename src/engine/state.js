@@ -5,6 +5,7 @@
 import { applySession, xpForResult, XP } from './rating.js';
 import { campusStatus } from './campus.js';
 import { addDays } from './dates.js';
+import { DEFAULT_NEXT_ROUND, normalizeNextRound, reviewCap } from './round.js';
 
 export const STATE_VERSION = 1;
 export const STORAGE_KEY = 'energize.state.v1';
@@ -14,10 +15,18 @@ const RATINGS = ['Locked In', 'Minor Refresh', 'Needs Improvement', 'Not Ready',
 const WEIGHT_NAMES = ['Core', 'Support', 'Light'];
 
 export const DEFAULT_SETTINGS = {
-  cardsPerShift: null, // null = the day's default (15, 10 in cutover week, 20 on Nov 1)
+  cardsPerShift: null, // null = the day's default (15; the sweep day is up to 20)
   sound: true,
   haptics: true,
+  nextRound: { ...DEFAULT_NEXT_ROUND }, // { label, focus: technical | behavioral, date: YYYY-MM-DD | null }
+  interrupt: null, // null = on in technical focus, off in behavioral
 };
+
+// Old saves (v1.0) have no nextRound / interrupt: fill them in, keep everything else.
+export function migrateSettings(settings) {
+  const s = settings && typeof settings === 'object' ? settings : {};
+  return { ...DEFAULT_SETTINGS, ...s, nextRound: normalizeNextRound(s.nextRound), interrupt: typeof s.interrupt === 'boolean' ? s.interrupt : null };
+}
 
 function clone(x) {
   return JSON.parse(JSON.stringify(x));
@@ -58,7 +67,7 @@ export function createState(topics, { today = null } = {}) {
     lastShiftDate: null,
     blitzBest: 0,
     energized: [],
-    settings: { ...DEFAULT_SETTINGS },
+    settings: migrateSettings({}),
     // Per-topic record as it stood before today's first result, so a day's
     // results can be re-applied as one session.
     snapshots: {},
@@ -76,8 +85,10 @@ function countByTopic(cards) {
   return m;
 }
 
-// Record one graded card. `rated: false` (Blitz, interview-day confidence
-// cards) logs history but never touches ratings.
+// Record one graded card. `rated: false` (Blitz, day-of confidence cards) logs
+// history but never touches ratings. A follow-up chain's layers are kept on the
+// entry (`layers`); the card's result is already the worst of them. The next
+// review is capped at the day before the next round (settings.nextRound).
 // Returns { state, topicBefore, topicAfter, xp, newlyEnergized }.
 export function recordResult(state, { card, grade, seconds = null, date, mode = 'shift', rated = true, cards = [] }) {
   const next = clone(state);
@@ -94,6 +105,7 @@ export function recordResult(state, { card, grade, seconds = null, date, mode = 
     rated,
     codeUnprompted: !!grade.codeUnprompted,
   };
+  if (grade.layers) entry.layers = grade.layers;
   entry.xp = xpForResult(entry, card);
   next.history.push(entry);
   next.xp += entry.xp;
@@ -109,7 +121,8 @@ export function recordResult(state, { card, grade, seconds = null, date, mode = 
     const before = next.snapshots[card.topicId].record;
     const results = next.history.filter((h) => h.topicId === card.topicId && h.date === date && h.rated !== false);
     const available = countByTopic(cards)[card.topicId] || Infinity;
-    topicAfter = applySession(before, results, date, { cardsAvailable: available });
+    const cap = reviewCap(date, next.settings && next.settings.nextRound);
+    topicAfter = applySession(before, results, date, { cardsAvailable: available, cap });
     next.topics[idx] = topicAfter;
   }
 
@@ -184,7 +197,7 @@ function migrate(s) {
     currentShift: null,
     createdOn: null,
     ...s,
-    settings: { ...DEFAULT_SETTINGS, ...(s.settings || {}) },
+    settings: migrateSettings(s.settings),
   };
 }
 
