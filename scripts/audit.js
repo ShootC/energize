@@ -1345,11 +1345,15 @@ const beatLabel = (b) => (typeof b === 'string' ? b : b.label || b.text);
 const isFillIn = (b) => typeof b !== 'string' && !!b.fillIn;
 
 // One graded follow-up beat: facts in the chain, no bracketed item, own-it / drill traced.
-function checkFollowUpBeat(card, where, label, chain, { experience, guideScopes, home, cardScope }) {
+// `graded`: a `number` follow-up's beats are its criterion and section — graded facts, like a
+// number card's fields — so a number or reference found only outside the follow-up's source and
+// the card's section is a finding, not a note (a wrong value that happens to exist elsewhere in
+// the guide, "loss ≤ 2.5 psi", must not pass).
+function checkFollowUpBeat(card, where, label, chain, { experience, guideScopes, home, cardScope, graded = false }) {
   if (/\[[^\]]*\]/.test(label)) reportR2({ kind: 'bracket', card: card.id, where, token: label, detail: 'a graded beat carries a bracketed (open) item — make it a fill-in' });
   const bh = bracketHit(label);
   if (bh) reportR2({ kind: 'bracket', card: card.id, where, token: label, detail: `restates a bracketed (open) line of ${bh.file} line ${bh.line}: "[${bh.text}]" — make it a fill-in` });
-  checkText(card, where, label, chain);
+  checkText(card, where, label, chain, { outsideHard: graded });
   if (experience) return checkExperienceBeat(card, where, label, guideScopes);
   const loc = locatePhrase(label, home);
   if (loc.ratio < 0.5 && (loc.words || 0) >= 3) {
@@ -1418,7 +1422,7 @@ function auditFollowUps(card, sec, sub) {
         return;
       }
       graded.push(label);
-      checkFollowUpBeat(card, where, label, chain, { experience, guideScopes, home, cardScope: sec });
+      checkFollowUpBeat(card, where, label, chain, { experience, guideScopes, home, cardScope: sec, graded: f.kind === 'number' });
     });
     if (!graded.length) reviewR2({ kind: 'fillin', card: card.id, where: `${fk}.beats`, token: `${f.beats.length} fill-in${f.beats.length === 1 ? '' : 's'}`, detail: 'every beat is a fill-in — the layer is shown and not graded' });
     if (f.kind === 'number') checkNumberLeak(card, `${fk}.prompt`, f.prompt, graded);
@@ -1494,7 +1498,7 @@ function auditMockFollowUps(q, fake, linked, chain, files) {
       const label = beatLabel(b);
       if (isFillIn(b)) return;
       graded.push(label);
-      checkFollowUpBeat(fake, where, label, fchain, { experience, guideScopes: [...sectionScopes.filter((s) => s.file === 'content/study-guide.md'), guideFile], home, cardScope: null });
+      checkFollowUpBeat(fake, where, label, fchain, { experience, guideScopes: [...sectionScopes.filter((s) => s.file === 'content/study-guide.md'), guideFile], home, cardScope: null, graded: f.kind === 'number' });
       if (linkedFu.length && !linkedBeats.has(label)) reviewR2({ kind: 'copy', card: q.id, where, token: label, detail: `not a verbatim copy of a beat on ${linked.id}'s follow-ups (decision 84) — scoped as a mock beat instead` });
     });
     if (!graded.length) reviewR2({ kind: 'fillin', card: q.id, where: `${fk}.beats`, token: f.prompt, detail: 'every beat is a fill-in — the layer is shown and not graded' });
@@ -1640,7 +1644,7 @@ function writeR2Report(outPath, { cards, mock, rows, active, decisions, allowedL
   out.push('');
   out.push('## What is checked');
   out.push('');
-  out.push("- **Every follow-up beat and prompt** goes through the same fact extraction as a main answer — numbers with units, section references, identifiers, steps — and each fact must be found, verbatim or trivially reformatted, in the chain: the follow-up's `source` (a heading path, bold label, table or list number, or a whole document: `story-scripts.md`, `study-guide.md`, `round1-debrief.md`) → the experience sources for own-it / drill layers → the card's own section → the files → both files. Not found anywhere is a finding; found only outside the named source is a review note (as for scenario beats).");
+  out.push("- **Every follow-up beat and prompt** goes through the same fact extraction as a main answer — numbers with units, section references, identifiers, steps — and each fact must be found, verbatim or trivially reformatted, in the chain: the follow-up's `source` (a heading path, bold label, table or list number, or a whole document: `story-scripts.md`, `study-guide.md`, `round1-debrief.md`) → the experience sources for own-it / drill layers → the card's own section → the files → both files. Not found anywhere is a finding; found only outside the named source is a review note (as for scenario beats) — except in a `number` follow-up, whose numbers and references are its graded criterion: there it is a finding.");
   out.push('- **own-it and drill beats** must trace (≥ 50% of their content words on one line) to `story-scripts.md` (its "Open questions" list excluded), the guide\'s Interview playbook, or the debrief\'s "Facts about my own work" list. A beat that does not is accepted only as the common block\'s disclaimer ("say plainly there\'s no direct story…") or as a "how I\'d run it" procedure that sits in the guide and does not read as first-person experience; anything else is a finding. Every bridge is listed in the appendix for the reading pass.');
   out.push('- **find-out** layers only on `confirmInEdition: true` cards; a `ladder` card\'s layers are all drills.');
   out.push('- **Bracketed items**: a graded beat may not carry `[…]` and may not restate a bracketed (open) line of the sources (≥ 60% of its content words in one bracket). Fill-in beats (`{ "label", "fillIn": true }`) are open items — shown, never graded — and are not checked as fact.');
