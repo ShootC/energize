@@ -6540,7 +6540,7 @@
             "Name the standard — NFPA 110 — and confirm the section in the edition the site uses before you quote a number",
             "Name the section you'd check before writing the script; the script cites the code / BOD sections each acceptance criterion comes from"
           ],
-          "source": "study-guide.md",
+          "source": "Read this first",
           "par": 45
         },
         {
@@ -7211,12 +7211,92 @@
       ],
       "requiresNumber": true,
       "codeRef": null,
-      "explanation": "Barometric relief or relief damper, the fan's VFD setpoint, sensor location, and a stair tighter than designed. Then run the open-door case before retuning: too high fails door force, too low lets smoke in."
+      "explanation": "Barometric relief or relief damper, the fan's VFD setpoint, sensor location, and a stair tighter than designed. Then run the open-door case before retuning: too high fails door force, too low lets smoke in.",
+      "followUps": [
+        {
+          "id": "K1-scn-01-f1",
+          "kind": "why-not",
+          "prompt": "Why not just turn the fan's VFD down until the number's right?",
+          "beats": [
+            "Run the open-door case before retuning",
+            "Too high fails door force; too low lets smoke in",
+            "Check the other causes first: barometric relief or relief damper, sensor location, a stair tighter than designed"
+          ],
+          "source": "Smoke control › Likely question",
+          "par": 45
+        },
+        {
+          "id": "K1-scn-01-f2",
+          "kind": "number",
+          "prompt": "What's the door-force limit, and the NFPA 92 minimum across a barrier?",
+          "beats": [
+            "Door opening force ≤ 30 lbf",
+            "Pressure difference, sprinklered space (NFPA 92): ≥ 0.05 in. w.c.",
+            "At L4 you measure pressure across every barrier and every door force, zone by zone"
+          ],
+          "source": "Smoke control",
+          "par": 45
+        }
+      ]
     },
     "hook": "Relief, VFD, sensor, tight stair — then open a door before you touch the setpoint.",
     "source": "Smoke control › Likely question",
     "par": 90,
     "confirmInEdition": false
+  },
+  {
+    "id": "K1-scn-02-r2",
+    "topicId": "K1",
+    "type": "scenario",
+    "prompt": "What pressure range do you hold a pressurized stair and an elevator hoistway to — and what's the trap in quoting those numbers?",
+    "interviewerPhrasing": "What are you looking for across the stair door and the hoistway?",
+    "answer": {
+      "beats": [
+        "Stair pressurization (IBC smokeproof enclosures): 0.10–0.35 in. w.c., doors closed",
+        "Elevator hoistway pressurization (IBC): 0.10–0.25 in. w.c.",
+        "Door opening force ≤ 30 lbf — too high fails door force, too low lets smoke in",
+        "The IBC values are from a presentation citing the 2012 IBC — confirm them in the edition your site uses"
+      ],
+      "requiresNumber": true,
+      "codeRef": "IBC",
+      "codeRefAliases": [
+        "International Building Code",
+        "IBC smokeproof enclosures",
+        "IBC 2012",
+        "the IBC"
+      ],
+      "explanation": "Stair pressurization (IBC smokeproof enclosures) 0.10–0.35 in. w.c. with doors closed; elevator hoistway pressurization (IBC) 0.10–0.25 in. w.c.; door opening force ≤ 30 lbf. The IBC values come from a presentation citing the 2012 IBC — confirm them in the edition your site uses.",
+      "followUps": [
+        {
+          "id": "K1-scn-02-r2-f1",
+          "kind": "find-out",
+          "prompt": "You said \"confirm the edition\". What would you check, and what do you do on site until it's confirmed?",
+          "beats": [
+            "Say it straight: \"I'd confirm which IBC edition the site uses before I quote the range\" — their guide scores \"here's how I'd find out\" above a guess",
+            "The IBC values are from a BCA presentation citing the 2012 IBC — confirm them in the edition your site uses",
+            "Name the section you'd check before writing the script; the script cites the code / BOD sections each acceptance criterion comes from"
+          ],
+          "source": "Read this first",
+          "par": 45
+        },
+        {
+          "id": "K1-scn-02-r2-f2",
+          "kind": "what-if",
+          "prompt": "Say the stair reads inside the range with the doors closed, but a door takes more than thirty pounds to open. Pass?",
+          "beats": [
+            "No — door opening force ≤ 30 lbf; too high fails door force",
+            "Run the open-door case before retuning",
+            "Check barometric relief or relief damper, the fan's VFD setpoint, sensor location, a stair tighter than designed"
+          ],
+          "source": "Smoke control",
+          "par": 45
+        }
+      ]
+    },
+    "hook": "Stair 0.10–0.35, hoistway 0.10–0.25, door 30 lbf — and say which IBC edition before you say the numbers.",
+    "source": "Smoke control › table",
+    "par": 90,
+    "confirmInEdition": true
   },
   {
     "id": "K2-num-01",
@@ -7364,7 +7444,37 @@
       ],
       "requiresNumber": false,
       "codeRef": null,
-      "explanation": "The firefighter's smoke control panel (FSCP) must override everything — prove FSCP priority over the BMS, freezestats and duct detectors — with positive confirmation from each component (airflow or position, not just a command), and true status on standby power."
+      "explanation": "The firefighter's smoke control panel (FSCP) must override everything — prove FSCP priority over the BMS, freezestats and duct detectors — with positive confirmation from each component (airflow or position, not just a command), and true status on standby power.",
+      "followUps": [
+        {
+          "id": "K2-scn-01-f1",
+          "kind": "what-if",
+          "prompt": "Say the BMS shows a damper open and the FSCP says closed. Which do you believe?",
+          "beats": [
+            "Neither until it's confirmed — positive confirmation from each component is airflow or position, not just a command",
+            "The FSCP has priority over the BMS and has to show true status",
+            "It's a finding on the issues log, and it gets checked again on standby power at L5"
+          ],
+          "source": "Smoke control",
+          "par": 45
+        },
+        {
+          "id": "K2-scn-01-f2",
+          "kind": "own-it",
+          "prompt": "Have you troubleshot fan and damper monitoring on a real smoke control job?",
+          "beats": [
+            "On a high-rise lab I was the main troubleshooter on fan and damper monitoring",
+            "We tested smoke control and the generator backup for the emergency circuits",
+            {
+              "label": "[The hardest one was ___, and the cause was ___]",
+              "fillIn": true
+            },
+            "I ran the AHJ inspection and trained the owners before turnover"
+          ],
+          "source": "Backup scripts (45–70 seconds)",
+          "par": 45
+        }
+      ]
     },
     "hook": "The FSCP wins every argument, and a command sent is not a damper moved — confirm position or flow.",
     "source": "Smoke control › table",
@@ -7386,11 +7496,87 @@
       ],
       "requiresNumber": false,
       "codeRef": null,
-      "explanation": "Data halls rarely have a code-required smoke control system; you'll find it in stairs, atriums and office blocks. But smoke-control-like sequences are everywhere and the IST matrix tests them the same way; high-airflow cooling can fight pressurization, so test with CRAHs in every mode."
+      "explanation": "Data halls rarely have a code-required smoke control system; you'll find it in stairs, atriums and office blocks. But smoke-control-like sequences are everywhere and the IST matrix tests them the same way; high-airflow cooling can fight pressurization, so test with CRAHs in every mode.",
+      "followUps": [
+        {
+          "id": "K2-scn-02-f1",
+          "kind": "what-if",
+          "prompt": "Say the clean agent room's dampers close on the BMS command, but nobody checked position. Done?",
+          "beats": [
+            "No — smoke-control-like sequences are tested the same way: positive confirmation from each component, airflow or position, not just a command",
+            "The IST matrix row for a clean agent release in the electrical room: room HVAC off, dampers close — each cell is a test step",
+            "A command sent is not a damper moved"
+          ],
+          "source": "Smoke control",
+          "par": 45
+        },
+        {
+          "id": "K2-scn-02-f2",
+          "kind": "why-not",
+          "prompt": "Why test with the CRAHs in every mode? Pick the worst case and move on.",
+          "beats": [
+            "High-airflow cooling can fight pressurization, so test with CRAHs in every mode",
+            "L5 repeats on standby power and with cooling in its real operating modes",
+            "The as-tested values become the baseline for periodic tests"
+          ],
+          "source": "Smoke control",
+          "par": 45
+        }
+      ]
     },
     "hook": "No smoke control in the hall, but smoke-control sequences everywhere — and the CRAHs are the wind you test against.",
     "source": "Smoke control › Data center points to make",
     "par": 90,
+    "confirmInEdition": false
+  },
+  {
+    "id": "K2-scn-03-r2",
+    "topicId": "K2",
+    "type": "scenario",
+    "walkthrough": true,
+    "prompt": "Walk me through smoke control acceptance, design review to close-out.",
+    "interviewerPhrasing": "How do you take a smoke control system from design review to the inspector's report?",
+    "answer": {
+      "beats": [
+        "L0 — design review: rational analysis, sequence of operations per zone, fan and damper schedule, FSCP graphics",
+        "L2: witness duct leak tests; dampers accessible with the right actuators; belt-driven fans with at least two belts (1.5 × design duty); wiring in raceway; makeup air intakes at least 20 ft from exhaust",
+        "L3: the test-and-balance contractor balances to design airflow; each fan and damper proven on its own from the FSCP and from automatic inputs",
+        "L4: zone by zone — trigger each fire zone; time each component to its smoke-control state; measure pressure across every barrier and every door force; verify end-to-end confirmation; prove FSCP priority over the BMS, freezestats and duct detectors",
+        "L5: repeat on standby power and with cooling in its real operating modes",
+        "Close-out: special inspector's report to the AHJ; the as-tested values become the baseline for periodic tests"
+      ],
+      "requiresNumber": true,
+      "codeRef": null,
+      "explanation": "L0 design review → L2 duct leak tests, actuators, two belts at 1.5 × design duty, raceway, intakes 20 ft from exhaust → L3 balance to design airflow, each fan and damper on its own from the FSCP and automatic inputs → L4 zone by zone: time each component, pressure across every barrier, every door force, end-to-end confirmation, FSCP priority → L5 on standby power and with cooling in its real modes → close-out: special inspector's report to the AHJ, as-tested values as the baseline.",
+      "followUps": [
+        {
+          "id": "K2-scn-03-r2-f1",
+          "kind": "number",
+          "prompt": "The duct leakage test at L2 — what's the criterion?",
+          "beats": [
+            "1.5 × maximum design pressure",
+            "Leakage ≤ 5% of design flow"
+          ],
+          "source": "Smoke control › table",
+          "par": 45
+        },
+        {
+          "id": "K2-scn-03-r2-f2",
+          "kind": "what-if",
+          "prompt": "Say the special inspector can't make the L4 date. Can you witness it yourself and send the report?",
+          "beats": [
+            "A special inspector witnesses smoke control acceptance — IBC Chapter 17 special inspection",
+            "The close-out is the special inspector's report to the AHJ",
+            "Re-sequence what can run in parallel; the witnessed L4 waits for the inspector"
+          ],
+          "source": "Smoke control",
+          "par": 45
+        }
+      ]
+    },
+    "hook": "Review, leak-test, balance, zone by zone, on generator, then the inspector's report — as-tested becomes the baseline.",
+    "source": "Smoke control › Acceptance sequence",
+    "par": 120,
     "confirmInEdition": false
   },
   {
@@ -7681,10 +7867,83 @@
       ],
       "requiresNumber": true,
       "codeRef": null,
-      "explanation": "Test cause and effect against the sequence of operations, not just the devices: every input against every output (blank cells too), 100% point-to-point at L3, failure modes and loss of primary power at L4, ride-through on batteries at L5, and a verified return to normal."
+      "explanation": "Test cause and effect against the sequence of operations, not just the devices: every input against every output (blank cells too), 100% point-to-point at L3, failure modes and loss of primary power at L4, ride-through on batteries at L5, and a verified return to normal.",
+      "followUps": [
+        {
+          "id": "K3-scn-01-f1",
+          "kind": "what-if",
+          "prompt": "Say the point-to-point sheet is 100% and on day one you find a device in the wrong zone. What does that tell you?",
+          "beats": [
+            "Devices prove the wiring; cause and effect against the sequence of operations proves the sequence",
+            "Every input against every output from the IST matrix — the blank cells too",
+            "On the issues log: ID, system, level found, severity, owner, due date and closure evidence"
+          ],
+          "source": "Data center commissioning language",
+          "par": 45
+        },
+        {
+          "id": "K3-scn-01-f2",
+          "kind": "number",
+          "prompt": "Audibility — what are you measuring at L4, and the numbers?",
+          "beats": [
+            "Public mode at least 15 dB over average ambient, or 5 dB over the maximum sound level lasting 60 s or more, whichever is greater",
+            "110 dBA maximum",
+            "Voice intelligibility target: STI ≥ 0.50 (CIS ≥ 0.70)"
+          ],
+          "source": "FPE refresher: fire alarm and fire dynamics › Fire alarm",
+          "par": 45
+        }
+      ]
     },
     "hook": "Devices prove the wiring; cause and effect proves the sequence — 100% of points, then every cell in the matrix.",
     "source": "Data center commissioning language › Script development — what a good fire FPT script contains.",
+    "par": 90,
+    "confirmInEdition": false
+  },
+  {
+    "id": "K3-scn-02-r2",
+    "topicId": "K3",
+    "type": "scenario",
+    "prompt": "Notification in a data hall FPT — what do you verify for audible, visible and voice, and what are the numbers?",
+    "interviewerPhrasing": "How do you prove the notification appliances in a hall actually do their job?",
+    "answer": {
+      "beats": [
+        "Audibility: public mode at least 15 dB over average ambient, or 5 dB over the maximum sound level lasting 60 s or more, whichever is greater; 110 dBA maximum",
+        "Visible: wall-mount room sizing 20×20 ft → 15 cd, 28×28 → 30 cd, 40×40 → 60 cd; corridors up to 20 ft wide within 15 ft of each end, no more than 100 ft apart",
+        "Voice intelligibility target: STI ≥ 0.50 (CIS ≥ 0.70)",
+        "Secondary power: 24 h standby plus 5 min alarm (15 min for in-building voice evacuation), with the 20% margin"
+      ],
+      "requiresNumber": true,
+      "codeRef": null,
+      "explanation": "Audibility public mode: at least 15 dB over average ambient or 5 dB over the maximum sound level lasting 60 s or more, whichever is greater, 110 dBA maximum; visible 20×20 → 15 cd, 28×28 → 30 cd, 40×40 → 60 cd, corridors within 15 ft of each end and no more than 100 ft apart; STI ≥ 0.50 (CIS ≥ 0.70); secondary power 24 h + 5 min (15 min for voice) with the 20% margin.",
+      "followUps": [
+        {
+          "id": "K3-scn-02-r2-f1",
+          "kind": "what-if",
+          "prompt": "Say the horns don't clear the CRAH noise by the required margin. What do you do?",
+          "beats": [
+            "The criterion: at least 15 dB over average ambient, or 5 dB over the maximum sound level lasting 60 s or more — whichever is greater",
+            "Doubling distance loses 6 dB; two equal sources add 3 dB",
+            "It's a finding on the issues log — life safety first — with an owner and a due date; it closes before turnover"
+          ],
+          "source": "FPE refresher: fire alarm and fire dynamics › Fire alarm",
+          "par": 45
+        },
+        {
+          "id": "K3-scn-02-r2-f2",
+          "kind": "number",
+          "prompt": "Candela for a 28 by 28 room, and the corridor rule?",
+          "beats": [
+            "28×28 → 30 cd",
+            "Corridors up to 20 ft wide: within 15 ft of each end, no more than 100 ft apart"
+          ],
+          "source": "FPE refresher: fire alarm and fire dynamics › Fire alarm › Visible",
+          "par": 45
+        }
+      ]
+    },
+    "hook": "15 over ambient (or 5 over a 60-second peak), 110 max; 15 · 30 · 60 candela; STI 0.50; 24 h + 5 (15 for voice) × 1.2.",
+    "source": "FPE refresher: fire alarm and fire dynamics › Fire alarm",
     "par": 90,
     "confirmInEdition": false
   },
@@ -7818,7 +8077,21 @@
         "901.6.2.2",
         "IFC 901.6.2.2"
       ],
-      "explanation": "Dedicated systems: weekly automatic self-test and semiannual periodic testing; nondedicated annually; integrated retest every 10 years (IFC 901.6.2.2) unless the integrated test plan says otherwise. The as-tested values from acceptance become the baseline."
+      "explanation": "Dedicated systems: weekly automatic self-test and semiannual periodic testing; nondedicated annually; integrated retest every 10 years (IFC 901.6.2.2) unless the integrated test plan says otherwise. The as-tested values from acceptance become the baseline.",
+      "followUps": [
+        {
+          "id": "K4-scn-01-f1",
+          "kind": "what-if",
+          "prompt": "Say Ops asks why a dedicated system needs a weekly self-test when it gets tested semiannually anyway.",
+          "beats": [
+            "Control verification: weekly automatic self-test of dedicated systems",
+            "Periodic testing: dedicated systems semiannually; nondedicated annually",
+            "The as-tested values from acceptance are the baseline for every periodic test"
+          ],
+          "source": "Smoke control",
+          "par": 45
+        }
+      ]
     },
     "hook": "Weekly, semiannual, annual, decade — self-test, dedicated, nondedicated, integrated.",
     "source": "Smoke control › table",
