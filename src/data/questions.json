@@ -113,7 +113,33 @@
       ],
       "requiresNumber": true,
       "codeRef": null,
-      "explanation": "L1 factory test → L2 install vs submittal → L3 air test, program, point-to-point → L4 trip with water delivery time against the BOD → L5 IST with the release signals to BMS / EPMS through a utility failure. End on IST."
+      "explanation": "L1 factory test → L2 install vs submittal → L3 air test, program, point-to-point → L4 trip with water delivery time against the BOD → L5 IST with the release signals to BMS / EPMS through a utility failure. End on IST.",
+      "followUps": [
+        {
+          "id": "C1-scn-01-f1",
+          "kind": "why-not",
+          "prompt": "Okay, but why not go straight to the IST — why keep L4 separate from L5?",
+          "beats": [
+            "At L4 I prove the system. At L5 I prove the building.",
+            "L4: each system runs every sequence, including failure and degraded modes, against the Basis of Design",
+            "L5: all systems work together under simulated load and utility failure, the way Ops will live with them"
+          ],
+          "source": "Data center commissioning language › table",
+          "par": 45
+        },
+        {
+          "id": "C1-scn-01-f2",
+          "kind": "number",
+          "prompt": "At L4 you said water delivery time. What's the criterion you're timing against, and where's it from?",
+          "beats": [
+            "Water at the inspector's test connection within 60 s by test — from normal air pressure, detection activated and the test connection opened at the same moment",
+            "Or by calculation (NFPA 13 §8.3.2.3)",
+            "Double-interlock gets only the 500 gal exemption"
+          ],
+          "source": "Pre-action › Dry-pipe sizing rules",
+          "par": 45
+        }
+      ]
     },
     "hook": "Ship it, fit it, start it, trip it, then prove it with the building — end on IST.",
     "source": "Likely questions and day-of checklist › Commissioning technical (the 35%)",
@@ -135,7 +161,33 @@
       ],
       "requiresNumber": false,
       "codeRef": null,
-      "explanation": "L1–L5 is an industry convention, not a code, so definitions vary — ask which ladder Fluidstack uses. Some owners add an L0 for design review."
+      "explanation": "L1–L5 is an industry convention, not a code, so definitions vary — ask which ladder Fluidstack uses. Some owners add an L0 for design review.",
+      "followUps": [
+        {
+          "id": "C1-scn-02-f1",
+          "kind": "why-not",
+          "prompt": "Why not just call all of it \"commissioning\"? Why does the level matter?",
+          "beats": [
+            "Each level proves something the one before cannot",
+            "Place every fire system on the ladder — that is the vocabulary their commissioning interviewer thinks in",
+            "A script's prerequisites start with the prior level signed off"
+          ],
+          "source": "Data center commissioning language",
+          "par": 45
+        },
+        {
+          "id": "C1-scn-02-f2",
+          "kind": "number",
+          "prompt": "Which standards actually govern commissioning and integrated testing, and which edition?",
+          "beats": [
+            "NFPA 3 (2024) is the commissioning standard for fire and life safety systems — names the Fire Commissioning Agent (FCxA)",
+            "NFPA 4 (2024) covers integrated testing — names the Integrated Testing Agent (ITa)",
+            "One person can hold both"
+          ],
+          "source": "Data center commissioning language › The documents.",
+          "par": 45
+        }
+      ]
     },
     "hook": "Convention, not code: ask whose ladder before you climb it.",
     "source": "Data center commissioning language",
@@ -157,11 +209,88 @@
       ],
       "requiresNumber": false,
       "codeRef": null,
-      "explanation": "L4 proves each system runs every sequence, including failure and degraded modes, against the BOD; L5 proves all systems work together under simulated load and utility failure, the way Ops will live with them."
+      "explanation": "L4 proves each system runs every sequence, including failure and degraded modes, against the BOD; L5 proves all systems work together under simulated load and utility failure, the way Ops will live with them.",
+      "followUps": [
+        {
+          "id": "C1-scn-03-f1",
+          "kind": "what-if",
+          "prompt": "Say every L4 passed and the owner wants to drop L5 to make the date. What do you tell them?",
+          "beats": [
+            "L5 is where all systems work together under simulated load and utility failure, the way Ops will live with them — L4 can't show that",
+            "Sort it three ways: life-safety and code-required tests are not negotiable; tests that can run in parallel get re-sequenced",
+            "Anything deferred gets a documented risk acceptance, an impairment entry and a fire watch",
+            "\"Velocity is knowing which unknowns actually block you\" — their words, your method"
+          ],
+          "source": "Likely questions and day-of checklist › Values and judgment (the 65%)",
+          "par": 45
+        },
+        {
+          "id": "C1-scn-03-f2",
+          "kind": "own-it",
+          "prompt": "Have you actually run an integrated test yourself — fire alarm through a power failure?",
+          "beats": [
+            "On a high-rise lab we tested smoke control and the generator backup for the emergency circuits",
+            "I was the contractor's liaison to the third-party commissioning FPE, so I was on the receiving end of every Cx script",
+            "From the commissioning seat: a script they've seen in advance, a pre-test that has already passed, and one person running the room"
+          ],
+          "source": "Backup scripts (45–70 seconds)",
+          "par": 45
+        }
+      ]
     },
     "hook": "Four: the system, every mode. Five: the building, lights out.",
     "source": "Data center commissioning language › table",
     "par": 90,
+    "confirmInEdition": false
+  },
+  {
+    "id": "C1-scn-04-r2",
+    "topicId": "C1",
+    "type": "scenario",
+    "walkthrough": true,
+    "prompt": "Walk me through the Cx levels for a pre-action system, L1 to L5 — what each level proves and what you test there.",
+    "interviewerPhrasing": "Walk me through the Cx levels for a pre-action system.",
+    "answer": {
+      "beats": [
+        "L1 — factory acceptance / factory witness test: the equipment meets spec before it ships — the releasing panel factory test",
+        "L2 — delivery and installation verification: what arrived matches the submittal and is installed per design and listing — hangers and seismic bracing, sprinkler temperature ratings and obstructions around containment",
+        "L3 — start-up / pre-functional: each component runs on its own — the dry / pre-action air test, program loaded, 100% point-to-point",
+        "L4 — functional performance test: every sequence, including failure and degraded modes, against the Basis of Design — the pre-action trip with water delivery time",
+        "L5 — integrated systems test: all systems work together under simulated load and utility failure, the way Ops will live with them — release signals to BMS / EPMS, fire alarm through a utility failure onto generator. End on IST."
+      ],
+      "requiresNumber": true,
+      "codeRef": null,
+      "explanation": "L1 factory test → L2 install vs submittal → L3 air test, program, 100% point-to-point → L4 trip with water delivery time against the BOD → L5 IST: release signals to BMS / EPMS through a utility failure. End on IST.",
+      "followUps": [
+        {
+          "id": "C1-scn-04-r2-f1",
+          "kind": "what-if",
+          "prompt": "Say the L3 point-to-point was sampled, not 100%. Do you start L4?",
+          "beats": [
+            "L3 is 100% point-to-point, not a sample",
+            "The script's prerequisites: prior level signed off before L4 starts",
+            "A deferral is a documented risk acceptance, an impairment entry and a fire watch — not a quiet skip"
+          ],
+          "source": "Data center commissioning language",
+          "par": 45
+        },
+        {
+          "id": "C1-scn-04-r2-f2",
+          "kind": "number",
+          "prompt": "The air test at L3 — numbers, and the section?",
+          "beats": [
+            "Dry and double-interlock air test: 40 psi for 24 h, loss ≤ 1.5 psi",
+            "NFPA 13 §29.2.2",
+            "Air supply: restores normal air pressure within 30 min (NFPA 13 §8.2.6.3)"
+          ],
+          "source": "Sprinkler and underground › table",
+          "par": 45
+        }
+      ]
+    },
+    "hook": "Ship it, fit it, start it, trip it, then prove it with the building — end on IST.",
+    "source": "Data center commissioning language › table",
+    "par": 120,
     "confirmInEdition": false
   },
   {
@@ -316,7 +445,34 @@
       ],
       "requiresNumber": false,
       "codeRef": null,
-      "explanation": "Sort it three ways: life-safety and code-required tests are not negotiable; tests that can run in parallel get re-sequenced; anything deferred gets a documented risk acceptance, an impairment entry and a fire watch."
+      "explanation": "Sort it three ways: life-safety and code-required tests are not negotiable; tests that can run in parallel get re-sequenced; anything deferred gets a documented risk acceptance, an impairment entry and a fire watch.",
+      "followUps": [
+        {
+          "id": "C2-scn-01-f1",
+          "kind": "what-if",
+          "prompt": "Say the schedule wins and a test gets pushed past turnover. What has to be on paper?",
+          "beats": [
+            "A documented risk acceptance",
+            "An impairment entry",
+            "A fire watch",
+            "Life-safety issues close before turnover — only anything else can be carried into operations, with that documented risk acceptance"
+          ],
+          "source": "Likely questions and day-of checklist › Values and judgment (the 65%)",
+          "par": 45
+        },
+        {
+          "id": "C2-scn-01-f2",
+          "kind": "why-not",
+          "prompt": "Why not just run everything in parallel and finish faster?",
+          "beats": [
+            "Only tests that can run in parallel get re-sequenced",
+            "Life-safety and code-required tests are not negotiable",
+            "\"Velocity is knowing which unknowns actually block you\""
+          ],
+          "source": "Likely questions and day-of checklist › Values and judgment (the 65%)",
+          "par": 45
+        }
+      ]
     },
     "hook": "Three piles: never, reorder, defer-with-paper (risk acceptance, impairment, fire watch).",
     "source": "Likely questions and day-of checklist › Values and judgment (the 65%)",
@@ -340,7 +496,33 @@
       ],
       "requiresNumber": true,
       "codeRef": null,
-      "explanation": "OPR says what the owner needs; BOD says how the design meets it; the Cx plan says who tests what, when. NFPA 3 (2024) names the FCxA, NFPA 4 (2024) names the ITa — one person can hold both; retest frequency sits in the integrated test plan, with the IFC's 10 years as the default."
+      "explanation": "OPR says what the owner needs; BOD says how the design meets it; the Cx plan says who tests what, when. NFPA 3 (2024) names the FCxA, NFPA 4 (2024) names the ITa — one person can hold both; retest frequency sits in the integrated test plan, with the IFC's 10 years as the default.",
+      "followUps": [
+        {
+          "id": "C2-scn-02-f1",
+          "kind": "number",
+          "prompt": "Once the building's running, how often does the integrated test get repeated — and who decides?",
+          "beats": [
+            "NFPA 4 leaves retest frequency to the integrated test plan",
+            "The IFC sets 10 years for high-rise and smoke control integrated tests unless the plan says otherwise"
+          ],
+          "source": "Data center commissioning language › The documents.",
+          "par": 45
+        },
+        {
+          "id": "C2-scn-02-f2",
+          "kind": "what-if",
+          "prompt": "Say the contractor's submittal has cooling stopping on Fire 1, and the IST matrix says it keeps running. Where do you go?",
+          "beats": [
+            "The matrix is example only — the BOD decides every cell",
+            "The BOD says how the design meets what the owner needs (the OPR)",
+            "Per BOD — halls often keep cooling running",
+            "Every finding gets an ID, system, level found, severity, owner, due date and closure evidence on the issues log"
+          ],
+          "source": "Data center commissioning language",
+          "par": 45
+        }
+      ]
     },
     "hook": "OPR → BOD → Cx plan; 3 commissions, 4 integrates, 10 years unless the plan says otherwise.",
     "source": "Data center commissioning language › The documents.",
@@ -494,7 +676,33 @@
       ],
       "requiresNumber": false,
       "codeRef": null,
-      "explanation": "Purpose and criteria sources; prerequisites (prior level signed off, AHJ notified, central station on test, impairment logged, fire watch); safety isolation; steps with expected / actual / pass-fail / initials; failure modes; return to normal — every isolation reversed and verified."
+      "explanation": "Purpose and criteria sources; prerequisites (prior level signed off, AHJ notified, central station on test, impairment logged, fire watch); safety isolation; steps with expected / actual / pass-fail / initials; failure modes; return to normal — every isolation reversed and verified.",
+      "followUps": [
+        {
+          "id": "C3-scn-01-f1",
+          "kind": "why-not",
+          "prompt": "Why not leave the actuators connected? The test is more realistic that way.",
+          "beats": [
+            "Safety isolation: actuators and solenoids replaced by test lamps or simulators",
+            "Agent cylinders disconnected, shutdown circuits verified before you trip anything",
+            "Return to normal — every isolation reversed and verified; the most dangerous outcome of a test is a system left disabled"
+          ],
+          "source": "Data center commissioning language › Script development — what a good fire FPT script contains.",
+          "par": 45
+        },
+        {
+          "id": "C3-scn-01-f2",
+          "kind": "what-if",
+          "prompt": "Say a step fails halfway through the script. What happens on the page, and after?",
+          "beats": [
+            "The line carries an expected result, an actual result, pass/fail and initials — it gets a fail and initials",
+            "The finding goes on the issues log: ID, system, level found, severity (life safety first), owner, due date and closure evidence",
+            "Life-safety issues close before turnover"
+          ],
+          "source": "Data center commissioning language",
+          "par": 45
+        }
+      ]
     },
     "hook": "Six parts — and the script ends with every isolation reversed, not with the last pass.",
     "source": "Data center commissioning language › Script development — what a good fire FPT script contains.",
@@ -518,7 +726,33 @@
       ],
       "requiresNumber": false,
       "codeRef": null,
-      "explanation": "Failure modes: open and ground faults on releasing circuits, loss of primary power, loss of air, abort and manual release behavior — each with an expected result and a line in the script."
+      "explanation": "Failure modes: open and ground faults on releasing circuits, loss of primary power, loss of air, abort and manual release behavior — each with an expected result and a line in the script.",
+      "followUps": [
+        {
+          "id": "C3-scn-02-f1",
+          "kind": "what-if",
+          "prompt": "Say the contractor tells you the panel \"supervises all that already\". Do you still fault every circuit?",
+          "beats": [
+            "Yes — each failure mode gets a line with an expected result, an actual result, pass/fail and initials",
+            "L4 means the system runs every sequence, including failure and degraded modes, against the Basis of Design",
+            "Return to normal after the faults — every isolation reversed and verified"
+          ],
+          "source": "Data center commissioning language",
+          "par": 45
+        },
+        {
+          "id": "C3-scn-02-f2",
+          "kind": "number",
+          "prompt": "Loss of primary power — what does a releasing panel have to ride on, and for how long?",
+          "beats": [
+            "NFPA 72: 24 h standby plus 5 min alarm",
+            "FM Approval Standard 1011: 90 h standby plus 10 min for deluge and pre-action releasing",
+            "Ask whether the owner or insurer specifies FM"
+          ],
+          "source": "Pre-action › Releasing panel power.",
+          "par": 45
+        }
+      ]
     },
     "hook": "Open, ground, no power, no air, abort, by hand — six ways to break it on purpose.",
     "source": "Data center commissioning language › Script development — what a good fire FPT script contains.",
@@ -822,7 +1056,34 @@
       ],
       "requiresNumber": true,
       "codeRef": null,
-      "explanation": "Halls at full load-bank heat on normal power → ASD Fire 1, then Fire 2 or a second detector → pre-action valve trips, inspector's test simulates a fused head → verify notification, central station, valve trip and water delivery time, BMS / EPMS responses, cooling stays up → drop utility mid-event → restore and verify every isolation reversed."
+      "explanation": "Halls at full load-bank heat on normal power → ASD Fire 1, then Fire 2 or a second detector → pre-action valve trips, inspector's test simulates a fused head → verify notification, central station, valve trip and water delivery time, BMS / EPMS responses, cooling stays up → drop utility mid-event → restore and verify every isolation reversed.",
+      "followUps": [
+        {
+          "id": "C4-scn-01-f1",
+          "kind": "what-if",
+          "prompt": "Say the ASD hits Fire 2 and the pre-action valve doesn't trip. What's your read?",
+          "beats": [
+            "Double-interlock: Fire 2 operates the pre-action solenoid, but the valve trips only on loss of air",
+            "The inspector's test simulates the fused head — open it to supply the second input",
+            "Then record time to trip and time to water at the test connection against the table or calc"
+          ],
+          "source": "Data center commissioning language › IST matrix — the document the posting says you'll review.",
+          "par": 45
+        },
+        {
+          "id": "C4-scn-01-f2",
+          "kind": "number",
+          "prompt": "When you drop utility mid-event, what code times are you holding the building to?",
+          "beats": [
+            "Emergency loads within 10 s (NEC 700) — egress lighting and exit signs lit within 10 s",
+            "Legally required standby within 60 s (NEC 701)",
+            "Fire alarm on its own batteries: 24 h standby + 5 min alarm",
+            "Pre-action compressors or nitrogen generators: air restored within 30 min once power returns"
+          ],
+          "source": "Emergency power interface",
+          "par": 45
+        }
+      ]
     },
     "hook": "Heat, smoke, smoke, water, check, kill the power, put it all back.",
     "source": "Likely questions and day-of checklist › Commissioning technical (the 35%)",
@@ -844,11 +1105,90 @@
       ],
       "requiresNumber": false,
       "codeRef": null,
-      "explanation": "Every input against every output with the expected state; each filled cell becomes a test step, and the blank cells get tested too, because proving an output does not happen is half the job. The BOD decides every cell."
+      "explanation": "Every input against every output with the expected state; each filled cell becomes a test step, and the blank cells get tested too, because proving an output does not happen is half the job. The BOD decides every cell.",
+      "followUps": [
+        {
+          "id": "C4-scn-02-f1",
+          "kind": "why-not",
+          "prompt": "Why not just test the filled cells? The blank ones are \"nothing happens\".",
+          "beats": [
+            "The blank cells get tested too — proving an output does not happen is half the job",
+            "Example: ASD Fire 1 in Hall 1 goes to building alarm and central station, but Release / trip stays blank — prove no release",
+            "Example: ASD Fire 2 reaches the pre-action solenoid, and the valve trips only on loss of air"
+          ],
+          "source": "Data center commissioning language › IST matrix — the document the posting says you'll review.",
+          "par": 45
+        },
+        {
+          "id": "C4-scn-02-f2",
+          "kind": "own-it",
+          "prompt": "Have you caught something in cause-and-effect that the device tests had missed?",
+          "beats": [
+            "Cause-and-effect testing found a pre-action release tripping the wrong COLO's valve",
+            "It was double interlock, so that system primed but never filled; the releases for two COLOs were swapped",
+            "I verified the release relay for every system and corrected the programming to the sequence of operations",
+            "Since then I treat every inherited system as unverified until I've tested cause and effect against the sequence, not just the devices"
+          ],
+          "source": "Story 2 — A data center with no drawings",
+          "par": 45
+        }
+      ]
     },
     "hook": "Filled cells are steps; blank cells are steps too — “no water” has to be proven.",
     "source": "Data center commissioning language › IST matrix — the document the posting says you'll review.",
     "par": 90,
+    "confirmInEdition": false
+  },
+  {
+    "id": "C4-scn-03-r2",
+    "topicId": "C4",
+    "type": "scenario",
+    "walkthrough": true,
+    "prompt": "Take one IST matrix row — ASD Fire 2 in Hall 1 — and turn it into test steps, blank cells included.",
+    "interviewerPhrasing": "Pick a row of the IST matrix and tell me the test steps it becomes.",
+    "answer": {
+      "beats": [
+        "Input: ASD Fire 2 or a second detector, Hall 1 — the usual pre-action release input",
+        "Building alarm ● — a test step: verify the building alarm",
+        "Central station ● — a test step: verify the signal is received, with central station on test",
+        "Release / trip: pre-action solenoid — the valve trips only on loss of air; prove the solenoid operates and the valve stays shut until the inspector's test is opened",
+        "HVAC and dampers: per BOD — the BOD decides the cell; test to it",
+        "BMS / EPMS ● — a test step: verify the point",
+        "Elevator — blank: a test step too; prove no recall happens, because proving an output does not happen is half the job"
+      ],
+      "requiresNumber": false,
+      "codeRef": null,
+      "explanation": "Every filled cell becomes a test step — building alarm, central station, the pre-action solenoid (valve trips only on loss of air), HVAC per BOD, BMS / EPMS — and the blank Elevator cell becomes a step too, because proving an output does not happen is half the job. The BOD decides every cell.",
+      "followUps": [
+        {
+          "id": "C4-scn-03-r2-f1",
+          "kind": "why-not",
+          "prompt": "Why not skip the elevator cell? Nobody expects a hall detector to recall an elevator.",
+          "beats": [
+            "The blank cells get tested too — proving an output does not happen is half the job",
+            "Each filled cell becomes a test step; a blank cell becomes a step with the expected state \"does not happen\"",
+            "Example only — the BOD decides every cell"
+          ],
+          "source": "Data center commissioning language › IST matrix — the document the posting says you'll review.",
+          "par": 45
+        },
+        {
+          "id": "C4-scn-03-r2-f2",
+          "kind": "what-if",
+          "prompt": "Say Fire 2 trips the valve outright — water in the pipe, no sprinkler open. What happened?",
+          "beats": [
+            "The row says Fire 2 reaches the pre-action solenoid, and the valve trips only on loss of air — so the valve tripping on detection alone is a finding",
+            "Detection only: alarms annunciate, valve stays shut — that's the expected result",
+            "On the issues log: ID, system, level found, severity — life safety first — and it closes before turnover"
+          ],
+          "source": "Data center commissioning language",
+          "par": 45
+        }
+      ]
+    },
+    "hook": "Filled cells are steps; blank cells are steps too — “no water”, “no recall” have to be proven.",
+    "source": "Data center commissioning language › IST matrix — the document the posting says you'll review.",
+    "par": 120,
     "confirmInEdition": false
   },
   {
@@ -986,7 +1326,37 @@
       ],
       "requiresNumber": false,
       "codeRef": null,
-      "explanation": "Pre-test the whole script first; send it ahead and agree witness points and sample size; one voice on the day; every comment on the issues log on the spot, code questions resolved after; leave with the signed acceptance and any TCO conditions in writing."
+      "explanation": "Pre-test the whole script first; send it ahead and agree witness points and sample size; one voice on the day; every comment on the issues log on the spot, code questions resolved after; leave with the signed acceptance and any TCO conditions in writing.",
+      "followUps": [
+        {
+          "id": "C5-scn-01-f1",
+          "kind": "what-if",
+          "prompt": "Say the AHJ shows up and wants every device, not the sample you agreed. What do you do?",
+          "beats": [
+            "The witness points and sample size were agreed before the day — that's why the script went ahead",
+            "Don't argue in the room: log the request on the issues log on the spot",
+            "Leave with the signed acceptance and any conditions on a temporary certificate of occupancy in writing"
+          ],
+          "source": "Data center commissioning language › Running an AHJ witness test",
+          "par": 45
+        },
+        {
+          "id": "C5-scn-01-f2",
+          "kind": "own-it",
+          "prompt": "Have you run an AHJ inspection yourself?",
+          "beats": [
+            "On the high-rise lab I ran the AHJ inspection and trained the owners before turnover",
+            "I was the contractor's liaison to the third-party commissioning FPE — on the receiving end of every Cx script",
+            {
+              "label": "[The AHJ inspection result: ___ — did it pass first time?]",
+              "fillIn": true
+            },
+            "What makes a test day go right: a script they've seen in advance, a pre-test that has already passed, and one person running the room"
+          ],
+          "source": "Backup scripts (45–70 seconds)",
+          "par": 45
+        }
+      ]
     },
     "hook": "A witness test is a rerun: rehearsed, pre-agreed, one voice, logged, signed.",
     "source": "Data center commissioning language › Running an AHJ witness test",
@@ -1008,7 +1378,32 @@
       ],
       "requiresNumber": false,
       "codeRef": null,
-      "explanation": "Log every AHJ comment on the issues log on the spot. Don't argue code in the room — cite the section and resolve it after. Leave with the signed acceptance and any conditions on a temporary certificate of occupancy in writing."
+      "explanation": "Log every AHJ comment on the issues log on the spot. Don't argue code in the room — cite the section and resolve it after. Leave with the signed acceptance and any conditions on a temporary certificate of occupancy in writing.",
+      "followUps": [
+        {
+          "id": "C5-scn-02-f1",
+          "kind": "what-if",
+          "prompt": "Say you're certain the AHJ has the section wrong. Do you say so?",
+          "beats": [
+            "Not in the room — log the comment on the issues log on the spot",
+            "Cite the section and resolve it after",
+            "Still leave with the signed acceptance and any conditions on a temporary certificate of occupancy in writing"
+          ],
+          "source": "Data center commissioning language › Running an AHJ witness test",
+          "par": 45
+        },
+        {
+          "id": "C5-scn-02-f2",
+          "kind": "number",
+          "prompt": "Say it's the integrated retest interval they're disputing. What's the number, and where's it from?",
+          "beats": [
+            "Integrated retest every 10 years (IFC 901.6.2.2)",
+            "Unless the integrated test plan says otherwise"
+          ],
+          "source": "Smoke control › table",
+          "par": 45
+        }
+      ]
     },
     "hook": "Log it, cite it, settle it later — never in the room.",
     "source": "Data center commissioning language › Running an AHJ witness test",
@@ -1029,7 +1424,33 @@
       ],
       "requiresNumber": false,
       "codeRef": null,
-      "explanation": "Leave with the signed acceptance and any conditions on a temporary certificate of occupancy in writing; every AHJ comment went on the issues log on the spot."
+      "explanation": "Leave with the signed acceptance and any conditions on a temporary certificate of occupancy in writing; every AHJ comment went on the issues log on the spot.",
+      "followUps": [
+        {
+          "id": "C5-scn-03-f1",
+          "kind": "what-if",
+          "prompt": "Say the AHJ won't sign today — they want the punch list closed first. What do you leave with?",
+          "beats": [
+            "Any conditions in writing — on a temporary certificate of occupancy",
+            "Every AHJ comment already on the issues log, each with an owner and a due date",
+            "Life-safety issues close before turnover"
+          ],
+          "source": "Data center commissioning language",
+          "par": 45
+        },
+        {
+          "id": "C5-scn-03-f2",
+          "kind": "why-not",
+          "prompt": "Why not take the inspector's verbal OK and chase the signature next week?",
+          "beats": [
+            "Leave with the signed acceptance",
+            "Any conditions on a temporary certificate of occupancy in writing",
+            "Log every AHJ comment on the issues log on the spot"
+          ],
+          "source": "Data center commissioning language › Running an AHJ witness test",
+          "par": 45
+        }
+      ]
     },
     "hook": "Signature, TCO conditions on paper, comments on the log — nothing verbal.",
     "source": "Data center commissioning language › Running an AHJ witness test",
@@ -1138,7 +1559,34 @@
       ],
       "requiresNumber": false,
       "codeRef": null,
-      "explanation": "New load banks burn off coatings and can drive ASD into Alert or Action — agree thresholds and fire watch with the Cx lead in advance, never just disable a hall; temporary cabling adds fuel load; after load banks leave, re-run the ASD learn on clean air with real airflow."
+      "explanation": "New load banks burn off coatings and can drive ASD into Alert or Action — agree thresholds and fire watch with the Cx lead in advance, never just disable a hall; temporary cabling adds fuel load; after load banks leave, re-run the ASD learn on clean air with real airflow.",
+      "followUps": [
+        {
+          "id": "C6-scn-01-f1",
+          "kind": "why-not",
+          "prompt": "Why not just disable the hall's ASD while the load banks run and turn it back on after?",
+          "beats": [
+            "Never just disable a hall",
+            "Agree thresholds and fire watch with the Cx lead in advance",
+            "Temporary cabling adds fuel load",
+            "After load banks leave, re-run the ASD learn on clean air with real airflow"
+          ],
+          "source": "Data center commissioning language › Load bank strategy — the fire protection angle.",
+          "par": 45
+        },
+        {
+          "id": "C6-scn-01-f2",
+          "kind": "own-it",
+          "prompt": "Have you set ASD thresholds on a live data hall yourself?",
+          "beats": [
+            "I pulled the configuration from all 20 detectors — every one was still at factory defaults",
+            "Set Fire 1 to 0.0625 %/ft and Fire 2 to 1 %/ft for very early detection; normalized airflow and measured transport time on every pipe",
+            "Tie the settings to the alarm philosophy: Alert and Action call Ops, Fire 1 is the building alarm, Fire 2 releases"
+          ],
+          "source": "Story 2 — A data center with no drawings",
+          "par": 45
+        }
+      ]
     },
     "hook": "Burn-off smokes, cabling burns — agree the thresholds, post the watch, relearn after.",
     "source": "Data center commissioning language › Load bank strategy — the fire protection angle.",
@@ -1277,7 +1725,34 @@
       ],
       "requiresNumber": false,
       "codeRef": null,
-      "explanation": "Every finding gets an ID, system, level found, severity (life safety first), owner, due date and closure evidence. Life-safety issues close before turnover; anything else carried into operations needs a documented risk acceptance."
+      "explanation": "Every finding gets an ID, system, level found, severity (life safety first), owner, due date and closure evidence. Life-safety issues close before turnover; anything else carried into operations needs a documented risk acceptance.",
+      "followUps": [
+        {
+          "id": "C7-scn-01-f1",
+          "kind": "what-if",
+          "prompt": "Say a non-life-safety item is still open the morning of turnover. What happens to it?",
+          "beats": [
+            "Anything else carried into operations needs a documented risk acceptance",
+            "It keeps its ID, owner, due date and closure evidence on the log",
+            "Life-safety issues close before turnover — those don't carry"
+          ],
+          "source": "Data center commissioning language › Issues log, punch and turnover.",
+          "par": 45
+        },
+        {
+          "id": "C7-scn-01-f2",
+          "kind": "number",
+          "prompt": "Which standards are the turnover certificates written against?",
+          "beats": [
+            "Record of Completion — NFPA 72",
+            "Contractor's Material and Test Certificates — NFPA 13 / 24",
+            "Pump acceptance report — NFPA 20",
+            "Clean agent acceptance with door fan report — NFPA 2001"
+          ],
+          "source": "Data center commissioning language › Issues log, punch and turnover.",
+          "par": 45
+        }
+      ]
     },
     "hook": "ID, system, level, severity, owner, due, evidence — life safety closes, the rest gets a signed risk acceptance.",
     "source": "Data center commissioning language › Issues log, punch and turnover.",
@@ -1299,7 +1774,34 @@
       ],
       "requiresNumber": false,
       "codeRef": null,
-      "explanation": "Facts in the script, criteria from the BOD, escalate on the issues log, never in the hallway."
+      "explanation": "Facts in the script, criteria from the BOD, escalate on the issues log, never in the hallway.",
+      "followUps": [
+        {
+          "id": "C7-scn-02-f1",
+          "kind": "what-if",
+          "prompt": "Say the contractor insists the step passed and won't initial a fail. What do you do?",
+          "beats": [
+            "Facts in the script — the line has an expected result, an actual result, pass/fail and initials",
+            "Criteria from the BOD",
+            "Escalate on the issues log, never in the hallway"
+          ],
+          "source": "Likely questions and day-of checklist › Values and judgment (the 65%)",
+          "par": 45
+        },
+        {
+          "id": "C7-scn-02-f2",
+          "kind": "own-it",
+          "prompt": "Tell me about a client who didn't want your fix.",
+          "beats": [
+            "The client wanted to try everything short of a re-pull, and each attempt failed",
+            "I let them try their options, because each was cheaper than a re-pull if it worked",
+            "When they didn't, I put the proof on the ground in front of them instead of arguing — twisted cable laid out to the detectors, and the faults cleared",
+            "Tell it as a process gap: the cable was approved before anyone read its data sheet — not blame"
+          ],
+          "source": "Story 3 — Ground faults nobody could ground out",
+          "par": 45
+        }
+      ]
     },
     "hook": "Script for facts, BOD for criteria, issues log for the fight — not the hallway.",
     "source": "Likely questions and day-of checklist › Values and judgment (the 65%)",
@@ -1324,7 +1826,33 @@
       ],
       "requiresNumber": true,
       "codeRef": null,
-      "explanation": "Record of Completion (NFPA 72), Contractor's Material and Test Certificates (NFPA 13 / 24), pump acceptance report (NFPA 20), clean agent acceptance with door fan report (NFPA 2001), battery calcs, program backups, spare sprinklers and agent recharge plan, ITM schedule in the CMMS, impairment procedure, and recorded Ops training."
+      "explanation": "Record of Completion (NFPA 72), Contractor's Material and Test Certificates (NFPA 13 / 24), pump acceptance report (NFPA 20), clean agent acceptance with door fan report (NFPA 2001), battery calcs, program backups, spare sprinklers and agent recharge plan, ITM schedule in the CMMS, impairment procedure, and recorded Ops training.",
+      "followUps": [
+        {
+          "id": "C7-scn-03-f1",
+          "kind": "what-if",
+          "prompt": "Say Ops hasn't been trained by turnover day. Does the package go out?",
+          "beats": [
+            "Recorded Ops training is part of the turnover package",
+            "A gap carried into operations needs a documented risk acceptance",
+            "The ITM schedule loaded into the CMMS and the impairment procedure go with it"
+          ],
+          "source": "Data center commissioning language › Issues log, punch and turnover.",
+          "par": 45
+        },
+        {
+          "id": "C7-scn-03-f2",
+          "kind": "number",
+          "prompt": "What baselines are you handing Ops in that package?",
+          "beats": [
+            "The main drain reading — a reading more than 10% below acceptance has to be investigated, so record yours carefully",
+            "Dry and pre-action valves: a partial trip test every year and a full-flow trip test every 3 years",
+            "That's the NFPA 25 baseline you're setting"
+          ],
+          "source": "Pre-action › Test-day details an interviewer will probe",
+          "par": 45
+        }
+      ]
     },
     "hook": "72 · 13/24 · 20 · 2001, then calcs, backups, spares, the CMMS, impairment, training.",
     "source": "Data center commissioning language › Issues log, punch and turnover.",
