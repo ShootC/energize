@@ -10395,7 +10395,34 @@
       ],
       "requiresNumber": true,
       "codeRef": null,
-      "explanation": "Prerequisites → detection only (valve stays shut) → loss of air only (valve stays shut) → both: valve trips, record time to trip and time to water → manual release → faults → restore. Delivery time is proven against the table or calc — 60 s by test for double-interlock above the 500 gal exemption."
+      "explanation": "Prerequisites → detection only (valve stays shut) → loss of air only (valve stays shut) → both: valve trips, record time to trip and time to water → manual release → faults → restore. Delivery time is proven against the table or calc — 60 s by test for double-interlock above the 500 gal exemption.",
+      "followUps": [
+        {
+          "id": "A2-scn-01-f1",
+          "kind": "what-if",
+          "prompt": "Say the AHJ only wants to witness the \"both\" step. What stays in the script?",
+          "beats": [
+            "Everything — the witness test should repeat a test you've already passed; pre-test the whole script first",
+            "Send the script ahead; agree the witness points and sample size before the day",
+            "The faults and the restore still run: return to normal, every isolation reversed and verified"
+          ],
+          "source": "Data center commissioning language",
+          "par": 45
+        },
+        {
+          "id": "A2-scn-01-f2",
+          "kind": "own-it",
+          "prompt": "Where did \"isolation first, return to normal last\" come from for you?",
+          "beats": [
+            "Seven months in, a dirty head in a San Francisco data center: I didn't put the system on test and didn't pull the head — canned air from under the raised floor, and the building evacuated",
+            "I didn't reset the panel to make it go away; I confirmed the alarm was mine, silenced it, and told the trucks myself",
+            "If I'm touching a panel or a device, the system is on test first; every test script I write starts with isolation and ends with a verified return to normal",
+            "Nobody should ever learn about your test from an evacuation"
+          ],
+          "source": "Story 4 — Canned air at a data center",
+          "par": 45
+        }
+      ]
     },
     "hook": "Prereqs, one key, the other key, both keys, by hand, break everything, put it back — seven sections.",
     "source": "Pre-action › Sample L4 script — double-interlock (the Day 12 exercise)",
@@ -10418,11 +10445,89 @@
       ],
       "requiresNumber": false,
       "codeRef": null,
-      "explanation": "Purpose and criteria sources → prerequisites → safety isolation → steps with expected result, actual result, pass/fail and initials on every line → failure modes → return to normal, every isolation reversed and verified. The most dangerous outcome of a test is a system left disabled."
+      "explanation": "Purpose and criteria sources → prerequisites → safety isolation → steps with expected result, actual result, pass/fail and initials on every line → failure modes → return to normal, every isolation reversed and verified. The most dangerous outcome of a test is a system left disabled.",
+      "followUps": [
+        {
+          "id": "A2-scn-02-f1",
+          "kind": "why-not",
+          "prompt": "Why put the code or BOD section next to every criterion? You know the numbers.",
+          "beats": [
+            "Purpose, system, and the code / BOD sections each acceptance criterion comes from — it's the first thing in the script",
+            "Don't argue code in the room — cite the section and resolve it after; the section is already on the line",
+            "Their guide scores \"here's how I'd find out\" above a guess: name the section you'd check before writing the script"
+          ],
+          "source": "Data center commissioning language",
+          "par": 45
+        },
+        {
+          "id": "A2-scn-02-f2",
+          "kind": "number",
+          "prompt": "Prerequisites for the pre-action script — what has to be true before step one?",
+          "beats": [
+            "Hydro and air test passed — 40 psi for 24 h, loss ≤ 1.5 psi",
+            "Panel programmed; central station on test; gauges calibrated; drain path ready",
+            "Prior level signed off, AHJ notified, impairment logged, fire watch in place if the system goes out of service"
+          ],
+          "source": "Pre-action",
+          "par": 45
+        }
+      ]
     },
     "hook": "Why, before, isolate, step-by-step with initials, break it, put it back — six parts to every script.",
     "source": "Data center commissioning language › Script development — what a good fire FPT script contains.",
     "par": 90,
+    "confirmInEdition": false
+  },
+  {
+    "id": "A2-scn-03-r2",
+    "topicId": "A2",
+    "type": "scenario",
+    "walkthrough": true,
+    "prompt": "Walk me through the double-interlock L4 script, start to restore — the seven steps, in order.",
+    "interviewerPhrasing": "Take me through your double-interlock functional test from the first prerequisite to sign-off.",
+    "answer": {
+      "beats": [
+        "Prerequisites: hydro and air test passed; panel programmed; central station on test; gauges calibrated; drain path ready",
+        "Detection only (one zone, then the cross-zone or Fire 2 input): alarms annunciate, valve stays shut",
+        "Loss of air only (open the inspector's test): low-air supervisory, valve stays shut",
+        "Both: detection plus open test connection — valve trips, waterflow pressure switch alarms; record time to trip and time to water at the test connection against the table or calc",
+        "Manual release per the design",
+        "Faults: open and short on the solenoid circuit, detection circuit faults, low and high air, compressor or nitrogen generator failure, tamper, panel AC loss — each one annunciates correctly",
+        "Restore: drain, reset the valve per the manufacturer (clapper, priming water), restore air, panel normal, sign-off"
+      ],
+      "requiresNumber": false,
+      "codeRef": null,
+      "explanation": "Prerequisites → detection only, valve stays shut → loss of air only, valve stays shut → both: valve trips, record time to trip and time to water → manual release per the design → faults, each one annunciates correctly → restore: drain, reset the valve, restore air, panel normal, sign-off.",
+      "followUps": [
+        {
+          "id": "A2-scn-03-r2-f1",
+          "kind": "number",
+          "prompt": "The air faults on step six — low, high, and what the air supply has to do?",
+          "beats": [
+            "Low and high air each annunciate correctly",
+            "The air supply must restore normal pressure within 30 minutes",
+            "Automatic air supervision is required above 20 sprinklers"
+          ],
+          "source": "Pre-action",
+          "par": 45
+        },
+        {
+          "id": "A2-scn-03-r2-f2",
+          "kind": "what-if",
+          "prompt": "Say the manual release does nothing. Where do you look?",
+          "beats": [
+            "The manual release path is one of the failure modes — it gets its own line: expected result, actual result, pass/fail, initials",
+            "Check the safety isolation first: a solenoid replaced by a test lamp or simulator shows the signal, not the trip",
+            "It's a finding, life safety first — restore, fix, retest"
+          ],
+          "source": "Data center commissioning language",
+          "par": 45
+        }
+      ]
+    },
+    "hook": "Shut, shut, trip — then by hand, then break it seven ways, then put it back.",
+    "source": "Pre-action › Sample L4 script — double-interlock (the Day 12 exercise)",
+    "par": 120,
     "confirmInEdition": false
   },
   {
@@ -10646,7 +10751,34 @@
       ],
       "requiresNumber": false,
       "codeRef": null,
-      "explanation": "Halls at full load-bank heat on normal power → ASD Fire 1, then Fire 2 or a second detector → pre-action valve trips → inspector's test simulates a fused head → verify notification, central station, valve trip and water delivery time, BMS / EPMS, cooling stays up → drop utility mid-event → fire alarm on secondary power, pumps on generator, controllers transfer → restore and verify every isolation reversed."
+      "explanation": "Halls at full load-bank heat on normal power → ASD Fire 1, then Fire 2 or a second detector → pre-action valve trips → inspector's test simulates a fused head → verify notification, central station, valve trip and water delivery time, BMS / EPMS, cooling stays up → drop utility mid-event → fire alarm on secondary power, pumps on generator, controllers transfer → restore and verify every isolation reversed.",
+      "followUps": [
+        {
+          "id": "A3-scn-01-f1",
+          "kind": "what-if",
+          "prompt": "Say the hall's cooling drops out the moment the valve trips. Finding?",
+          "beats": [
+            "Cooling stays up is one of the things you verify — per BOD, halls often keep cooling running",
+            "Check the HVAC column of the matrix first — the BOD decides every cell",
+            "If the BOD says cooling stays up, it's a finding: ID, system, level found, severity, owner, due date and closure evidence"
+          ],
+          "source": "Data center commissioning language",
+          "par": 45
+        },
+        {
+          "id": "A3-scn-01-f2",
+          "kind": "own-it",
+          "prompt": "What's the closest you've come to running that scenario for real?",
+          "beats": [
+            "Cause-and-effect testing on the VESDA job: zone by zone against the sequence of operations, watching which valve actually operated, not just that a release output went active",
+            "That's how we found a pre-action release tripping the wrong COLO's valve — double interlock, so it primed but never filled",
+            "Say plainly there's no direct story of a full data hall IST with load banks and a utility drop",
+            "Then how I'd run it: halls at load-bank heat → Fire 1, then Fire 2 → valve trips → drop utility mid-event → restore and verify every isolation reversed"
+          ],
+          "source": "Story 2 — A data center with no drawings",
+          "par": 45
+        }
+      ]
     },
     "hook": "At L5 I prove the building: fire, water, power loss, and everything back to normal.",
     "source": "Commissioning technical (the 35%) › 9",
@@ -10669,11 +10801,88 @@
       ],
       "requiresNumber": true,
       "codeRef": null,
-      "explanation": "Signals at the FACP and BMS: generator running and fault, low fuel, ATS position, fire pump power status (loss of phase, phase reversal, transfer switch position). Panels ride through on batteries with no lost points or trouble storms; air restored within 30 min; everything returns to normal without a manual reset."
+      "explanation": "Signals at the FACP and BMS: generator running and fault, low fuel, ATS position, fire pump power status (loss of phase, phase reversal, transfer switch position). Panels ride through on batteries with no lost points or trouble storms; air restored within 30 min; everything returns to normal without a manual reset.",
+      "followUps": [
+        {
+          "id": "A3-scn-02-f1",
+          "kind": "what-if",
+          "prompt": "Say one controller doesn't come back after restore and Ops resets it by hand. Pass?",
+          "beats": [
+            "No — every system should return to normal without a manual reset; log any that don't",
+            "Controllers transfer is part of what you verify when you drop utility mid-event",
+            "Utility failure in the matrix: smoke control fans restart, BMS / EPMS ●, central station trouble if a panel loses AC"
+          ],
+          "source": "Emergency power interface",
+          "par": 45
+        },
+        {
+          "id": "A3-scn-02-f2",
+          "kind": "number",
+          "prompt": "The fire pump during the drop — the signals, and the transfer rule?",
+          "beats": [
+            "Fire pump power status: loss of phase, phase reversal, transfer switch position",
+            "Transfer to the alternate source and back without opening overcurrent devices; at least half the starts on the alternate source",
+            "At L5 the pump runs on generator at system demand; signals reach the FACP — pump running, loss of phase or phase reversal, controller trouble"
+          ],
+          "source": "Fire pump",
+          "par": 45
+        }
+      ]
     },
     "hook": "Generator, fuel, ATS, pump phases — then no trouble storm, air back in 30, and nobody touches a reset.",
     "source": "Emergency power interface › Signals to check at the FACP and BMS",
     "par": 90,
+    "confirmInEdition": false
+  },
+  {
+    "id": "A3-scn-03-r2",
+    "topicId": "A3",
+    "type": "scenario",
+    "walkthrough": true,
+    "prompt": "Run the data hall IST fire scenario for me, step by step — heat, smoke, water, power loss, restore.",
+    "interviewerPhrasing": "Write the IST fire scenario for a data hall.",
+    "answer": {
+      "beats": [
+        "Halls at full load-bank heat on normal power",
+        "ASD Fire 1, then Fire 2 or a second detector",
+        "Pre-action valve trips; the inspector's test simulates a fused head",
+        "Verify notification, central station, valve trip and water delivery time, BMS / EPMS responses; cooling stays up",
+        "Drop utility mid-event: fire alarm on secondary power, pumps on generator, controllers transfer",
+        "Restore and verify every isolation reversed"
+      ],
+      "requiresNumber": false,
+      "codeRef": null,
+      "explanation": "Halls at full load-bank heat on normal power → ASD Fire 1, then Fire 2 or a second detector → pre-action valve trips, inspector's test simulates a fused head → verify notification, central station, valve trip and water delivery time, BMS / EPMS responses, cooling stays up → drop utility mid-event: fire alarm on secondary power, pumps on generator, controllers transfer → restore and verify every isolation reversed.",
+      "followUps": [
+        {
+          "id": "A3-scn-03-r2-f1",
+          "kind": "number",
+          "prompt": "Water delivery time in that scenario — what number are you holding the hall to?",
+          "beats": [
+            "Double-interlock above 500 gal: water at the test connection within 60 s by test, or by calculation (NFPA 13 §8.3.2.3)",
+            "Or the table by hazard: light 60 s, ordinary 50 s, extra 45 s, high-piled storage 40 s",
+            "Record time to trip and time to water at the test connection"
+          ],
+          "source": "Pre-action",
+          "par": 45
+        },
+        {
+          "id": "A3-scn-03-r2-f2",
+          "kind": "why-not",
+          "prompt": "Why drop utility in the middle of the fire scenario? Run it as its own test.",
+          "beats": [
+            "The pull-the-plug test is repeated with a fire scenario already in alarm — an alarm in progress keeps sounding",
+            "Fire alarm on secondary power, pumps on generator, controllers transfer — that's what the mid-event drop proves",
+            "At L5 I prove the building: all systems together under simulated load and utility failure, the way Ops will live with them"
+          ],
+          "source": "Emergency power interface",
+          "par": 45
+        }
+      ]
+    },
+    "hook": "Heat, smoke, smoke, water, check, kill the power, put it all back.",
+    "source": "Commissioning technical (the 35%) › 9",
+    "par": 120,
     "confirmInEdition": false
   },
   {
