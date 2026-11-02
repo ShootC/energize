@@ -6475,12 +6475,92 @@
         "Article 700",
         "NEC Article 700"
       ],
-      "explanation": "NEC 700 emergency within 10 s, NEC 701 legally required standby within 60 s, NEC 695 fire pumps, NFPA 110 generators and transfer equipment, NFPA 72 Chapter 10 fire alarm power, NFPA 20 pump alternate power. The IST proves every life-safety load rides through, is back within code time, and returns to normal without anyone touching it."
+      "explanation": "NEC 700 emergency within 10 s, NEC 701 legally required standby within 60 s, NEC 695 fire pumps, NFPA 110 generators and transfer equipment, NFPA 72 Chapter 10 fire alarm power, NFPA 20 pump alternate power. The IST proves every life-safety load rides through, is back within code time, and returns to normal without anyone touching it.",
+      "followUps": [
+        {
+          "id": "E1-scn-01-f1",
+          "kind": "what-if",
+          "prompt": "Say the egress lighting takes longer than ten seconds to come back. Does the IST pass?",
+          "beats": [
+            "Egress lighting and exit signs lit within 10 s — NEC 700 emergency, available within 10 s",
+            "Each load in the table has something you prove — a miss is a finding on the issues log, severity life safety first",
+            "Life-safety issues close before turnover"
+          ],
+          "source": "Emergency power interface",
+          "par": 45
+        },
+        {
+          "id": "E1-scn-01-f2",
+          "kind": "number",
+          "prompt": "The fire pump — what does \"transfers and carries demand\" look like when you actually test it?",
+          "beats": [
+            "Simulate loss of normal power at peak load; transfer to the alternate source and back without opening overcurrent devices",
+            "At least half the starts on the alternate source",
+            "Minimum run timer: electric 10 min after an automatic start (diesel 30 min)"
+          ],
+          "source": "Fire pump › table",
+          "par": 45
+        }
+      ]
     },
     "hook": "10 seconds for 700, 60 for 701, the pump on 695, the panels on their batteries — and nobody touches a reset.",
     "source": "Emergency power interface",
     "par": 90,
     "confirmInEdition": false
+  },
+  {
+    "id": "E1-scn-02-r2",
+    "topicId": "E1",
+    "type": "scenario",
+    "prompt": "The generator behind the data hall's life-safety loads — what do you need to see at acceptance, and what periodic test do you hand Ops?",
+    "interviewerPhrasing": "What does the generator acceptance look like, and what's the test schedule after that?",
+    "answer": {
+      "beats": [
+        "Level 1 = failure could cost lives; Type 10 = power within 10 s; Class = hours of fuel at rated load",
+        "Acceptance: cold start and transfer within 10 s",
+        "A building load test and a 2-hour full-load test, with results on file before occupancy",
+        "Periodic: monthly 30 min at 30% or more of nameplate (or the manufacturer's minimum exhaust temperature)",
+        "An annual load-bank test where monthly runs can't reach 30%; Level 1 systems run 4 h every 36 months"
+      ],
+      "requiresNumber": true,
+      "codeRef": "NFPA 110",
+      "codeRefAliases": [
+        "110",
+        "NFPA110",
+        "NFPA 110 EPSS"
+      ],
+      "explanation": "NFPA 110 (confirm sections in your edition): Level 1, Type 10, Class in hours of fuel. Acceptance is a cold start and transfer within 10 s, a building load test and a 2-hour full-load test on file before occupancy; periodic is monthly 30 min at 30% or more of nameplate, an annual load-bank test where the monthly runs can't reach 30%, and 4 h every 36 months for Level 1.",
+      "followUps": [
+        {
+          "id": "E1-scn-02-r2-f1",
+          "kind": "find-out",
+          "prompt": "You keep saying \"confirm the section\". Which one would you check, and what do you do on site until you have?",
+          "beats": [
+            "Say it straight: \"I don't know the section — here's how I'd find out.\" Their own guide scores that above a guess",
+            "Name the standard — NFPA 110 — and confirm the section in the edition the site uses before you quote a number",
+            "Name the section you'd check before writing the script; the script cites the code / BOD sections each acceptance criterion comes from"
+          ],
+          "source": "study-guide.md",
+          "par": 45
+        },
+        {
+          "id": "E1-scn-02-r2-f2",
+          "kind": "what-if",
+          "prompt": "Say the monthly run can't get the generator to 30% — the building's light. What then?",
+          "beats": [
+            "An annual load-bank test where monthly runs can't reach 30%",
+            "The monthly run is 30 min at 30% or more of nameplate — or the manufacturer's minimum exhaust temperature",
+            "Level 1 systems still run 4 h every 36 months"
+          ],
+          "source": "Emergency power interface › Generator numbers (NFPA 110 — confirm sections in your edition)",
+          "par": 45
+        }
+      ]
+    },
+    "hook": "Level 1, Type 10, Class in hours — start in 10, 2 h at full load; then 30 min at 30% monthly and 4 h every 36 months.",
+    "source": "Emergency power interface › Generator numbers (NFPA 110 — confirm sections in your edition)",
+    "par": 90,
+    "confirmInEdition": true
   },
   {
     "id": "E2-ord-01",
@@ -6653,7 +6733,33 @@
       ],
       "requiresNumber": true,
       "codeRef": null,
-      "explanation": "The five pull-the-plug steps — load-bank heat and fire alarm normal (then in alarm), open the utility main, time the transfer and walk every load, repeat N+1 and with the pump running, restore without a manual reset — plus what you'd log if a panel throws troubles on transfer: no lost points or trouble storms, an alarm in progress keeps sounding."
+      "explanation": "The five pull-the-plug steps — load-bank heat and fire alarm normal (then in alarm), open the utility main, time the transfer and walk every load, repeat N+1 and with the pump running, restore without a manual reset — plus what you'd log if a panel throws troubles on transfer: no lost points or trouble storms, an alarm in progress keeps sounding.",
+      "followUps": [
+        {
+          "id": "E2-scn-01-f1",
+          "kind": "what-if",
+          "prompt": "Say a releasing panel throws a trouble storm on transfer and then clears itself. Pass?",
+          "beats": [
+            "No — the criterion for fire alarm, voice evacuation and releasing panels is no lost points or trouble storms",
+            "Log what the panel throws on transfer",
+            "Every system should return to normal without a manual reset; log any that don't"
+          ],
+          "source": "Emergency power interface",
+          "par": 45
+        },
+        {
+          "id": "E2-scn-01-f2",
+          "kind": "why-not",
+          "prompt": "Why run it twice? If the panels ride through on normal, they'll ride through in alarm.",
+          "beats": [
+            "Halls at load-bank heat with fire alarm normal first — then repeat with a fire scenario already in alarm",
+            "An alarm in progress keeps sounding is one of the things you prove",
+            "Then repeat with one generator failed (N+1) and with the fire pump running"
+          ],
+          "source": "Emergency power interface",
+          "par": 45
+        }
+      ]
     },
     "hook": "Five steps, two passes (normal, then in alarm), and the panels must ride through with no lost points.",
     "source": "Emergency power interface › The L5 pull-the-plug test",
@@ -6679,11 +6785,86 @@
         "110",
         "NFPA110"
       ],
-      "explanation": "Signals to check at the FACP and BMS: generator running and fault (NFPA 110 remote annunciator), low fuel, ATS position, fire pump power status (loss of phase, phase reversal, transfer switch position)."
+      "explanation": "Signals to check at the FACP and BMS: generator running and fault (NFPA 110 remote annunciator), low fuel, ATS position, fire pump power status (loss of phase, phase reversal, transfer switch position).",
+      "followUps": [
+        {
+          "id": "E2-scn-02-f1",
+          "kind": "what-if",
+          "prompt": "Say the generator's running fine but the fire alarm panel never shows it. Does the IST pass?",
+          "beats": [
+            "Generator running and fault reach the FACP and BMS — the NFPA 110 remote annunciator",
+            "The signals are part of the walk: generator running and fault, low fuel, ATS position, fire pump power status",
+            "A missing signal is a finding: ID, system, level found, severity, owner, due date and closure evidence"
+          ],
+          "source": "Emergency power interface",
+          "par": 45
+        },
+        {
+          "id": "E2-scn-02-f2",
+          "kind": "own-it",
+          "prompt": "Have you proven generator backup for a fire alarm yourself?",
+          "beats": [
+            "On a high-rise lab we tested smoke control and the generator backup for the emergency circuits",
+            "I was the main troubleshooter on fan and damper monitoring",
+            "I was the contractor's liaison to the third-party commissioning FPE, so I was on the receiving end of every Cx script"
+          ],
+          "source": "Backup scripts (45–70 seconds)",
+          "par": 45
+        }
+      ]
     },
     "hook": "Generator running and fault, low fuel, ATS position, pump phase and transfer — five things on two screens.",
     "source": "Emergency power interface › Signals to check at the FACP and BMS",
     "par": 60,
+    "confirmInEdition": false
+  },
+  {
+    "id": "E2-scn-01-r2",
+    "topicId": "E2",
+    "type": "scenario",
+    "walkthrough": true,
+    "prompt": "Walk me through the pull-the-plug IST, start to restore.",
+    "interviewerPhrasing": "How do you test fire alarm through a utility failure?",
+    "answer": {
+      "beats": [
+        "Halls at load-bank heat; fire alarm normal. Then repeat with a fire scenario already in alarm",
+        "Open the utility main — or trip a generation block on an islanded campus",
+        "Time the transfer and walk every load in the table",
+        "Repeat with one generator failed (N+1) and with the fire pump running",
+        "Restore normal power. Every system should return to normal without a manual reset; log any that don't"
+      ],
+      "requiresNumber": false,
+      "codeRef": null,
+      "explanation": "The L5 pull-the-plug test in order: halls at load-bank heat with fire alarm normal (then again with a fire scenario already in alarm), open the utility main or trip a generation block, time the transfer and walk every load, repeat N+1 and with the fire pump running, then restore — every system back to normal without a manual reset.",
+      "followUps": [
+        {
+          "id": "E2-scn-01-r2-f1",
+          "kind": "what-if",
+          "prompt": "Say the campus is islanded — there's no utility to drop. What changes?",
+          "beats": [
+            "Trip a generation block instead of opening the utility main",
+            "\"Normal\" and \"alternate\" sources have to be defined with the AHJ before you can write the transfer test"
+          ],
+          "source": "Emergency power interface",
+          "par": 45
+        },
+        {
+          "id": "E2-scn-01-r2-f2",
+          "kind": "number",
+          "prompt": "What does fire alarm have to carry on secondary power, and where's that from?",
+          "beats": [
+            "24 h standby + 5 min alarm on batteries",
+            "Or an automatic-starting generator plus dedicated batteries with 4 h of capacity",
+            "NFPA 72-2019 §10.6.7.3.1 (renumbered in 2025)"
+          ],
+          "source": "Emergency power interface › Fire alarm secondary power",
+          "par": 45
+        }
+      ]
+    },
+    "hook": "Five steps, two passes (normal, then in alarm), and the panels must ride through with no lost points.",
+    "source": "Emergency power interface › The L5 pull-the-plug test",
+    "par": 120,
     "confirmInEdition": false
   },
   {
@@ -6824,7 +7005,33 @@
         "10.6.7.3.1",
         "NFPA 72 10.6.7.3.1"
       ],
-      "explanation": "Fire alarm, voice evacuation and releasing panels ride through on their own batteries (24 h + 5 min, or an automatic-starting generator plus 4 h dedicated batteries, NFPA 72-2019 §10.6.7.3.1). With islanded power and no utility, normal and alternate sources have to be defined with the AHJ before you can write the transfer test."
+      "explanation": "Fire alarm, voice evacuation and releasing panels ride through on their own batteries (24 h + 5 min, or an automatic-starting generator plus 4 h dedicated batteries, NFPA 72-2019 §10.6.7.3.1). With islanded power and no utility, normal and alternate sources have to be defined with the AHJ before you can write the transfer test.",
+      "followUps": [
+        {
+          "id": "E3-scn-01-f1",
+          "kind": "what-if",
+          "prompt": "Say the electrical team calls the microgrid \"always on\" and wants no transfer test at all. What do you say?",
+          "beats": [
+            "With islanded power and no utility, \"normal\" and \"alternate\" sources have to be defined with the AHJ before you can write the transfer test",
+            "Trip a generation block instead of opening the utility main",
+            "The IST proves every life-safety load rides through a generation-block trip, is back within code time, and returns to normal without anyone touching it"
+          ],
+          "source": "Emergency power interface",
+          "par": 45
+        },
+        {
+          "id": "E3-scn-01-f2",
+          "kind": "number",
+          "prompt": "Voice evac — same battery number as the fire alarm?",
+          "beats": [
+            "NFPA 72: 24 h standby plus 5 min alarm",
+            "15 min for in-building voice evacuation",
+            "Add the 20% margin most manufacturers and AHJs require"
+          ],
+          "source": "FPE refresher: fire alarm and fire dynamics › Fire alarm › Secondary power",
+          "par": 45
+        }
+      ]
     },
     "hook": "Define normal and alternate with the AHJ first; then prove 24 + 5 — or generator + 4 — with no lost points.",
     "source": "Emergency power interface › Data center points to make",
