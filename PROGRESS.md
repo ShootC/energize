@@ -159,6 +159,48 @@ Spec: `GAME_SPEC_ROUND2.md` (a delta that wins over `GAME_SPEC.md`), `ROUND2_UPD
 | `tests/helpers.js` | 19, 24, 39, 47, 54 | Interview area and Oct fixtures — kept |
 | `tests/markdown.test.js` | 14 | "one cutover" in a story title — kept |
 
+### Round 2 · Session B1 · Technical follow-ups, the data hall core (Fable, Nov 2)
+
+Topics C1–C7, P1–P8, E1–E3, K1–K4, A2, A3, per `ROUND2_UPDATE_PROMPT.md` (common block + B1). Six commits on `round2`, one per area plus the wrap-up. **The round 1 debrief step was skipped by Brandon's choice** — `content/round1-debrief.md` is still the blank template, so no "Round 1 debrief" cards exist and no "Facts about my own work" fed the own-it beats; it can be run later per "After it ships" in `ROUND2_UPDATE_PROMPT.md`.
+
+- **Backup.** `src/data/questions.round1.json` is the bank as it stood before this session (388 cards, byte-identical to `v1.0-round1`'s plus session A's validator-only changes — none).
+- **Bank: 397 cards** (388 + 9 `-r2`), **53 cards with follow-ups, 103 follow-ups** (what-if 44 · number 29 · why-not 18 · own-it 10 · find-out 2), **6 walkthroughs**. Every existing card keeps its id, type, beats and explanation; the only edits to existing cards are the added `answer.followUps`.
+- **Walkthrough cards** (scenario, `walkthrough: true`, par 120, beats = the guide's steps in order, 2 follow-ups each): `C1-scn-04-r2` (the L1–L5 ladder for a pre-action system, Q8 — the Cx table rows), `C4-scn-03-r2` (the IST matrix's "ASD Fire 2, Hall 1" row turned into test steps, blank Elevator cell included), `A2-scn-03-r2` (the double-interlock L4 script, start to restore — the Pre-action sample script's seven steps), `A3-scn-03-r2` (the data hall IST fire scenario, Q9), `E2-scn-01-r2` (the pull-the-plug IST — carried in from `sample.json` under the same id), `K2-scn-03-r2` (smoke control acceptance, L0 to close-out).
+- **New scenario cards** (Core topics that had one scenario card): `E1-scn-02-r2` (NFPA 110 generator acceptance and periodic numbers; `confirmInEdition: true`, `codeRef: "NFPA 110"`, with a find-out follow-up), `K1-scn-02-r2` (IBC stair / hoistway ranges and door force; `confirmInEdition: true`, `codeRef: "IBC"`, with a find-out), `K3-scn-02-r2` (notification: audibility, candela, STI, secondary power from the fire alarm refresher).
+- **Follow-ups**: prompts in a peer's spoken voice, 2–4 checkable beats each, `par: 45`, `source` a guide heading path (or the story's heading for own-its). Every number, section and step in a follow-up beat was located in the guide the same way the audit locates main beats: the audit was run over a synthetic bank with every follow-up as a scenario card (a scratchpad harness, not committed) — **0 findings**, 3 review notes (E1-scn-02-r2-f1's "NFPA 110" and K1-scn-02-r2-f1's "2012" sit in the card's section, not in "Read this first"; P4-scn-01-f1's "2 sprinklers" takes its noun from the table header). Session D's extended audit should see the same.
+- **own-it beats** come only from `content/story-scripts.md`: Story 2 (cause-and-effect zone by zone, the wrong-COLO release, the VESDA thresholds), Story 3 (the client who tried every cheaper fix), Story 4 (on test first, isolation to return to normal), and the lab backup (AHJ inspection, generator backup, fan and damper monitoring — its bracketed lines are fill-in beats). A3-scn-01-f2 uses the common block's shape for a test no story covers: say plainly there's no direct story → the closest thing (Story 2) → how he'd run it per the guide.
+- **No engine or audit change.** `-r2` ids pass `ID_RE`, the validator, the bank tests and the audit as session A left them; no topic exceeds its `CARD_MINIMUMS` range (K3 is the largest at 9), so the range was not raised. `scripts/audit-allow.json` is unchanged.
+- **Verified**: `npm test` 124/124 · `node validate.js src/data/questions.json --strict` 0 errors, 0 warnings · `node scripts/audit.js` 0 findings (397 cards; `audit-report.md` recommitted with the new count) · `node build.js` → `dist/index.html` 878 KB (dist/ recommitted, as session A did) · the stock `node tools/smoke.js` passes its first 40 checks and stops at its plain-scenario fixture (`P6-scn-01` now has follow-ups — decision 79, Open questions); a scratchpad copy of the smoke with that fixture switched to `C6-scn-02` ran the whole suite over this build: **100/100** at 390×844 (plus 430×932 and landscape), offline, with the chain / interrupt / walkthrough / round-deck / installable-app checks, 397 cards in the cached shell, no console errors, no network requests.
+
+| Topic | Weight | Cards | Scenario cards | Follow-ups added, by kind | New cards | Debrief cards | Flagged |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| C1 | Core | 8 | 4 (4 with follow-ups) | why-not 2 · what-if 2 · number 3 · own-it 1 | C1-scn-04-r2 (walkthrough) | skipped | — |
+| C2 | Core | 6 | 2 (2 with follow-ups) | why-not 1 · what-if 2 · number 1 | — | skipped | — |
+| C3 | Core | 7 | 2 (2 with follow-ups) | why-not 1 · what-if 2 · number 1 | — | skipped | — |
+| C4 | Core | 8 | 3 (3 with follow-ups) | why-not 2 · what-if 2 · number 1 · own-it 1 | C4-scn-03-r2 (walkthrough) | skipped | — |
+| C5 | Core | 7 | 3 (3 with follow-ups) | why-not 1 · what-if 3 · number 1 · own-it 1 | — | skipped | — |
+| C6 | Support | 5 | 2 (1 with follow-ups) | why-not 1 · own-it 1 | — | skipped | — |
+| C7 | Core | 6 | 3 (3 with follow-ups) | what-if 3 · number 2 · own-it 1 | — | skipped | — |
+| P1 | Core | 6 | 2 (2 with follow-ups) | why-not 1 · what-if 1 · number 2 | — | skipped | — |
+| P2 | Core | 6 | 2 (2 with follow-ups) | why-not 1 · what-if 2 · number 1 | — | skipped | — |
+| P3 | Core | 6 | 2 (2 with follow-ups) | why-not 1 · what-if 2 · number 1 | — | skipped | — |
+| P4 | Support | 4 | 1 (1 with follow-ups) | what-if 1 | — | skipped | — |
+| P5 | Core | 7 | 2 (2 with follow-ups) | what-if 2 · number 2 | — | skipped | the L4-script walkthrough sits on A2 (decision 74) |
+| P6 | Core | 7 | 2 (2 with follow-ups) | why-not 1 · what-if 2 · number 1 | — | skipped | — |
+| P7 | Support | 5 | 1 (1 with follow-ups) | what-if 1 | — | skipped | — |
+| P8 | Core | 6 | 3 (3 with follow-ups) | why-not 1 · what-if 2 · number 2 · own-it 1 | — | skipped | — |
+| E1 | Core | 8 | 2 (2 with follow-ups) | what-if 2 · number 1 · find-out 1 | E1-scn-02-r2 (confirmInEdition) | skipped | — |
+| E2 | Core | 7 | 3 (3 with follow-ups) | why-not 1 · what-if 3 · number 1 · own-it 1 | E2-scn-01-r2 (walkthrough) | skipped | — |
+| E3 | Support | 5 | 1 (1 with follow-ups) | what-if 1 · number 1 | — | skipped | — |
+| K1 | Core | 7 | 2 (2 with follow-ups) | why-not 1 · what-if 1 · number 1 · find-out 1 | K1-scn-02-r2 (confirmInEdition) | skipped | — |
+| K2 | Core | 8 | 3 (3 with follow-ups) | why-not 1 · what-if 3 · number 1 · own-it 1 | K2-scn-03-r2 (walkthrough) | skipped | — |
+| K3 | Core | 9 | 2 (2 with follow-ups) | what-if 2 · number 2 | K3-scn-02-r2 | skipped | — |
+| K4 | Support | 5 | 1 (1 with follow-ups) | what-if 1 | — | skipped | — |
+| A2 | Core | 8 | 3 (3 with follow-ups) | why-not 1 · what-if 2 · number 2 · own-it 1 | A2-scn-03-r2 (walkthrough) | skipped | — |
+| A3 | Core | 8 | 3 (3 with follow-ups) | why-not 1 · what-if 2 · number 2 · own-it 1 | A3-scn-03-r2 (walkthrough) | skipped | — |
+
+Coverage targets (common block): every Core scenario card has 2 follow-ups with at least one why-not or what-if; every Core topic has ≥ 2 scenario cards with follow-ups; every Core `confirmInEdition` scenario (the two new ones — none existed) has a find-out; every area has an own-it (Cx 5 · Pre-action 1 · Emergency power 1 · Smoke control 1 · Applied 2); every Support topic has one scenario card with 1–2 follow-ups; Light (A1, A5) untouched.
+
 ### For the content sessions (B1, B2, C, D) — read this before writing cards
 
 **Card fields added in round 2** (validator-enforced; `node validate.js src/data/questions.json --strict`):
@@ -200,11 +242,11 @@ One follow-up chain as implemented (`src/data/sample.json`, E2-scn-01-r2 trimmed
 
 **Checks to run after each area**: `node validate.js src/data/questions.json --strict` · `npm test` (the bank test grades every card clean on its own model answer, every follow-up layer included) · `node scripts/audit.js` (it does not read `followUps` yet — session D extends it) · `node build.js`, then open `dist/index.html?card=<id>` to see a card (`&interruptAt=1` to watch the first follow-up cut in).
 
-**Before B1**: `content/round1-debrief.md` is still the blank template — fill it in (rough is fine) or B1 skips the debrief cards and its "Facts about my own work" stay empty. `src/data/questions.round1.json` (the backup) does not exist yet; B1 makes it.
+**After B1**: `src/data/questions.round1.json` is the round-1 bank (do not edit it). `content/round1-debrief.md` is still the blank template — B1 skipped the debrief cards by Brandon's choice, so no own-it or drill beat may claim anything the story scripts don't say until that file is filled in. B2 and C add to the same bank; keep topic order and the `-r2` suffix on new ids. The follow-up harness B1 used (the audit run over a synthetic bank with every follow-up as a scenario card) lived in the session scratchpad; session D replaces it by extending `scripts/audit.js` to walk `followUps[].beats`.
 
 ## In progress
 
-- **Round 2 update.** Session A done (branch `round2`, not pushed). Next: B1 (Fable) — technical follow-ups for the data hall core and the round 1 debrief cards. Then B2, C, D, E (`ROUND2_UPDATE_PROMPT.md`). `main` and the live site are still v1.0 until session E.
+- **Round 2 update.** Sessions A and B1 done (branch `round2`, not pushed). Next: B2 (Fable) — technical follow-ups for everything else (F1–F9, S1–S8, G1–G6, B1–B4, A1, A4, A5) plus the three Round 2 mock decks. Then C, D, E (`ROUND2_UPDATE_PROMPT.md`). The round 1 debrief step was skipped (template unfilled) and can be run later. `main` and the live site are still v1.0 until session E.
 
 ## For later sessions (re-audits, re-deploys)
 
@@ -400,12 +442,25 @@ Round 2 · session A (retarget and follow-up engine):
 72. **QA overrides** `?round=YYYY-MM-DD|none`, `?focus=technical|behavioral`, `?interruptAt=<seconds>` are never saved (a "dev round" badge shows); `recordResult` takes the effective `nextRound` so the cap matches what the page shows.
 73. **`tools/smoke.js` reads the DevTools port from the profile's `DevToolsActivePort`** (current Edge on Windows hands off to another process and prints nothing on stderr) and closes the browser over DevTools at the end, so no headless Edge is left running.
 
+Round 2 · session B1 (technical follow-ups, data hall core):
+
+74. **The L4-script walkthrough lives on A2, not P5.** The brief's "(P5, A2)" reads like its "(Q9, A3)": the first names where the content lives (P5's sample script; Q9), the second the topic that carries the walkthrough — the two Day 12 exercises are A2 and A3. `A2-scn-03-r2`'s beats are the Pre-action sample script's seven steps; P5 keeps its two scenario cards with follow-ups (`P5-scn-02` is already the seven steps at par 120). A topic's walkthrough is a separate card from its plain scenario on purpose (`C1-scn-04-r2` / `C1-scn-01`, `E2-scn-01-r2` / `E2-scn-01`, `A3-scn-03-r2` / `A3-scn-01` share their steps): the walkthrough is served only in the walkthrough slot, the plain card is the topic's default.
+75. **Find-out follow-ups cite "Read this first".** Their first and third beats are that section's lines ("I don't know — here's how I'd find out" scores above a guess; name the section you'd check before writing the script); the middle beat repeats the card section's own hedge (NFPA 110 / the 2012 IBC), which the beat audit notes as "found outside the section" (a review note, not a finding). `study-guide.md` as a first segment passes the validator but does not resolve in `scripts/audit.js`, so it is not used anywhere.
+76. **`E2-scn-01-r2` is the sample deck's card carried into the bank under the same id** (as Phase 2 did, decision 37); `sample.json` is unchanged.
+77. **own-it beats when no story covers the exact test** follow the common block: say plainly there's no direct story → the closest thing the scripts support → how he'd run it per the guide (`A3-scn-01-f2`). Where a story covers the question, the own-it goes straight to it: Story 2 (cause-and-effect zone by zone, the wrong-COLO release, the VESDA thresholds), Story 3 (the client who tried every cheaper fix), Story 4 (on test first, isolation to return to normal), the lab backup (AHJ inspection, generator backup, fan and damper monitoring; its bracketed lines are fill-in beats). Nothing about his experience was written that the scripts don't say.
+78. **No hypothetical numbers in follow-up prompts** ("over 500 gallons", "after the 50-second mark", "more than thirty pounds" are all guide numbers), so session D's extended audit has nothing to allowlist; the only follow-up that cites a number from another section names that section as its source (`C5-scn-02-f2` → Smoke control › table for IFC 901.6.2.2, as decision 48).
+79. **`CARD_MINIMUMS` unchanged.** The nine `-r2` cards leave the largest Core topic (K3) at 9 and no Support topic grew, so neither the schema range nor the audit needed touching. `tools/smoke.js` was not touched either: its plain-scenario fixture `P6-scn-01` now carries follow-ups, so its "Grade it" button reads "Next — they follow up" and the stock smoke stops at that check (see Open questions — a one-line fixture change for session E).
+
 ## Open questions
 
 - **Round 2 (session A):** `content/round1-debrief.md` is still the blank template. B1 turns it into cards and C/B use its "Facts about my own work" for own-it and drill beats — fill it in before B1, or B1 skips that step.
 - **Round 2 (session A):** the kit's "Nov 2" study guide and story scripts are byte-identical to the Oct 23 copies. If the Claude Doc was edited after Oct 23, re-export it over `content/study-guide.md` / `story-scripts.md` and run `node scripts/guide-diff.js` before session B.
 - **Round 2 (session A):** behavioral focus caps technical redos at 3 of its 6 technical slots (my reading of "due topics by the technical rules"); say if all 6 should go to redos first.
 - **Round 2 (session A):** interrupt mode skips story cards (decision 69); say if the behavioral drill-downs should be cut in on too.
+- **Round 2 (B1):** the round 1 debrief step was skipped by your choice (`content/round1-debrief.md` is the blank template). To run it later: fill the file in and ask Fable to "turn content/round1-debrief.md into cards, the same way as the round 1 debrief" (ROUND2_UPDATE_PROMPT.md › After it ships), then D on those cards and E to redeploy.
+- **Round 2 (B1):** `A3-scn-01-f2` carries the beat "say plainly there's no direct story of a full data hall IST with load banks and a utility drop" because no script covers one. If you have run one, write it under "Facts about my own work" in the debrief file and the beat gets replaced with the facts.
+- **Round 2 (B1):** `tools/smoke.js` hard-codes `P6-scn-01` as its plain scenario (lines 500 and 525); that card now has follow-ups, so after Reveal its button is "Next — they follow up" and the stock smoke stops at "scenario: Grade it with nothing ticked". A copy with the fixture switched to `C6-scn-02` (a scenario without follow-ups) was run instead — result in the B1 section. Session E should make that one-line change in `tools/smoke.js` (B1 was told not to touch `tools/`).
+- **Round 2 (B1):** nothing in the guide was found wrong while writing these cards; no guide fix is pending.
 
 - Defect card, wrong line → Not Ready. If that feels too harsh for a recognition task, change one line in `gradeDefect` (`src/engine/grader.js`) to give `framework: true` (Needs Improvement).
 - Nov 1 sweep includes Not Tested topics whose study day is Nov 1 (A4, A5); they sort late, so they rarely make the 20. Say if they should be skipped.
