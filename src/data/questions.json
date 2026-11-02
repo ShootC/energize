@@ -5069,11 +5069,92 @@
         "Chapter 14",
         "NFPA 20 Ch. 14"
       ],
-      "explanation": "The field acceptance test proves the installed pump reproduces its certified shop curve at churn, 100% and 150% of rated flow (churn ≤ 140%, 150% ≥ 65% of rated pressure), and that the controller and driver start it every time, on every power source (NFPA 20 Chapter 14)."
+      "explanation": "The field acceptance test proves the installed pump reproduces its certified shop curve at churn, 100% and 150% of rated flow (churn ≤ 140%, 150% ≥ 65% of rated pressure), and that the controller and driver start it every time, on every power source (NFPA 20 Chapter 14).",
+      "followUps": [
+        {
+          "id": "F1-scn-01-f1",
+          "kind": "why-not",
+          "prompt": "Why not just accept the certified shop curve and skip the field test? The factory already ran it.",
+          "beats": [
+            "The field acceptance test proves the installed pump reproduces its certified shop curve at churn, 100% and 150% of rated flow",
+            "…and that the controller and driver start it every time, on every power source",
+            "L1 is the certified shop test curve on file; L4 is the field acceptance test — NFPA 20 Chapter 14"
+          ],
+          "source": "Fire pump",
+          "par": 45
+        },
+        {
+          "id": "F1-scn-01-f2",
+          "kind": "what-if",
+          "prompt": "Say the contractor's sheet shows the field curve within 95% of the shop curve and calls it accepted. Done?",
+          "beats": [
+            "Curve match at acceptance: field results match the certified shop curve within the accuracy of the test equipment",
+            "The 95% / 5% figure is NFPA 25's annual test — not acceptance",
+            "Correct every test point to rated speed with the affinity laws before you compare it to the shop curve; plot net pressure, not discharge pressure"
+          ],
+          "source": "Fire pump › table",
+          "par": 45
+        }
+      ]
     },
     "hook": "Three points on the curve, every start on every source — 140 at the top, 65 at the end.",
     "source": "Fire pump",
     "par": 90,
+    "confirmInEdition": false
+  },
+  {
+    "id": "F1-scn-02-r2",
+    "topicId": "F1",
+    "type": "scenario",
+    "walkthrough": true,
+    "prompt": "Walk me through the fire pump acceptance test, L1 to L5 — what you check at each level and what the field test has to show.",
+    "interviewerPhrasing": "How do you run a pump acceptance test?",
+    "answer": {
+      "beats": [
+        "L1: certified shop test curve on file",
+        "L2: alignment on horizontal split-case pumps (checked by the manufacturer's rep); rotation; no elbow or tee in a plane parallel to the shaft within 10 pipe diameters of the suction flange; relief valve and test header as designed",
+        "L3: suction flush and hydro; controller settings; jockey and fire pump start / stop pressures",
+        "L4: field acceptance test — churn, 100%, 150% with speed, suction, discharge, flow, volts and amps at each point; all starts; alternate-source transfer",
+        "L5: pump runs on generator at system demand; signals reach the FACP — pump running, loss of phase or phase reversal, controller trouble; for diesel, engine running, controller trouble, and switch off-automatic"
+      ],
+      "requiresNumber": true,
+      "codeRef": "NFPA 20 Chapter 14",
+      "codeRefAliases": [
+        "20 14",
+        "Chapter 14",
+        "NFPA 20 Ch. 14"
+      ],
+      "explanation": "L1 shop curve on file → L2 alignment, rotation, no elbow or tee parallel to the shaft within 10 pipe diameters of the suction flange, relief valve and test header → L3 suction flush and hydro, controller settings, jockey and pump start / stop pressures → L4 field acceptance test: churn, 100%, 150% with speed, suction, discharge, flow, volts and amps at each point, all starts, alternate-source transfer → L5 on generator at system demand with signals at the FACP (NFPA 20 Chapter 14).",
+      "followUps": [
+        {
+          "id": "F1-scn-02-r2-f1",
+          "kind": "number",
+          "prompt": "At L4 — what are you holding the three points and the starts to?",
+          "beats": [
+            "Churn: no more than 140% of rated pressure",
+            "150% flow: at least 65% of rated pressure",
+            "6 automatic + 6 manual starts, each run at least 5 min at full speed; at least 1 h cumulative"
+          ],
+          "source": "Fire pump › table",
+          "par": 45
+        },
+        {
+          "id": "F1-scn-02-r2-f2",
+          "kind": "what-if",
+          "prompt": "Say the manufacturer's rep can't make the date. Do you run the test anyway?",
+          "beats": [
+            "The pump, engine (if supplied), controller and transfer switch manufacturers or their authorized reps must be present",
+            "Alignment on horizontal split-case pumps is checked by the manufacturer's rep at L2",
+            "Re-sequence what can run in parallel; anything deferred gets a documented risk acceptance, an impairment entry and a fire watch"
+          ],
+          "source": "Fire pump",
+          "par": 45
+        }
+      ]
+    },
+    "hook": "Curve on file, shaft and suction, flush and settings, three points and every start, then the generator carries demand.",
+    "source": "Fire pump › Acceptance sequence",
+    "par": 120,
     "confirmInEdition": false
   },
   {
@@ -5279,9 +5360,89 @@
         "Chapter 14",
         "NFPA 20 Ch. 14"
       ],
-      "explanation": "6 automatic + 6 manual starts, each run at least 5 min at full speed; diesel starts split across both battery sets with no 5-min run needed between starts until cumulative cranking reaches 45 s; at least 1 h cumulative run time (NFPA 20 Chapter 14)."
+      "explanation": "6 automatic + 6 manual starts, each run at least 5 min at full speed; diesel starts split across both battery sets with no 5-min run needed between starts until cumulative cranking reaches 45 s; at least 1 h cumulative run time (NFPA 20 Chapter 14).",
+      "followUps": [
+        {
+          "id": "F2-scn-01-f1",
+          "kind": "why-not",
+          "prompt": "Why not run all the starts off the main battery set? It's the healthier one.",
+          "beats": [
+            "Diesel: starts split across both battery sets",
+            "At least half the starts on the alternate source — the alternate-power part of the same test",
+            "The controller and driver have to start it every time, on every power source"
+          ],
+          "source": "Fire pump › table",
+          "par": 45
+        },
+        {
+          "id": "F2-scn-01-f2",
+          "kind": "number",
+          "prompt": "Run time — how long per start, and how long over the whole test?",
+          "beats": [
+            "Each run at least 5 min at full speed",
+            "At least 1 h cumulative during the test",
+            "Minimum run timer after an automatic start: diesel 30 min, electric 10 min"
+          ],
+          "source": "Fire pump › table",
+          "par": 45
+        }
+      ]
     },
     "hook": "6 + 6, 5 minutes, both battery sets, 45 s of crank, 1 hour total.",
+    "source": "Fire pump › table",
+    "par": 90,
+    "confirmInEdition": false
+  },
+  {
+    "id": "F2-scn-02-r2",
+    "topicId": "F2",
+    "type": "scenario",
+    "prompt": "An electric pump this time — walk me through the starts and the run time you need before you sign the test.",
+    "interviewerPhrasing": "How many starts, and how long does it have to run?",
+    "answer": {
+      "beats": [
+        "6 automatic + 6 manual starts, each run at least 5 min at full speed",
+        "At least 1 h cumulative run time during the test",
+        "At least half the starts on the alternate source",
+        "Minimum run timer: electric 10 min after an automatic start",
+        "The controller and driver start it every time, on every power source"
+      ],
+      "requiresNumber": true,
+      "codeRef": "NFPA 20 Chapter 14",
+      "codeRefAliases": [
+        "20 14",
+        "Chapter 14",
+        "NFPA 20 Ch. 14"
+      ],
+      "explanation": "6 automatic + 6 manual starts, each run at least 5 min at full speed, at least 1 h cumulative, at least half the starts on the alternate source; the electric minimum run timer is 10 min after an automatic start (NFPA 20 Chapter 14).",
+      "followUps": [
+        {
+          "id": "F2-scn-02-r2-f1",
+          "kind": "what-if",
+          "prompt": "Say the schedule's tight and the contractor wants to cut the starts short.",
+          "beats": [
+            "6 automatic + 6 manual, each run at least 5 min at full speed — the count doesn't move",
+            "Life-safety and code-required tests are not negotiable; anything deferred gets a documented risk acceptance, an impairment entry and a fire watch",
+            "At least 1 h cumulative during the test"
+          ],
+          "source": "Fire pump › table",
+          "par": 45
+        },
+        {
+          "id": "F2-scn-02-r2-f2",
+          "kind": "number",
+          "prompt": "The minimum run timer — electric versus diesel? And what does Ops run after turnover?",
+          "beats": [
+            "Electric 10 min after an automatic start; diesel 30 min",
+            "NFPA 25 churn tests: diesel weekly for 30 min; electric monthly for 10 min",
+            "Electric goes weekly where the pump serves a high-rise beyond fire department pumping, has a limited-service controller, is vertical turbine, or takes suction from a ground-level tank or a source with no useful pressure"
+          ],
+          "source": "Fire pump › table",
+          "par": 45
+        }
+      ]
+    },
+    "hook": "6 and 6, 5 minutes apiece, an hour all told, half of them on the other source — and 10 minutes before it's allowed to stop.",
     "source": "Fire pump › table",
     "par": 90,
     "confirmInEdition": false
@@ -5453,7 +5614,33 @@
         "Chapter 14",
         "NFPA 20 Ch. 14"
       ],
-      "explanation": "Simulate loss of normal power at peak load; transfer to the alternate source and back without opening overcurrent devices; at least half the starts on the alternate source (NFPA 20 Chapter 14). At L5 the pump runs on generator at system demand."
+      "explanation": "Simulate loss of normal power at peak load; transfer to the alternate source and back without opening overcurrent devices; at least half the starts on the alternate source (NFPA 20 Chapter 14). At L5 the pump runs on generator at system demand.",
+      "followUps": [
+        {
+          "id": "F3-scn-01-f1",
+          "kind": "what-if",
+          "prompt": "Say the transfer back to normal opens a breaker. Pass?",
+          "beats": [
+            "Transfer to the alternate source and back without opening overcurrent devices — a breaker opening on the transfer fails it",
+            "The test is run at peak load: simulate loss of normal power at peak load",
+            "It's a finding on the issues log: ID, system, level found, severity (life safety first), owner, due date and closure evidence"
+          ],
+          "source": "Fire pump › table",
+          "par": 45
+        },
+        {
+          "id": "F3-scn-01-f2",
+          "kind": "own-it",
+          "prompt": "Have you proven a fire pump's transfer to the alternate source yourself?",
+          "beats": [
+            "Say plainly there's no direct story of a fire pump acceptance test",
+            "The closest: on a high-rise lab we tested smoke control and the generator backup for the emergency circuits, and I was the main troubleshooter on fan and damper monitoring",
+            "How I'd run it: simulate loss of normal power at peak load; transfer to the alternate source and back without opening overcurrent devices; at least half the starts on the alternate source"
+          ],
+          "source": "Backup scripts (45–70 seconds)",
+          "par": 45
+        }
+      ]
     },
     "hook": "Peak load, both directions, no breaker, half the starts — then the generator carries demand at L5.",
     "source": "Fire pump › table",
@@ -5475,7 +5662,34 @@
       ],
       "requiresNumber": false,
       "codeRef": null,
-      "explanation": "On an islanded-power campus the pump's alternate source is part of a microgrid, not a utility feed plus a generator — what counts as a reliable source and how transfer is proven is a real conversation with the electrical team and the AHJ."
+      "explanation": "On an islanded-power campus the pump's alternate source is part of a microgrid, not a utility feed plus a generator — what counts as a reliable source and how transfer is proven is a real conversation with the electrical team and the AHJ.",
+      "followUps": [
+        {
+          "id": "F3-scn-02-f1",
+          "kind": "why-not",
+          "prompt": "Why not just call the generator the alternate source, like any other site?",
+          "beats": [
+            "On an islanded-power campus the pump's alternate source is part of a microgrid, not a utility feed plus a generator",
+            "What counts as a reliable source and how transfer is proven is a real conversation with the electrical team and the AHJ",
+            "With islanded power and no utility, \"normal\" and \"alternate\" sources have to be defined with the AHJ before you can write the transfer test"
+          ],
+          "source": "Fire pump › Data center points to make",
+          "par": 45
+        },
+        {
+          "id": "F3-scn-02-f2",
+          "kind": "number",
+          "prompt": "Once the two sources are defined — what does the transfer test itself have to show?",
+          "beats": [
+            "Simulate loss of normal power at peak load",
+            "Transfer to the alternate source and back without opening overcurrent devices",
+            "At least half the starts on the alternate source",
+            "NFPA 20 Chapter 14 for the field acceptance; NEC 695 for the pump power"
+          ],
+          "source": "Fire pump › table",
+          "par": 45
+        }
+      ]
     },
     "hook": "No utility means no default \"normal\" — define both sources with the AHJ before the script exists.",
     "source": "Fire pump › Data center points to make",
@@ -5598,7 +5812,33 @@
         "Chapter 14",
         "NFPA 20 Ch. 14"
       ],
-      "explanation": "Volts and amps at each point; starting no more than 15% below rated at the controller line terminals; running at 115% of full-load current no more than 5% below rated at the motor terminals; amps ≤ FLA × service factor (NFPA 20 Chapter 14)."
+      "explanation": "Volts and amps at each point; starting no more than 15% below rated at the controller line terminals; running at 115% of full-load current no more than 5% below rated at the motor terminals; amps ≤ FLA × service factor (NFPA 20 Chapter 14).",
+      "followUps": [
+        {
+          "id": "F4-scn-01-f1",
+          "kind": "number",
+          "prompt": "Where do you take the voltage readings, and what's the limit at each?",
+          "beats": [
+            "Starting: no more than 15% below rated at the controller line terminals",
+            "Running at 115% of full-load current: no more than 5% below rated at the motor terminals",
+            "Amps ≤ FLA × service factor"
+          ],
+          "source": "Fire pump › table",
+          "par": 45
+        },
+        {
+          "id": "F4-scn-01-f2",
+          "kind": "why-not",
+          "prompt": "Why not take both readings at the controller? That's where the meter is.",
+          "beats": [
+            "The starting reading is at the controller line terminals",
+            "The running reading, at 115% of full-load current, is at the motor terminals",
+            "Volts and amps at each point — churn, 100%, 150% — with speed, suction, discharge and flow"
+          ],
+          "source": "Fire pump",
+          "par": 45
+        }
+      ]
     },
     "hook": "15 at the controller on the start, 5 at the motor at 115% — and amps stay under FLA × SF.",
     "source": "Fire pump › table",
@@ -5758,7 +5998,33 @@
         "annex",
         "NFPA 20 Annex A"
       ],
-      "explanation": "Jockey stop = churn + minimum static; jockey start at least 10 psi below stop; fire pump start 5 psi below jockey start; each additional pump 10 psi lower (NFPA 20 Annex). Minimum run timer electric 10 min, diesel 30 min."
+      "explanation": "Jockey stop = churn + minimum static; jockey start at least 10 psi below stop; fire pump start 5 psi below jockey start; each additional pump 10 psi lower (NFPA 20 Annex). Minimum run timer electric 10 min, diesel 30 min.",
+      "followUps": [
+        {
+          "id": "F5-scn-01-f1",
+          "kind": "what-if",
+          "prompt": "Say the pump starts on its own overnight, runs ten minutes and stops. Is that a problem?",
+          "beats": [
+            "Minimum run timer: electric 10 min after an automatic start (diesel 30 min) — the stop is by design",
+            "The start is the settings talking: fire pump start 5 psi below jockey start; jockey start at least 10 psi below stop (NFPA 20 Annex)",
+            "Check the jockey stop against churn + minimum static before blaming the pump"
+          ],
+          "source": "Fire pump › table",
+          "par": 45
+        },
+        {
+          "id": "F5-scn-01-f2",
+          "kind": "why-not",
+          "prompt": "Why not put the fire pump start right at the jockey start?",
+          "beats": [
+            "Fire pump start 5 psi below jockey start",
+            "Jockey start at least 10 psi below stop; jockey stop = churn + minimum static",
+            "Each additional pump 10 psi lower (NFPA 20 Annex)"
+          ],
+          "source": "Fire pump › table",
+          "par": 45
+        }
+      ]
     },
     "hook": "Churn-plus-static, minus 10, minus 5, minus 10 again — then 10 or 30 minutes before it stops.",
     "source": "Fire pump › table",
@@ -5892,7 +6158,33 @@
       ],
       "requiresNumber": false,
       "codeRef": null,
-      "explanation": "Correct every test point to rated speed with the affinity laws before you compare it to the shop curve: Q2/Q1 = N2/N1, P2/P1 = (N2/N1)². Plot net pressure (discharge − suction), not discharge pressure."
+      "explanation": "Correct every test point to rated speed with the affinity laws before you compare it to the shop curve: Q2/Q1 = N2/N1, P2/P1 = (N2/N1)². Plot net pressure (discharge − suction), not discharge pressure.",
+      "followUps": [
+        {
+          "id": "F6-scn-01-f1",
+          "kind": "what-if",
+          "prompt": "Say you corrected to rated speed, plotted discharge pressure, and it clears the curve. Done?",
+          "beats": [
+            "Plot net pressure — discharge minus suction — not discharge pressure",
+            "Correct every test point to rated speed with the affinity laws before you compare it to the shop curve",
+            "Then compare to the certified shop curve, within the accuracy of the test equipment"
+          ],
+          "source": "Fire pump › Formulas",
+          "par": 45
+        },
+        {
+          "id": "F6-scn-01-f2",
+          "kind": "number",
+          "prompt": "Flow versus pressure — how does each one scale with speed?",
+          "beats": [
+            "Flow scales with the speed ratio (Q2/Q1 = N2/N1)",
+            "Pressure scales with the speed ratio squared (P2/P1 = (N2/N1)²)",
+            "Net pressure is discharge minus suction"
+          ],
+          "source": "Fire pump › Formulas",
+          "par": 45
+        }
+      ]
     },
     "hook": "Speed-correct first, net pressure second, shop curve third — then you may blame the pump.",
     "source": "Fire pump › Formulas",
@@ -6142,7 +6434,33 @@
       ],
       "requiresNumber": true,
       "codeRef": null,
-      "explanation": "Check the test first: calibrated gauges, pitot readings, nozzle sizes, measured speed with affinity correction. Then suction: a partly closed valve, strainer debris, air entrainment. Then the pump: rotation, impeller debris. Compare to the certified shop curve. Genuine shortfall = manufacturer claim and an impairment plan."
+      "explanation": "Check the test first: calibrated gauges, pitot readings, nozzle sizes, measured speed with affinity correction. Then suction: a partly closed valve, strainer debris, air entrainment. Then the pump: rotation, impeller debris. Compare to the certified shop curve. Genuine shortfall = manufacturer claim and an impairment plan.",
+      "followUps": [
+        {
+          "id": "F8-scn-01-f1",
+          "kind": "why-not",
+          "prompt": "Why not start with the pump? That's what's failing.",
+          "beats": [
+            "Check the test first: calibrated gauges, pitot readings, nozzle sizes, measured speed with affinity correction",
+            "Then suction: a partly closed valve, strainer debris, air entrainment",
+            "Only then the pump: rotation, impeller debris — and compare to the certified shop curve"
+          ],
+          "source": "Likely questions and day-of checklist › Commissioning technical (the 35%) › 11",
+          "par": 45
+        },
+        {
+          "id": "F8-scn-01-f2",
+          "kind": "number",
+          "prompt": "What's the number you're short of at 150%, and what's the other end of the curve held to?",
+          "beats": [
+            "150% flow: at least 65% of rated pressure",
+            "Churn: no more than 140% of rated pressure",
+            "NFPA 20 Chapter 14 field acceptance"
+          ],
+          "source": "Fire pump › table",
+          "par": 45
+        }
+      ]
     },
     "hook": "At 150% you need 65% — check the test, then the suction, then the pump, then call the factory.",
     "source": "Likely questions and day-of checklist › Commissioning technical (the 35%) › 11",
@@ -6164,11 +6482,88 @@
       ],
       "requiresNumber": false,
       "codeRef": null,
-      "explanation": "Compare the corrected points to the certified shop curve after checking the test setup, suction and pump. Genuine shortfall = manufacturer claim and an impairment plan."
+      "explanation": "Compare the corrected points to the certified shop curve after checking the test setup, suction and pump. Genuine shortfall = manufacturer claim and an impairment plan.",
+      "followUps": [
+        {
+          "id": "F8-scn-02-f1",
+          "kind": "what-if",
+          "prompt": "Say the manufacturer's rep looks at your data and says your test setup was wrong.",
+          "beats": [
+            "Check the test first: calibrated gauges, pitot readings, nozzle sizes, measured speed with affinity correction — show the sheet",
+            "Compare to the certified shop curve: field results match it within the accuracy of the test equipment",
+            "Facts in the script, criteria from the BOD, escalate on the issues log, never in the hallway"
+          ],
+          "source": "Likely questions and day-of checklist › Commissioning technical (the 35%) › 11",
+          "par": 45
+        },
+        {
+          "id": "F8-scn-02-f2",
+          "kind": "number",
+          "prompt": "And if it is the pump — what tolerance were you holding it to in the first place?",
+          "beats": [
+            "Field results match the certified shop curve within the accuracy of the test equipment",
+            "The 95% / 5% figure is NFPA 25's annual test — not acceptance",
+            "150% flow: at least 65% of rated pressure"
+          ],
+          "source": "Fire pump › table",
+          "par": 45
+        }
+      ]
     },
     "hook": "A real shortfall gets two documents: a claim to the factory and an impairment plan for the building.",
     "source": "Likely questions and day-of checklist › Commissioning technical (the 35%) › 11",
     "par": 75,
+    "confirmInEdition": false
+  },
+  {
+    "id": "F8-scn-03-r2",
+    "topicId": "F8",
+    "type": "scenario",
+    "walkthrough": true,
+    "prompt": "The fire pump misses the 150% point at acceptance. Walk me through what you check, in order, to the point where you'd call it a bad pump.",
+    "interviewerPhrasing": "The pump misses the 150% point — what do you check?",
+    "answer": {
+      "beats": [
+        "Check the test first: calibrated gauges, pitot readings, nozzle sizes",
+        "Measured speed with affinity correction",
+        "Then suction: a partly closed valve, strainer debris, air entrainment",
+        "Then the pump: rotation, impeller debris",
+        "Compare to the certified shop curve",
+        "Genuine shortfall = manufacturer claim and an impairment plan"
+      ],
+      "requiresNumber": true,
+      "codeRef": null,
+      "explanation": "Test setup first — calibrated gauges, pitot readings, nozzle sizes, measured speed with affinity correction — then suction (a partly closed valve, strainer debris, air entrainment), then the pump (rotation, impeller debris); compare to the certified shop curve; a genuine shortfall is a manufacturer claim and an impairment plan.",
+      "followUps": [
+        {
+          "id": "F8-scn-03-r2-f1",
+          "kind": "what-if",
+          "prompt": "Say the speed correction alone brings the point onto the curve. Where does that leave you?",
+          "beats": [
+            "Correct every test point to rated speed with the affinity laws before you compare it to the shop curve",
+            "Plot net pressure, not discharge pressure",
+            "Curve match is within the accuracy of the test equipment — the 95% / 5% figure is NFPA 25's annual test, not acceptance"
+          ],
+          "source": "Fire pump",
+          "par": 45
+        },
+        {
+          "id": "F8-scn-03-r2-f2",
+          "kind": "what-if",
+          "prompt": "Say suction checks out, the pump checks out, and it's still short. What are you writing up?",
+          "beats": [
+            "Genuine shortfall = manufacturer claim",
+            "…and an impairment plan for the building while it's unresolved",
+            "Life-safety issues close before turnover; anything else carried into operations needs a documented risk acceptance"
+          ],
+          "source": "Likely questions and day-of checklist › Commissioning technical (the 35%) › 11",
+          "par": 45
+        }
+      ]
+    },
+    "hook": "Gauges, pitot, nozzles, speed; valve, strainer, air; rotation, impeller; the shop curve; then the factory and the impairment plan.",
+    "source": "Likely questions and day-of checklist › Commissioning technical (the 35%) › 11",
+    "par": 120,
     "confirmInEdition": false
   },
   {
