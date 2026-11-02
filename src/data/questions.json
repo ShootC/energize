@@ -3252,7 +3252,33 @@
       ],
       "requiresNumber": true,
       "codeRef": null,
-      "explanation": "Non-interlock opens on detection or sprinkler operation (loss of air); single-interlock on detection; double-interlock on detection and loss of air. Non- and single-interlock run up to 1,000 sprinklers per valve; double-interlock is sized like dry pipe with a 30% design-area increase; air supervision is required above 20 sprinklers."
+      "explanation": "Non-interlock opens on detection or sprinkler operation (loss of air); single-interlock on detection; double-interlock on detection and loss of air. Non- and single-interlock run up to 1,000 sprinklers per valve; double-interlock is sized like dry pipe with a 30% design-area increase; air supervision is required above 20 sprinklers.",
+      "followUps": [
+        {
+          "id": "P1-scn-01-f1",
+          "kind": "why-not",
+          "prompt": "Why not single-interlock in the hall? It's simpler and the water gets there sooner.",
+          "beats": [
+            "Single-interlock opens on detection alone",
+            "Double-interlock: one false detection signal or one damaged sprinkler alone can't put water on IT",
+            "The cost is delivery time, the 30% design-area increase and complexity — and you prove the delivery time at acceptance"
+          ],
+          "source": "Pre-action",
+          "par": 45
+        },
+        {
+          "id": "P1-scn-01-f2",
+          "kind": "number",
+          "prompt": "Double-interlock sizing — what rules come with it, and where are they?",
+          "beats": [
+            "Sized like dry pipe, with a 30% design-area increase",
+            "Dry-pipe sizing rules: NFPA 13-2022 §8.2.3 (consolidated into §8.2.4 in 2025)",
+            "Double-interlock gets only the 500 gal exemption — above that, prove water at the test connection within 60 s or by calculation (NFPA 13 §8.3.2.3)"
+          ],
+          "source": "Pre-action",
+          "par": 45
+        }
+      ]
     },
     "hook": "Or, detection, and — then 1,000, 30%, 20.",
     "source": "Pre-action › table",
@@ -3274,7 +3300,34 @@
       ],
       "requiresNumber": false,
       "codeRef": null,
-      "explanation": "ASD Fire 2 (or a second detector) is the usual release input; Fire 1 is the building alarm. Double-interlock opens on detection and loss of air, so a single false signal or a damaged sprinkler alone can't put water on IT."
+      "explanation": "ASD Fire 2 (or a second detector) is the usual release input; Fire 1 is the building alarm. Double-interlock opens on detection and loss of air, so a single false signal or a damaged sprinkler alone can't put water on IT.",
+      "followUps": [
+        {
+          "id": "P1-scn-02-f1",
+          "kind": "what-if",
+          "prompt": "Say the owner wants Fire 1 to release — faster water. What do you say?",
+          "beats": [
+            "ASD Fire 2 (or a second detector) is the usual release input",
+            "Fire 1 is the building alarm and central station — no release; Alert and Action are an Ops alert",
+            "Even then the double-interlock valve still needs loss of air before water moves",
+            "The BOD decides every cell — change it there, not in the field"
+          ],
+          "source": "Pre-action",
+          "par": 45
+        },
+        {
+          "id": "P1-scn-02-f2",
+          "kind": "number",
+          "prompt": "Walk me across the ASD levels in the matrix — which one does what?",
+          "beats": [
+            "ASD Alert / Action: Ops alert on BMS / EPMS — no building alarm, no release",
+            "ASD Fire 1: building alarm, central station, BMS / EPMS — Release / trip stays blank",
+            "ASD Fire 2 or a second detector: the pre-action solenoid — the valve trips only on loss of air"
+          ],
+          "source": "Data center commissioning language › IST matrix — the document the posting says you'll review.",
+          "par": 45
+        }
+      ]
     },
     "hook": "Fire 2 turns the first key; a fused head turns the second.",
     "source": "Pre-action › Data center points to make",
@@ -3437,7 +3490,33 @@
         "13 §29.2.2",
         "29.2.2"
       ],
-      "explanation": "40 psi for 24 h, loss ≤ 1.5 psi (NFPA 13 §29.2.2) — 3 psi fails. Find the leak at grooved couplings and threaded joints, fix it, retest; the air supply must restore normal pressure within 30 min."
+      "explanation": "40 psi for 24 h, loss ≤ 1.5 psi (NFPA 13 §29.2.2) — 3 psi fails. Find the leak at grooved couplings and threaded joints, fix it, retest; the air supply must restore normal pressure within 30 min.",
+      "followUps": [
+        {
+          "id": "P2-scn-01-f1",
+          "kind": "what-if",
+          "prompt": "Say it fails again on the retest. Now what?",
+          "beats": [
+            "Find the leak again — grooved couplings and threaded joints are the usual places",
+            "Fix it and run the full 24 h again; the criterion doesn't move: loss ≤ 1.5 psi at 40 psi",
+            "The L4 script's first prerequisite is hydro and air test passed — L4 doesn't start until it does"
+          ],
+          "source": "Pre-action",
+          "par": 45
+        },
+        {
+          "id": "P2-scn-01-f2",
+          "kind": "why-not",
+          "prompt": "Why not just top the air up and keep going? The compressor can hold it.",
+          "beats": [
+            "The test is 40 psi for 24 h with loss ≤ 1.5 psi — the leak is what you're finding, at grooved couplings and threaded joints",
+            "The air supply is its own test: it must restore normal pressure within 30 minutes",
+            "Automatic air supervision is required above 20 sprinklers"
+          ],
+          "source": "Pre-action",
+          "par": 45
+        }
+      ]
     },
     "hook": "Double the allowance is a fail — hunt grooves and threads, then another 24 hours.",
     "source": "Sprinkler and underground › table",
@@ -3459,7 +3538,33 @@
       ],
       "requiresNumber": true,
       "codeRef": null,
-      "explanation": "Common acceptance failures: air leaks at grooved couplings and threaded joints; a compressor too small to restore air in 30 minutes; missing or unlabeled low-point drains; trapped sections that hold water in a dry system."
+      "explanation": "Common acceptance failures: air leaks at grooved couplings and threaded joints; a compressor too small to restore air in 30 minutes; missing or unlabeled low-point drains; trapped sections that hold water in a dry system.",
+      "followUps": [
+        {
+          "id": "P2-scn-02-f1",
+          "kind": "number",
+          "prompt": "The compressor — what number does it have to meet, and where's it from?",
+          "beats": [
+            "Restores normal air pressure within 30 min",
+            "60 min for refrigerated spaces below 5 °F",
+            "NFPA 13 §8.2.6.3"
+          ],
+          "source": "Sprinkler and underground › table",
+          "par": 45
+        },
+        {
+          "id": "P2-scn-02-f2",
+          "kind": "what-if",
+          "prompt": "Say the contractor calls the trapped section \"just a low point, we'll add a drain later\". Punch item?",
+          "beats": [
+            "Trapped sections that hold water in a dry system are a common acceptance failure",
+            "Missing or unlabeled low-point drains are on the same list",
+            "It gets an ID, system, level found, severity, owner, due date and closure evidence on the issues log"
+          ],
+          "source": "Pre-action",
+          "par": 45
+        }
+      ]
     },
     "hook": "Leaks, a weak compressor (30 min), lost drains, trapped water.",
     "source": "Pre-action › Test-day details an interviewer will probe",
@@ -3627,7 +3732,33 @@
         "NFPA 13 §8.2.4",
         "8.2.4"
       ],
-      "explanation": "Any one of: 500 gal or less without a quick-opening device; 750 gal or less with one; water at the test connection within 60 s by test; calculated delivery meeting the table; or a manifold functional test (NFPA 13-2022 §8.2.3). Double-interlock gets only the 500 gal exemption."
+      "explanation": "Any one of: 500 gal or less without a quick-opening device; 750 gal or less with one; water at the test connection within 60 s by test; calculated delivery meeting the table; or a manifold functional test (NFPA 13-2022 §8.2.3). Double-interlock gets only the 500 gal exemption.",
+      "followUps": [
+        {
+          "id": "P3-scn-01-f1",
+          "kind": "what-if",
+          "prompt": "Say the dry system is over 500 gallons but has a quick-opening device, and the contractor calls it exempt. Is it?",
+          "beats": [
+            "For a dry system, 750 gal or less with a quick-opening device is exempt from the delivery-time rule",
+            "The 500 and 750 gal figures are exemptions, not size limits",
+            "If it's double-interlock, only the 500 gal exemption applies — above that, water at the test connection within 60 s by test or by calculation"
+          ],
+          "source": "Pre-action › Dry-pipe sizing rules",
+          "par": 45
+        },
+        {
+          "id": "P3-scn-01-f2",
+          "kind": "why-not",
+          "prompt": "Why not rely on the calc? Why ever run the 60-second test?",
+          "beats": [
+            "A system is acceptable by any one of the five — the test and the calculated delivery are alternatives",
+            "Double-interlock above 500 gal: water at the test connection within 60 s by test, or by calculation (NFPA 13 §8.3.2.3)",
+            "You prove the delivery time at acceptance, not assume it — the trip test records time to trip and time to water"
+          ],
+          "source": "Pre-action",
+          "par": 45
+        }
+      ]
     },
     "hook": "Five doors in: 500, 750, 60 seconds, the calc, the manifold — double-interlock loses the 750.",
     "source": "Pre-action › Dry-pipe sizing rules",
@@ -3656,7 +3787,32 @@
         "13 §8.3.2.3",
         "8.3.2.3"
       ],
-      "explanation": "Prove water at the test connection within 60 s — starting from normal air pressure, with detection activated and the test connection opened at the same moment — or by calculation (NFPA 13 §8.3.2.3)."
+      "explanation": "Prove water at the test connection within 60 s — starting from normal air pressure, with detection activated and the test connection opened at the same moment — or by calculation (NFPA 13 §8.3.2.3).",
+      "followUps": [
+        {
+          "id": "P3-scn-02-f1",
+          "kind": "what-if",
+          "prompt": "Say the contractor opened the test connection first and tripped detection a few seconds later. Does the time count?",
+          "beats": [
+            "No — detection activated and the test connection opened at the same moment",
+            "Starting from normal air pressure",
+            "Record starting air pressure, air pressure at trip, time to trip and time to water at the test connection"
+          ],
+          "source": "Pre-action",
+          "par": 45
+        },
+        {
+          "id": "P3-scn-02-f2",
+          "kind": "number",
+          "prompt": "Where's the test connection, and what size is the orifice?",
+          "beats": [
+            "An orifice matching the smallest K-factor on the system",
+            "On dry systems it sits at the most remote end of the top branch line"
+          ],
+          "source": "Pre-action › Test-day details an interviewer will probe",
+          "par": 45
+        }
+      ]
     },
     "hook": "Full air, both inputs on the same tick, water in sixty.",
     "source": "Pre-action › Dry-pipe sizing rules",
@@ -3771,7 +3927,21 @@
       ],
       "requiresNumber": true,
       "codeRef": null,
-      "explanation": "Dwelling unit 1 / 15 s · Light 1 / 60 s · Ordinary 2 / 50 s · Extra 4 / 45 s · High-piled storage 4 / 40 s — calculated delivery meeting the table is one way to satisfy the dry-pipe rule."
+      "explanation": "Dwelling unit 1 / 15 s · Light 1 / 60 s · Ordinary 2 / 50 s · Extra 4 / 45 s · High-piled storage 4 / 40 s — calculated delivery meeting the table is one way to satisfy the dry-pipe rule.",
+      "followUps": [
+        {
+          "id": "P4-scn-01-f1",
+          "kind": "what-if",
+          "prompt": "Say it's ordinary hazard and the water shows up after the 50-second mark. Pass, or punch item?",
+          "beats": [
+            "Ordinary: 2 sprinklers assumed open, max 50 s to water — over that is a failed delivery time",
+            "A failed delivery time is a code failure, not a punch item",
+            "Fixes: split the system onto another valve, adjust air pressure within the valve's listed range, or re-run the calc — then retest"
+          ],
+          "source": "Pre-action",
+          "par": 45
+        }
+      ]
     },
     "hook": "15, 60, 50, 45, 40 — with 1, 1, 2, 4, 4 heads open.",
     "source": "Pre-action › table",
@@ -3936,7 +4106,33 @@
       ],
       "requiresNumber": false,
       "codeRef": null,
-      "explanation": "Releasing solenoid open or ground fault, detection zone fault, loss of supervisory air, compressor or nitrogen generator failure, priming water lost, panel power, manual release path. Each one gets a line in your script."
+      "explanation": "Releasing solenoid open or ground fault, detection zone fault, loss of supervisory air, compressor or nitrogen generator failure, priming water lost, panel power, manual release path. Each one gets a line in your script.",
+      "followUps": [
+        {
+          "id": "P5-scn-01-f1",
+          "kind": "what-if",
+          "prompt": "Say you open the solenoid circuit and nothing shows at the panel. What do you do?",
+          "beats": [
+            "Each fault has to annunciate correctly — a silent open on the solenoid circuit is a failed line",
+            "It's written as pass/fail on the line, with initials",
+            "On the issues log with severity life safety first — it closes before turnover"
+          ],
+          "source": "Pre-action",
+          "par": 45
+        },
+        {
+          "id": "P5-scn-01-f2",
+          "kind": "number",
+          "prompt": "Loss of supervisory air is on your list — where do the air numbers come from?",
+          "beats": [
+            "Automatic air supervision is required above 20 sprinklers",
+            "Low and high air each get a fault line in the script",
+            "The air supply must restore normal pressure within 30 minutes — compressor or nitrogen generator failure is its own line"
+          ],
+          "source": "Pre-action",
+          "par": 45
+        }
+      ]
     },
     "hook": "Solenoid, zone, air, compressor, priming water, power, manual pull — seven lines in the script.",
     "source": "Likely questions and day-of checklist › Commissioning technical (the 35%)",
@@ -3961,7 +4157,33 @@
       ],
       "requiresNumber": true,
       "codeRef": null,
-      "explanation": "Prerequisites → detection only, valve shut → loss of air only, valve shut → both: trip, record time to trip and time to water → manual release → faults → restore (drain, reset, restore air, panel normal, sign-off)."
+      "explanation": "Prerequisites → detection only, valve shut → loss of air only, valve shut → both: trip, record time to trip and time to water → manual release → faults → restore (drain, reset, restore air, panel normal, sign-off).",
+      "followUps": [
+        {
+          "id": "P5-scn-02-f1",
+          "kind": "what-if",
+          "prompt": "Say on the detection-only step the valve trips. What do you do?",
+          "beats": [
+            "Detection only: alarms annunciate, valve stays shut — a trip here is a failed step",
+            "Restore first: drain, reset the valve per the manufacturer (clapper, priming water), restore air, panel normal",
+            "Double-interlock opens on detection and loss of air — correct the programming to the sequence of operations before the retest"
+          ],
+          "source": "Pre-action",
+          "par": 45
+        },
+        {
+          "id": "P5-scn-02-f2",
+          "kind": "number",
+          "prompt": "On the \"both\" step — what are you recording, and against what?",
+          "beats": [
+            "Time to trip and time to water at the test connection",
+            "Against the table or calc — light hazard 60 s; double-interlock above 500 gal, 60 s by test or by calculation (NFPA 13 §8.3.2.3)",
+            "Plus starting air pressure, air pressure at trip, and water pressure once flow is steady"
+          ],
+          "source": "Pre-action",
+          "par": 45
+        }
+      ]
     },
     "hook": "Shut, shut, trip — then by hand, then break it seven ways, then put it back.",
     "source": "Pre-action › Sample L4 script — double-interlock (the Day 12 exercise)",
@@ -4135,7 +4357,34 @@
       ],
       "requiresNumber": true,
       "codeRef": null,
-      "explanation": "A failed delivery time is a code failure, not a punch item. Fixes: split the system onto another valve, adjust air pressure within the valve's listed range, or re-run the calc — then retest."
+      "explanation": "A failed delivery time is a code failure, not a punch item. Fixes: split the system onto another valve, adjust air pressure within the valve's listed range, or re-run the calc — then retest.",
+      "followUps": [
+        {
+          "id": "P6-scn-01-f1",
+          "kind": "what-if",
+          "prompt": "Say you adjusted the air pressure and it's still over on the retest. Next?",
+          "beats": [
+            "Split the system onto another valve",
+            "Or re-run the calc",
+            "Air pressure only moves within the valve's listed range",
+            "It's still a code failure, not a punch item — retest after every fix"
+          ],
+          "source": "Pre-action › Test-day details an interviewer will probe",
+          "par": 45
+        },
+        {
+          "id": "P6-scn-01-f2",
+          "kind": "why-not",
+          "prompt": "Why not write it up as a punch item and let the contractor sort it after turnover?",
+          "beats": [
+            "A failed delivery time is a code failure, not a punch item",
+            "Life-safety issues close before turnover",
+            "Anything deferred needs a documented risk acceptance, an impairment entry and a fire watch"
+          ],
+          "source": "Pre-action › Test-day details an interviewer will probe",
+          "par": 45
+        }
+      ]
     },
     "hook": "Ten seconds late is a failure, not a punch — split it, re-air it, or recalc it, then run it again.",
     "source": "Pre-action › Test-day details an interviewer will probe",
@@ -4160,7 +4409,33 @@
       ],
       "requiresNumber": false,
       "codeRef": null,
-      "explanation": "Record starting air pressure, air pressure at trip, time to trip, time to water at the test connection, and water pressure there once flow is steady. The test connection has an orifice matching the smallest K-factor; on dry systems it sits at the most remote end of the top branch line."
+      "explanation": "Record starting air pressure, air pressure at trip, time to trip, time to water at the test connection, and water pressure there once flow is steady. The test connection has an orifice matching the smallest K-factor; on dry systems it sits at the most remote end of the top branch line.",
+      "followUps": [
+        {
+          "id": "P6-scn-02-f1",
+          "kind": "number",
+          "prompt": "The main drain's on the same day — what are you setting there, and why does it matter later?",
+          "beats": [
+            "A main drain reading more than 10% below acceptance has to be investigated — so record yours carefully",
+            "Dry and pre-action valves get a partial trip test every year and a full-flow trip test every 3 years",
+            "That's the NFPA 25 baseline you're setting"
+          ],
+          "source": "Pre-action › Test-day details an interviewer will probe",
+          "par": 45
+        },
+        {
+          "id": "P6-scn-02-f2",
+          "kind": "what-if",
+          "prompt": "Say the test connection is at the riser, not the far end. Does the timing count?",
+          "beats": [
+            "On dry systems the test connection sits at the most remote end of the top branch line",
+            "Its orifice matches the smallest K-factor on the system",
+            "Time to water at the test connection is the number recorded against the table or calc"
+          ],
+          "source": "Pre-action › Test-day details an interviewer will probe",
+          "par": 45
+        }
+      ]
     },
     "hook": "Five readings from one tap at the far end of the top line, drilled to the smallest K.",
     "source": "Pre-action › Test-day details an interviewer will probe",
@@ -4318,7 +4593,21 @@
         "FM Standard 1011",
         "FM Approvals 1011"
       ],
-      "explanation": "NFPA 72 requires 24 h standby plus 5 min alarm; FM Approval Standard 1011 requires 90 h plus 10 min for deluge and pre-action releasing — ask whether the owner or insurer specifies FM. Solenoid and panel must be listed as compatible."
+      "explanation": "NFPA 72 requires 24 h standby plus 5 min alarm; FM Approval Standard 1011 requires 90 h plus 10 min for deluge and pre-action releasing — ask whether the owner or insurer specifies FM. Solenoid and panel must be listed as compatible.",
+      "followUps": [
+        {
+          "id": "P7-scn-01-f1",
+          "kind": "what-if",
+          "prompt": "Say the owner's insurer is FM and the submittal batteries were sized to NFPA 72. What do you do?",
+          "beats": [
+            "FM Approval Standard 1011 requires 90 h standby plus 10 min for deluge and pre-action releasing",
+            "Ask whether the owner or insurer specifies FM — if so, 24 h plus 5 min is short",
+            "Battery calcs are part of the turnover package"
+          ],
+          "source": "Pre-action › Releasing panel power.",
+          "par": 45
+        }
+      ]
     },
     "hook": "24 + 5 by code, 90 + 10 by FM — the insurer decides which.",
     "source": "Pre-action › Releasing panel power.",
@@ -4449,7 +4738,35 @@
         "5-32",
         "Data Sheet 5-32"
       ],
-      "explanation": "Protection against a single false signal or mechanical damage, paid for in delivery time, design area and complexity — and you prove the delivery time at acceptance, not assume it. FM Data Sheet 5-32 cautions that double-interlock can delay control."
+      "explanation": "Protection against a single false signal or mechanical damage, paid for in delivery time, design area and complexity — and you prove the delivery time at acceptance, not assume it. FM Data Sheet 5-32 cautions that double-interlock can delay control.",
+      "followUps": [
+        {
+          "id": "P8-scn-01-f1",
+          "kind": "what-if",
+          "prompt": "Say FM's own data sheet says double-interlock can delay control. Does that change the design?",
+          "beats": [
+            "Yes, FM Data Sheet 5-32 cautions that double-interlock can delay control",
+            "The trade: one false detection signal or one damaged sprinkler alone can't put water on IT",
+            "So you prove the delivery time at acceptance, not assume it",
+            "Hazard classification is set by the owner's and insurer's standard — FM Data Sheet 5-32 wants sprinklers throughout"
+          ],
+          "source": "Pre-action › Data center points to make",
+          "par": 45
+        },
+        {
+          "id": "P8-scn-01-f2",
+          "kind": "own-it",
+          "prompt": "Have you seen that second interlock actually matter?",
+          "beats": [
+            "On the VESDA job, cause-and-effect testing found a pre-action release tripping the wrong COLO's valve",
+            "It was double interlock, so that system primed but never filled",
+            "The releases for two COLOs were swapped — in a real fire the COLO that needed water wouldn't have gotten it",
+            "I verified the release relay for every system and corrected the programming to the sequence of operations"
+          ],
+          "source": "Story 2 — A data center with no drawings",
+          "par": 45
+        }
+      ]
     },
     "hook": "Two keys to open, 30% more area to pay — and you time the water.",
     "source": "Pre-action › Data center points to make",
@@ -4470,7 +4787,33 @@
       ],
       "requiresNumber": true,
       "codeRef": null,
-      "explanation": "Nitrogen inerting fights corrosion in the dry pipe; it also puts an oxygen-depletion detector in the generator room (alarm at 19.5% O2), and nitrogen generator failure is a fault the L4 script has to annunciate."
+      "explanation": "Nitrogen inerting fights corrosion in the dry pipe; it also puts an oxygen-depletion detector in the generator room (alarm at 19.5% O2), and nitrogen generator failure is a fault the L4 script has to annunciate.",
+      "followUps": [
+        {
+          "id": "P8-scn-02-f1",
+          "kind": "what-if",
+          "prompt": "Say the nitrogen generator fails during the test. What should you see?",
+          "beats": [
+            "Compressor or nitrogen generator failure is a fault line in the L4 script — it has to annunciate correctly",
+            "Loss of air alone: low-air supervisory, valve stays shut",
+            "The air supply must restore normal pressure within 30 minutes"
+          ],
+          "source": "Pre-action",
+          "par": 45
+        },
+        {
+          "id": "P8-scn-02-f2",
+          "kind": "number",
+          "prompt": "That oxygen detector in the generator room — mount and alarm level?",
+          "beats": [
+            "Breathing zone",
+            "Alarm at 19.5% O2",
+            "Nitrogen generator rooms (pre-action N2 inerting) — oxygen depletion"
+          ],
+          "source": "Gas detection › table",
+          "par": 45
+        }
+      ]
     },
     "hook": "Nitrogen saves the pipe and adds a 19.5% O2 alarm next door.",
     "source": "Pre-action › Data center points to make",
@@ -4499,7 +4842,33 @@
         "5-32",
         "Data Sheet 5-32"
       ],
-      "explanation": "The cost is delivery time, the area increase and complexity — FM Data Sheet 5-32 cautions that double-interlock can delay control. The benefit is that one false detection signal or one damaged sprinkler alone can't put water on IT, and you prove the delivery time at acceptance."
+      "explanation": "The cost is delivery time, the area increase and complexity — FM Data Sheet 5-32 cautions that double-interlock can delay control. The benefit is that one false detection signal or one damaged sprinkler alone can't put water on IT, and you prove the delivery time at acceptance.",
+      "followUps": [
+        {
+          "id": "P8-scn-03-f1",
+          "kind": "why-not",
+          "prompt": "Then why not single-interlock plus good ASD? Detection is reliable now.",
+          "beats": [
+            "Single-interlock opens on detection alone",
+            "Double-interlock needs detection and loss of air — one false detection signal or one damaged sprinkler alone can't put water on IT",
+            "Hazard classification is set by the owner's and insurer's standard"
+          ],
+          "source": "Pre-action",
+          "par": 45
+        },
+        {
+          "id": "P8-scn-03-f2",
+          "kind": "number",
+          "prompt": "How much delay are you actually allowed — the number, and where it's from?",
+          "beats": [
+            "Light hazard: 1 sprinkler open, 60 s; ordinary: 2 open, 50 s",
+            "Double-interlock above 500 gal: water at the test connection within 60 s by test, or by calculation (NFPA 13 §8.3.2.3)",
+            "Dry-pipe sizing rules: NFPA 13-2022 §8.2.3"
+          ],
+          "source": "Pre-action",
+          "par": 45
+        }
+      ]
     },
     "hook": "It does delay — so the stopwatch at acceptance is the price of the second key.",
     "source": "Pre-action › Data center points to make",
