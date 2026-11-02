@@ -507,6 +507,7 @@ async function main() {
   }
 
   // Spoken cards are graded by taps: with nothing tapped they ask first, and "Grade as a miss" grades a blank.
+  // (A1-scn-01: a Light topic, so it never gets a follow-up chain — Grade as a miss goes straight to the result.)
   await open('?date=2026-10-24&card=I3-sty-01');
   await evaluate(`[...document.querySelectorAll('button')].find((b) => b.textContent === 'Done speaking').click()`);
   await settle(300);
@@ -522,7 +523,7 @@ async function main() {
   await evaluate(`[...document.querySelectorAll('button')].find((b) => b.textContent === 'Grade it').click()`);
   await settle(300);
   check('story: tapping the beats after Done, then Grade it, grades the beats (clock stopped at Done)', !!(await text('.result h2')) && !/^Missed/.test((await text('.result h2')) || ''), await text('.result h2'));
-  await open('?date=2026-10-24&card=P6-scn-01');
+  await open('?date=2026-10-24&card=A1-scn-01');
   await evaluate(`[...document.querySelectorAll('button')].find((b) => b.textContent === 'Reveal').click()`);
   await settle(100);
   await evaluate(`[...document.querySelectorAll('button')].find((b) => b.textContent === 'Grade it').click()`);
