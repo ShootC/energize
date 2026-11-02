@@ -20,7 +20,7 @@
 //
 // Exit code 0 = all checks passed.
 
-import { spawn } from 'node:child_process';
+import { spawn, execFileSync } from 'node:child_process';
 import { createServer } from 'node:http';
 import { mkdirSync, writeFileSync, mkdtempSync, rmSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -108,8 +108,10 @@ async function launch() {
   const exe = CHROME_CANDIDATES.find((p) => existsSync(p));
   if (!exe) throw new Error('No Chrome/Edge found; pass --chrome <path>');
   const profile = mkdtempSync(join(tmpdir(), 'energize-chrome-'));
-  // The fake media flags give the story card a microphone to record from.
-  const proc = spawn(exe, ['--headless=new', '--remote-debugging-port=0', `--user-data-dir=${profile}`, '--no-first-run', '--no-default-browser-check', '--disable-gpu', '--allow-file-access-from-files', '--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', 'about:blank'], { stdio: ['ignore', 'ignore', 'pipe'] });
+  // The fake media flags give the story card a microphone to record from. The no-throttling flags
+  // keep a long run's timers and frames at full speed: a backgrounded headless page otherwise
+  // stalls an evaluate or a screenshot now and then, minutes in.
+  const proc = spawn(exe, ['--headless=new', '--remote-debugging-port=0', `--user-data-dir=${profile}`, '--no-first-run', '--no-default-browser-check', '--disable-gpu', '--allow-file-access-from-files', '--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', '--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows', '--disable-features=IntensiveWakeUpThrottling', 'about:blank'], { stdio: ['ignore', 'ignore', 'pipe'] });
   // The port comes on stderr ("DevTools listening on ws://…") or, where the browser hands
   // off to another process and prints nothing (current Edge on Windows), in the profile's
   // DevToolsActivePort file.
@@ -163,14 +165,15 @@ async function closeBrowser(b) {
 }
 
 // Serve dist/ over http for the installable-app checks. `site.variant`, once set,
-// serves a "new build": sw.js with that version and index.html with a marker.
+// serves a "new build": sw.js with that version and index.html with a marker. `site.dir` can be
+// switched to serve another build from the same origin (the v1.0 → round-2 upgrade check).
 function serveDist(dir) {
   const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.webmanifest': 'application/manifest+json', '.svg': 'image/svg+xml', '.png': 'image/png' };
-  const site = { variant: null, hits: [] };
+  const site = { variant: null, hits: [], dir };
   const srv = createServer((req, res) => {
     let p = decodeURIComponent(new URL(req.url, 'http://x').pathname);
     if (p === '/') p = '/index.html';
-    const file = join(dir, p.replace(/^\/+/, ''));
+    const file = join(site.dir, p.replace(/^\/+/, ''));
     site.hits.push(p);
     if (!existsSync(file)) {
       res.writeHead(404);
@@ -396,19 +399,27 @@ async function main() {
   await shot('07-browse');
 
   // ---- the next round's date (GAME_SPEC_ROUND2 §2), via the ?round= / ?focus= QA overrides ----
-  for (const [q, sel, expect, name] of [
+  // At both phone sizes (session E): each state's key line, and no sideways scroll.
+  const roundStates = [
     ['?date=2026-11-05&deck=sample', '#round-when', /^Round 2 · date not set$/, 'date unset: no countdown, the banner asks for a date'],
     ['?date=2026-11-05&deck=sample&round=2026-11-12', '#round-when', /^7 days to Round 2 · Thu Nov 12$/, 'date set 7 days out: the countdown'],
+    ['?date=2026-11-07&deck=sample&round=2026-11-12', '#round-when', /^5 days to Round 2 · Thu Nov 12$/, 'date set 5 days out: the countdown'],
     ['?date=2026-11-11&deck=sample&round=2026-11-12', '.mode', /^Sweep day — Round 2 is tomorrow\. Every technical topic not Locked In/, 'the sweep day (date − 1)'],
     ['?date=2026-11-12&deck=sample&round=2026-11-12', '.mode', /^Round 2 today — six quick cards from your strongest topics and one walkthrough warm-up/, 'day-of, technical focus'],
     ['?date=2026-11-12&deck=sample&round=2026-11-12&focus=behavioral', '.mode', /^Round 2 today — six quick cards, your 60-second intro and two hook lines/, 'day-of, behavioral focus'],
     ['?date=2026-11-13&deck=sample&round=2026-11-12', '.round-done h1', /^Round 2 is done — set the next one\.$/, 'the day after: set the next round'],
-  ]) {
-    await open(q);
-    const t = (await text(sel)) || '';
-    check(`next round: ${name}`, expect.test(t), t.slice(0, 90));
-    await shot(`08-${name.split(':')[0].replace(/[^a-z0-9]+/gi, '-')}`);
+  ];
+  for (const [w, hgt] of [[390, 844], [430, 932]]) {
+    await cdp.send('Emulation.setDeviceMetricsOverride', { width: w, height: hgt, deviceScaleFactor: 2, mobile: true });
+    for (const [q, sel, expect, name] of roundStates) {
+      await open(q);
+      const t = (await text(sel)) || '';
+      const noScroll = await evaluate('document.documentElement.scrollWidth <= window.innerWidth + 1');
+      check(`next round at ${w}×${hgt}: ${name}`, expect.test(t) && noScroll, `${t.slice(0, 90)}${noScroll ? '' : ' · scrolls sideways'}`);
+      await shot(`08-${w}-${name.split(':')[0].replace(/[^a-z0-9]+/gi, '-')}`);
+    }
   }
+  await cdp.send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
   await open('?date=2026-11-05&deck=sample&round=2026-11-12');
   check('next round: no banner once the date is set', !(await evaluate('!!document.getElementById("round-banner")')));
   await open('?date=2026-11-11&deck=sample&round=2026-11-12');
@@ -482,6 +493,87 @@ async function main() {
   const beh = await playDayOf('?date=2026-11-14&round=2026-11-14&focus=behavioral', 'behavioral');
   check('bank: day-of (behavioral) = six confidence cards, the 60-second intro, the hooks of Story 1 and Story 3', beh.slots.join(' ') === 'confidence confidence confidence confidence confidence confidence intro hook hook', JSON.stringify(beh.slots));
   check('bank: behavioral day-of ends on the stop screen; ratings unchanged', /Stop\. You're ready/.test(beh.end.stop || '') && beh.end.same, JSON.stringify(beh.end));
+
+  // ---- Round 2 ship QA: a full technical shift and a Round 2 mock deck, interrupt mode on and off ----
+  // On (the technical-focus default), ?interruptAt=1 makes follow-up 1 cut into every chained
+  // scenario and every technical / experience mock question a second in; each cut-in is
+  // answered and the main answer picked back up. Off (Settings → Interrupt mode unticked), the
+  // same wait brings no cut-in. Every answer is right, so every card and question is clean
+  // (a 0-second story may slip).
+  const waitCutIn = `(async () => { for (let i = 0; i < 18; i++) { if (document.getElementById('interrupt')) return true; await new Promise((r) => setTimeout(r, 100)); } return false; })()`;
+  const playFullShift = async (q) => {
+    await open(q);
+    await click('#start-shift');
+    const out = { cards: 0, chains: 0, cutIns: 0, notClean: [] };
+    for (let i = 0; i < 60; i++) {
+      const slot = await evaluate('(() => { const s = energize.state.currentShift?.slots.find((x) => !x.done); if (!s) return null; const c = energize.cardById.get(s.cardId); return { type: c.type, chain: s.chain !== false && (c.answer.followUps || []).length > 0 }; })()');
+      if (!slot) break;
+      if (slot.type === 'scenario' && slot.chain) {
+        out.chains++;
+        if (await evaluate(waitCutIn)) {
+          out.cutIns++;
+          await click('#interrupt-back');
+          await settle(40);
+        }
+      }
+      const r = await evaluate(`(${playCard})(false)`);
+      out.cards++;
+      if (r.result !== 'Clean' && !(/-sty-/.test(r.id) && r.result === 'Slipped')) out.notClean.push(`${r.id}=${r.result}`);
+      const next = await evaluate(`(() => { const b = [...document.querySelectorAll('.result button')].pop(); b.click(); return b.textContent; })()`);
+      await settle(30);
+      if (next === 'Finish') break;
+    }
+    out.headline = await text('.debrief .headline');
+    return out;
+  };
+  const playDeck = async (q, deckId) => {
+    await open(q);
+    await click('#nav-mock');
+    await settle();
+    await click(`#deck-${deckId}`);
+    await settle();
+    const out = { questions: 0, interruptible: 0, cutIns: 0 };
+    for (let k = 0; k < 12; k++) {
+      if (!(await evaluate('!!document.getElementById("mock-done")'))) break;
+      out.questions++;
+      if (/k-technical|k-experience/.test((await evaluate('document.querySelector(".mock-kind .kind")?.className')) || '')) {
+        out.interruptible++;
+        if (await evaluate(waitCutIn)) {
+          out.cutIns++;
+          await click('#interrupt-back');
+        }
+      }
+      await click('#mock-done');
+      await settle(30);
+      for (let j = 0; j < 6 && !(await evaluate('!!document.getElementById("mock-grade")')); j++) {
+        await evaluate(`(document.querySelector('[id^="mock-next-"]') || document.getElementById('mock-reveal'))?.click()`);
+        await settle(30);
+      }
+      await evaluate('document.querySelectorAll(".mock-card input[type=checkbox]").forEach((b) => (b.checked = true))');
+      await click('#mock-grade');
+      await settle(40);
+    }
+    out.headline = await text('#mock-headline');
+    out.dots = await evaluate('document.querySelectorAll(".mock-results .ldot").length');
+    return out;
+  };
+  await open('?date=2026-11-05');
+  await evaluate('localStorage.clear()');
+  const shiftOn = await playFullShift('?date=2026-11-05&interruptAt=1');
+  await shot('12-shift-interrupt-on-debrief');
+  check('ship QA: full technical shift, interrupt on — every chained scenario cut into, every answer clean', shiftOn.cards >= 15 && shiftOn.chains > 0 && shiftOn.cutIns === shiftOn.chains && !shiftOn.notClean.length && /framework right/.test(shiftOn.headline || ''), JSON.stringify(shiftOn));
+  const deckOn = await playDeck('?date=2026-11-05&interruptAt=1', 'r2-a');
+  await shot('12-deck-interrupt-on-debrief');
+  check('ship QA: Round 2 deck A end to end, interrupt on — every technical / experience question cut into, all clean', deckOn.questions === 7 && deckOn.interruptible === 5 && deckOn.cutIns === 5 && deckOn.headline === '7 of 7 framework right · 0 close · 7 clean' && deckOn.dots > 0, JSON.stringify(deckOn));
+  await open('?date=2026-11-05');
+  await click('#nav-settings');
+  await settle();
+  await evaluate(`(() => { const b = document.getElementById('set-interrupt'); b.checked = false; b.dispatchEvent(new Event('change')); })()`);
+  check('ship QA: Settings → Interrupt mode off is saved', (await evaluate('energize.state.settings.interrupt')) === false);
+  const shiftOff = await playFullShift('?date=2026-11-06&interruptAt=1');
+  check('ship QA: full technical shift, interrupt off — no cut-in, every answer clean', shiftOff.cards >= 15 && shiftOff.chains > 0 && shiftOff.cutIns === 0 && !shiftOff.notClean.length, JSON.stringify(shiftOff));
+  const deckOff = await playDeck('?date=2026-11-06&interruptAt=1', 'r2-b');
+  check('ship QA: Round 2 deck B end to end, interrupt off — no cut-in, all clean', deckOff.questions === 7 && deckOff.cutIns === 0 && deckOff.headline === '7 of 7 framework right · 0 close · 7 clean', JSON.stringify(deckOff));
 
   // ---- Phase 3: every screen reachable at 390×844 (real bank, offline) ----
   const fits = () => evaluate('document.documentElement.scrollWidth <= window.innerWidth + 1');
@@ -811,8 +903,65 @@ async function main() {
   await online(false);
   site.srv.close();
 
+  // ---- Round 2 ship: an installed v1.0 app upgrades in place and keeps its data ----
+  // The v1.0-round1 build (what phones run today) is served from its own origin and installed,
+  // then given tests/fixtures/state-v1.0.json as its save (written by the v1.0 engine). The
+  // server switches to this build; the next open lets the service worker update behind the
+  // page (v1.0's after-Nov-2 screen draws no update note, so the phone's path is close and
+  // reopen); the open after that runs the new build — with every rating, result, XP total,
+  // streak and setting kept and the round-2 defaults added.
+  const oldDist = mkdtempSync(join(tmpdir(), 'energize-v1-'));
+  const oldFiles = execFileSync('git', ['-C', ROOT, 'ls-tree', '--name-only', 'v1.0-round1', 'dist/'], { encoding: 'utf8' }).split(/\r?\n/).filter(Boolean);
+  for (const f of oldFiles) writeFileSync(join(oldDist, f.replace(/^dist\//, '')), execFileSync('git', ['-C', ROOT, 'show', `v1.0-round1:${f}`], { maxBuffer: 64 * 1024 * 1024 }));
+  const swVersion = (file) => /const VERSION = '([^']+)'/.exec(readFileSync(file, 'utf8'))[1];
+  const oldVersion = swVersion(join(oldDist, 'sw.js'));
+  const newVersion = swVersion(join(ROOT, 'dist/sw.js'));
+  check('upgrade: the service worker cache version changes from the installed v1.0 build', oldVersion !== newVersion, `energize-${oldVersion} → energize-${newVersion}`);
+  const up = await serveDist(oldDist);
+  await online(true);
+  const upPage = `${up.url}index.html?date=2026-11-03`;
+  await open(upPage);
+  const v1Ready = await evaluate(`(async () => { await navigator.serviceWorker.ready; for (let i = 0; i < 100 && !navigator.serviceWorker.controller; i++) await new Promise((r) => setTimeout(r, 100)); return !!navigator.serviceWorker.controller; })()`);
+  const fixture = JSON.parse(readFileSync(join(ROOT, 'tests/fixtures/state-v1.0.json'), 'utf8'));
+  await evaluate(`localStorage.setItem('energize.state.v1', ${JSON.stringify(JSON.stringify({ ...fixture, currentShift: null, createdOn: '2026-10-24' }))})`);
+  await open(upPage);
+  const v1State = await evaluate('({ version: energize.data.build.version, xp: energize.state.xp, history: energize.state.history.length, p2: energize.state.topics.find((t) => t.id === "P2").rating, nextRound: "nextRound" in energize.state.settings })');
+  check('upgrade: the v1.0 build is installed, offline-capable, and running the v1.0 save', v1Ready && v1State.version === oldVersion && v1State.xp === 161 && v1State.history === 5 && v1State.p2 === 'Locked In' && !v1State.nextRound, JSON.stringify(v1State));
+  up.dir = join(ROOT, 'dist');
+  await open(upPage);
+  const swapped = await evaluate(`(async () => { for (let i = 0; i < 200; i++) { const k = await caches.keys(); if (k.includes('energize-${newVersion}') && !k.includes('energize-${oldVersion}')) return k; await new Promise((r) => setTimeout(r, 100)); } return caches.keys(); })()`);
+  check('upgrade: opening the installed app updates its service worker and drops the v1.0 cache', swapped.length === 1 && swapped[0] === `energize-${newVersion}`, JSON.stringify(swapped));
+  await open(upPage);
+  const upgraded = await evaluate(`(async () => ({ version: energize.data.build.version, state: energize.state, stored: JSON.parse(localStorage.getItem('energize.state.v1')), when: document.getElementById('round-when')?.textContent, banner: !!document.getElementById('round-banner') }))()`);
+  const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  const st = upgraded.state;
+  const kept = {
+    version: upgraded.version === newVersion,
+    ratings: same(st.topics, fixture.topics),
+    history: same(st.history, fixture.history),
+    xp: st.xp === fixture.xp,
+    streak: st.dayStreak === fixture.dayStreak && st.lastShiftDate === fixture.lastShiftDate,
+    blitz: st.blitzBest === fixture.blitzBest,
+    energized: same(st.energized, fixture.energized),
+    snapshots: same(st.snapshots, fixture.snapshots),
+    settings: st.settings.cardsPerShift === 10 && st.settings.sound === false && st.settings.haptics === true,
+    roundDefaults: same(st.settings.nextRound, { label: 'Round 2', focus: 'technical', date: null }) && st.settings.interrupt === null,
+    saved: same(upgraded.stored.topics, fixture.topics) && same(upgraded.stored.history, fixture.history) && upgraded.stored.xp === fixture.xp && !!upgraded.stored.settings.nextRound,
+    home: upgraded.when === 'Round 2 · date not set' && upgraded.banner,
+  };
+  await screenCheck('upgrade: the reopened app runs the new build with every v1.0 rating, result, XP, streak and setting kept', Object.values(kept).every(Boolean), JSON.stringify(kept));
+  const upShift = await evaluate('(() => { document.getElementById("start-shift").click(); return energize.state.currentShift.slots.length; })()');
+  check('upgrade: the carried-over save plays a shift (its 10-card setting kept)', upShift === 10, `${upShift} cards`);
+  await online(false);
+  up.srv.close();
+  try {
+    rmSync(oldDist, { recursive: true, force: true });
+  } catch {
+    /* best effort */
+  }
+
   check('no console errors or exceptions', errors.length === 0, errors.slice(0, 3).join(' | '));
-  const remote = requests.filter((u) => !/^(file|data|blob|about|chrome):/.test(u) && !u.startsWith(site.url));
+  const remote = requests.filter((u) => !/^(file|data|blob|about|chrome):/.test(u) && !u.startsWith(site.url) && !u.startsWith(up.url));
   check('no network requests beyond the local test server', remote.length === 0, remote.slice(0, 3).join(' '));
 
   ws.close();

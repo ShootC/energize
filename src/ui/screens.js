@@ -161,6 +161,18 @@ function buildingRow(b, st, onBuilding) {
   );
 }
 
+// "A newer build is ready — Reload": on the campus screen and on the screens that replace it
+// (day-of stop, round done), so an update is never hidden behind them.
+function updateBar(updateReady, onReload) {
+  if (!updateReady) return null;
+  return h(
+    'div',
+    { class: 'update-note', role: 'status', id: 'update-note' },
+    h('span', {}, 'A newer build is ready.'),
+    h('button', { class: 'btn small', type: 'button', id: 'reload-app', onclick: onReload }, 'Reload'),
+  );
+}
+
 export function homeScreen({ status, buildings, mode, primary, hint, secondary, celebrate = [], updateReady = false, onReload, onBuilding, banner = null }) {
   const interactive = mode !== 'dayof' && mode !== 'after';
   const byId = new Map(status.map((x) => [x.id, x]));
@@ -168,14 +180,7 @@ export function homeScreen({ status, buildings, mode, primary, hint, secondary, 
   return h(
     'main',
     { class: 'home' },
-    updateReady
-      ? h(
-          'div',
-          { class: 'update-note', role: 'status', id: 'update-note' },
-          h('span', {}, 'A newer build is ready.'),
-          h('button', { class: 'btn small', type: 'button', id: 'reload-app', onclick: onReload }, 'Reload'),
-        )
-      : null,
+    updateBar(updateReady, onReload),
     banner,
     h(
       'figure',
@@ -315,13 +320,14 @@ export function debriefScreen({ headline, before, after, weakest, planRow, energ
 const readinessLine = (rd) => `Readiness ${formatPercent(rd.technical.value)} technical · ${formatPercent(rd.interview.value)} interview · ${formatPercent(rd.overall)} overall · ${rd.tested} of ${rd.total} tested`;
 
 // Day-of, after the last card: stop, and the day-of checklist from the guide.
-export function finalScreen({ checklist, rd, stats }) {
+export function finalScreen({ checklist, rd, stats, updateReady = false, onReload }) {
   const boxes = checklist.map((c, i) =>
     h('li', {}, h('label', { class: 'row-check', for: `dc${i}` }, h('input', { type: 'checkbox', id: `dc${i}` }), h('span', {}, c))),
   );
   return h(
     'main',
     { class: 'final go-day' },
+    updateBar(updateReady, onReload),
     h('h1', { class: 'go' }, "Stop. You're ready. Go win it."),
     h('p', { class: 'final-stats' }, readinessLine(rd)),
     stats ? h('p', { class: 'hint' }, stats) : null,
@@ -330,10 +336,11 @@ export function finalScreen({ checklist, rd, stats }) {
 }
 
 // After the round's date: set the next one. Ratings carry over; nothing retires.
-export function roundDoneScreen({ doneLabel, nextRound, today, rd, stats, map, onSave, onSettings }) {
+export function roundDoneScreen({ doneLabel, nextRound, today, rd, stats, map, onSave, onSettings, updateReady = false, onReload }) {
   return h(
     'main',
     { class: 'final after round-done' },
+    updateBar(updateReady, onReload),
     h('h1', {}, `${doneLabel} is done — set the next one.`),
     map ? h('figure', { class: 'campus' }, map) : null,
     h('p', { class: 'final-stats' }, readinessLine(rd)),

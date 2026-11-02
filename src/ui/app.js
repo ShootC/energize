@@ -148,7 +148,9 @@ function boot() {
   app.pwa = setupPwa({
     onUpdateReady: () => {
       app.updateReady = true;
+      // Never mid-card: only the screens that carry the note are redrawn.
       if (app.route === 'home') home();
+      else if (app.route === 'final') final(app.finalArg);
     },
     onInstallable: () => {
       if (app.route === 'settings') settings();
@@ -597,11 +599,13 @@ function nextLabel(label) {
 }
 
 function final(arg = {}) {
+  app.finalArg = arg;
   const rd = readiness(app.state.topics);
   const stats = `${app.state.history.length} cards answered · ${app.state.xp} XP · best Blitz ${app.state.blitzBest || 0}`;
+  const update = { updateReady: app.updateReady, onReload: () => location.reload() };
   if (!arg.after) {
     // Day-of, after the last card: stop. Nothing else is offered.
-    mount(app.root, topBar(), finalScreen({ checklist: app.data.checklist, rd, stats }));
+    mount(app.root, topBar(), finalScreen({ checklist: app.data.checklist, rd, stats, ...update }));
     return;
   }
   // After the round: set the next one. The gear stays so state can be exported.
@@ -624,6 +628,7 @@ function final(arg = {}) {
         return '';
       },
       onSettings: () => go('settings'),
+      ...update,
     }),
   );
 }
