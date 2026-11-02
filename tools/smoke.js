@@ -225,9 +225,25 @@ async function main() {
     await loaded;
     await evaluate('new Promise((r) => setTimeout(r, 150))');
   };
+  // Screenshots are for reviewing by eye, not checks. Headless Edge occasionally never
+  // answers a capture (seen after follow-up chains, intermittently); retry once after a
+  // repaint, then skip that picture with a note instead of failing the run.
+  const skippedShots = [];
   const shot = async (name) => {
-    const { data } = await cdp.send('Page.captureScreenshot', { format: 'png' });
-    writeFileSync(join(SHOTS, `${name}.png`), Buffer.from(data, 'base64'));
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const { data } = await cdp.send('Page.captureScreenshot', { format: 'png' }, 10000);
+        writeFileSync(join(SHOTS, `${name}.png`), Buffer.from(data, 'base64'));
+        return;
+      } catch (e) {
+        if (attempt === 2) {
+          skippedShots.push(name);
+          console.log(`  (screenshot ${name} skipped: ${e.message})`);
+          return;
+        }
+        await cdp.send('Runtime.evaluate', { expression: 'new Promise((r) => requestAnimationFrame(() => setTimeout(r, 300)))', awaitPromise: true });
+      }
+    }
   };
   const text = (sel) => evaluate(`document.querySelector(${JSON.stringify(sel)})?.textContent ?? null`);
   const click = (sel) => evaluate(`(() => { const el = document.querySelector(${JSON.stringify(sel)}); if (!el) return false; el.click(); return true; })()`);
@@ -788,7 +804,7 @@ async function main() {
     /* Chrome may still hold the profile on Windows */
   }
   const failed = results.filter((r) => !r.ok);
-  console.log(`\n${results.length - failed.length}/${results.length} checks passed`);
+  console.log(`\n${results.length - failed.length}/${results.length} checks passed${skippedShots.length ? ` · ${skippedShots.length} screenshot(s) skipped: ${skippedShots.join(', ')}` : ''}`);
   process.exitCode = failed.length ? 1 : 0;
 }
 
